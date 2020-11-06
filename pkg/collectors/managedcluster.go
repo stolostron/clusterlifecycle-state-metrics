@@ -24,6 +24,10 @@ var (
 	descClusterLabelsHelp          = "Kubernetes labels converted to Prometheus labels."
 	descClusterLabelsDefaultLabels = []string{"vendor", "cloud", "created_via", "version"}
 
+	descClusterInfoName          = "ocm_managedcluster_info"
+	descClusterInfoHelp          = "Kubernetes labels converted to Prometheus labels."
+	descClusterInfoDefaultLabels = []string{"vendor", "cloud", "version"}
+
 	cdGVR = schema.GroupVersionResource{
 		Group:    "hive.openshift.io",
 		Version:  "v1",
@@ -49,6 +53,7 @@ func getManagedClusterMetricFamilies(client dynamic.Interface) []metric.FamilyGe
 				return f
 			}),
 		},
+		// Read the clusterdeployment to define if hive or imported
 		{
 			Name: descClusterLabelsName,
 			Type: metric.MetricTypeGauge,
@@ -64,6 +69,23 @@ func getManagedClusterMetricFamilies(client dynamic.Interface) []metric.FamilyGe
 				return metric.Family{Metrics: []*metric.Metric{
 					{
 						LabelKeys:   descClusterLabelsDefaultLabels,
+						LabelValues: labelsValues,
+						Value:       1,
+					},
+				}}
+			}),
+		},
+		//Does not read the clusterdeployment
+		{
+			Name: descClusterInfoName,
+			Type: metric.MetricTypeGauge,
+			Help: "Kubernetes labels converted to Prometheus labels.",
+			GenerateFunc: wrapManagedClusterFunc(func(mc *managedclusterv1.ManagedCluster) metric.Family {
+				labels := mc.GetLabels()
+				labelsValues := []string{labels["vendor"], labels["cloud"], mc.Status.Version.Kubernetes}
+				return metric.Family{Metrics: []*metric.Metric{
+					{
+						LabelKeys:   descClusterInfoDefaultLabels,
 						LabelValues: labelsValues,
 						Value:       1,
 					},
