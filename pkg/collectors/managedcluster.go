@@ -17,9 +17,9 @@ import (
 )
 
 var (
-	descRouteLabelsName          = "openshift_route_labels"
+	descRouteLabelsName          = "ocm_managedcluster_labels"
 	descRouteLabelsHelp          = "Kubernetes labels converted to Prometheus labels."
-	descRouteLabelsDefaultLabels = []string{"namespace", "route"}
+	descRouteLabelsDefaultLabels = []string{"managedcluster"}
 
 	managedClusterMetricFamilies = []metric.FamilyGenerator{
 		{
