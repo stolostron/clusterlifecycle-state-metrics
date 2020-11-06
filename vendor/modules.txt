@@ -19,6 +19,8 @@ github.com/cespare/xxhash/v2
 github.com/davecgh/go-spew/spew
 # github.com/dgrijalva/jwt-go v3.2.0+incompatible
 github.com/dgrijalva/jwt-go
+# github.com/evanphx/json-patch v4.9.0+incompatible
+github.com/evanphx/json-patch
 # github.com/go-logr/logr v0.2.0
 github.com/go-logr/logr
 # github.com/gogo/protobuf v1.3.1
@@ -42,10 +44,10 @@ github.com/google/gofuzz
 github.com/googleapis/gnostic/compiler
 github.com/googleapis/gnostic/extensions
 github.com/googleapis/gnostic/openapiv2
-# github.com/hashicorp/golang-lru v0.5.1
+# github.com/hashicorp/golang-lru v0.5.4
 github.com/hashicorp/golang-lru
 github.com/hashicorp/golang-lru/simplelru
-# github.com/imdario/mergo v0.3.5
+# github.com/imdario/mergo v0.3.9
 github.com/imdario/mergo
 # github.com/json-iterator/go v1.1.10
 github.com/json-iterator/go
@@ -65,6 +67,9 @@ github.com/open-cluster-management/api/client/cluster/clientset/versioned/typed/
 github.com/open-cluster-management/api/client/cluster/clientset/versioned/typed/cluster/v1alpha1
 github.com/open-cluster-management/api/cluster/v1
 github.com/open-cluster-management/api/cluster/v1alpha1
+# github.com/openshift/api v3.9.1-0.20191112184635-86def77f6f90+incompatible
+## explicit
+github.com/openshift/api/config/v1
 # github.com/openshift/build-machinery-go v0.0.0-20200819073603-48aa266c95f7
 ## explicit
 github.com/openshift/build-machinery-go
@@ -75,6 +80,15 @@ github.com/openshift/build-machinery-go/make/targets/golang
 github.com/openshift/build-machinery-go/make/targets/openshift
 github.com/openshift/build-machinery-go/make/targets/openshift/operator
 github.com/openshift/build-machinery-go/scripts
+# github.com/openshift/hive v0.0.0-20200318152403-0c1ea8babb4e
+## explicit
+github.com/openshift/hive/pkg/apis/hive/v1
+github.com/openshift/hive/pkg/apis/hive/v1/aws
+github.com/openshift/hive/pkg/apis/hive/v1/azure
+github.com/openshift/hive/pkg/apis/hive/v1/baremetal
+github.com/openshift/hive/pkg/apis/hive/v1/gcp
+# github.com/pkg/errors v0.9.1
+github.com/pkg/errors
 # github.com/prometheus/client_golang v1.7.1
 ## explicit
 github.com/prometheus/client_golang/prometheus
@@ -239,21 +253,25 @@ k8s.io/apimachinery/pkg/util/errors
 k8s.io/apimachinery/pkg/util/framer
 k8s.io/apimachinery/pkg/util/intstr
 k8s.io/apimachinery/pkg/util/json
+k8s.io/apimachinery/pkg/util/mergepatch
 k8s.io/apimachinery/pkg/util/naming
 k8s.io/apimachinery/pkg/util/net
 k8s.io/apimachinery/pkg/util/runtime
 k8s.io/apimachinery/pkg/util/sets
+k8s.io/apimachinery/pkg/util/strategicpatch
 k8s.io/apimachinery/pkg/util/validation
 k8s.io/apimachinery/pkg/util/validation/field
 k8s.io/apimachinery/pkg/util/wait
 k8s.io/apimachinery/pkg/util/yaml
 k8s.io/apimachinery/pkg/version
 k8s.io/apimachinery/pkg/watch
+k8s.io/apimachinery/third_party/forked/golang/json
 k8s.io/apimachinery/third_party/forked/golang/reflect
 # k8s.io/client-go v0.19.2
 ## explicit
 k8s.io/client-go/discovery
 k8s.io/client-go/dynamic
+k8s.io/client-go/dynamic/fake
 k8s.io/client-go/kubernetes/scheme
 k8s.io/client-go/pkg/apis/clientauthentication
 k8s.io/client-go/pkg/apis/clientauthentication/v1alpha1
@@ -267,6 +285,7 @@ k8s.io/client-go/plugin/pkg/client/auth/oidc
 k8s.io/client-go/plugin/pkg/client/auth/openstack
 k8s.io/client-go/rest
 k8s.io/client-go/rest/watch
+k8s.io/client-go/testing
 k8s.io/client-go/third_party/forked/golang/template
 k8s.io/client-go/tools/auth
 k8s.io/client-go/tools/cache
@@ -287,6 +306,8 @@ k8s.io/client-go/util/workqueue
 # k8s.io/klog/v2 v2.3.0
 ## explicit
 k8s.io/klog/v2
+# k8s.io/kube-openapi v0.0.0-20200805222855-6aeccd4b50c6
+k8s.io/kube-openapi/pkg/util/proto
 # k8s.io/kube-state-metrics v0.0.0-20190129120824-7bfed92869b6
 ## explicit
 k8s.io/kube-state-metrics/pkg/collector
@@ -298,6 +319,10 @@ k8s.io/kube-state-metrics/pkg/whiteblacklist
 k8s.io/utils/buffer
 k8s.io/utils/integer
 k8s.io/utils/trace
+# sigs.k8s.io/controller-runtime v0.6.3
+## explicit
+sigs.k8s.io/controller-runtime/pkg/runtime/scheme
+sigs.k8s.io/controller-runtime/pkg/scheme
 # sigs.k8s.io/structured-merge-diff/v4 v4.0.1
 sigs.k8s.io/structured-merge-diff/v4/value
 # sigs.k8s.io/yaml v1.2.0

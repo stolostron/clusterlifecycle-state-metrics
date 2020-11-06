@@ -22,7 +22,7 @@ import (
 var (
 	descClusterLabelsName          = "ocm_managedcluster_labels"
 	descClusterLabelsHelp          = "Kubernetes labels converted to Prometheus labels."
-	descClusterLabelsDefaultLabels = []string{"managedcluster"}
+	descClusterLabelsDefaultLabels = []string{"vendor", "cloud", "created_via", "version"}
 
 	cdGVR = schema.GroupVersionResource{
 		Group:    "hive.openshift.io",
@@ -54,18 +54,17 @@ func getManagedClusterrMetricFamilies(client dynamic.Interface) []metric.FamilyG
 			Type: metric.MetricTypeGauge,
 			Help: descClusterLabelsHelp,
 			GenerateFunc: wrapManagedClusterFunc(func(d *managedclusterv1.ManagedCluster) metric.Family {
-				labelKeys, labelValues := kubeLabelsToPrometheusLabels(d.Labels)
 				createdVia := "hive"
 				_, err := client.Resource(cdGVR).Namespace(d.GetName()).Get(context.TODO(), d.GetName(), metav1.GetOptions{})
 				if errors.IsNotFound(err) {
 					createdVia = "imported"
 				}
-				labelKeys = append(labelKeys, "created_via")
-				labelValues = append(labelValues, createdVia)
+				labels := d.GetLabels()
+				labelsValues := []string{labels["vendor"], labels["cloud"], createdVia, d.Status.Version.Kubernetes}
 				return metric.Family{Metrics: []*metric.Metric{
 					{
-						LabelKeys:   labelKeys,
-						LabelValues: labelValues,
+						LabelKeys:   descClusterLabelsDefaultLabels,
+						LabelValues: labelsValues,
 						Value:       1,
 					},
 				}}
@@ -81,7 +80,7 @@ func wrapManagedClusterFunc(f func(*managedclusterv1.ManagedCluster) metric.Fami
 		metricFamily := f(Cluster)
 
 		for _, m := range metricFamily.Metrics {
-			m.LabelKeys = append(descClusterLabelsDefaultLabels, m.LabelKeys...)
+			m.LabelKeys = append([]string{"managedcluster"}, m.LabelKeys...)
 			m.LabelValues = append([]string{Cluster.Name}, m.LabelValues...)
 		}
 
