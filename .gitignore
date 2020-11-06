@@ -4,6 +4,7 @@
 *.dll
 *.so
 *.dylib
+ocm-state-metrics
 
 # Test binary, built with `go test -c`
 *.test
