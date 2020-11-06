@@ -4,11 +4,13 @@ import (
 	"sort"
 	"strings"
 
+	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/kube-state-metrics/pkg/collector"
 	"k8s.io/kube-state-metrics/pkg/metric"
 	metricsstore "k8s.io/kube-state-metrics/pkg/metrics_store"
 	"k8s.io/kube-state-metrics/pkg/options"
 
+	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/tools/cache"
 
 	managedclusterv1 "github.com/open-cluster-management/api/cluster/v1"
@@ -108,7 +110,13 @@ var availableCollectors = map[string]func(f *Builder) *collector.Collector{
 }
 
 func (b *Builder) buildManagedClusterCollector() *collector.Collector {
-	filteredMetricFamilies := metric.FilterMetricFamilies(b.whiteBlackList, managedClusterMetricFamilies)
+	config, err := clientcmd.BuildConfigFromFlags(b.apiserver, b.kubeconfig)
+	if err != nil {
+		klog.Fatalf("cannot create Dynamic client: %v", err)
+	}
+	client := dynamic.NewForConfigOrDie(config)
+
+	filteredMetricFamilies := metric.FilterMetricFamilies(b.whiteBlackList, getManagedClusterrMetricFamilies(client))
 	composedMetricGenFuncs := metric.ComposeMetricGenFuncs(filteredMetricFamilies)
 
 	familyHeaders := metric.ExtractMetricFamilyHeaders(filteredMetricFamilies)

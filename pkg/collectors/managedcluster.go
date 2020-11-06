@@ -3,9 +3,12 @@ package collectors
 import (
 	"context"
 
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/watch"
+	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/kube-state-metrics/pkg/metric"
@@ -17,13 +20,21 @@ import (
 )
 
 var (
-	descRouteLabelsName          = "ocm_managedcluster_labels"
-	descRouteLabelsHelp          = "Kubernetes labels converted to Prometheus labels."
-	descRouteLabelsDefaultLabels = []string{"managedcluster"}
+	descClusterLabelsName          = "ocm_managedcluster_labels"
+	descClusterLabelsHelp          = "Kubernetes labels converted to Prometheus labels."
+	descClusterLabelsDefaultLabels = []string{"managedcluster"}
 
-	managedClusterMetricFamilies = []metric.FamilyGenerator{
+	cdGVR = schema.GroupVersionResource{
+		Group:    "hive.openshift.io",
+		Version:  "v1",
+		Resource: "clusterdeployments",
+	}
+)
+
+func getManagedClusterrMetricFamilies(client dynamic.Interface) []metric.FamilyGenerator {
+	return []metric.FamilyGenerator{
 		{
-			Name: "openshift_route_created",
+			Name: "ocm_cluster_created",
 			Type: metric.MetricTypeGauge,
 			Help: "Unix creation timestamp",
 			GenerateFunc: wrapManagedClusterFunc(func(c *managedclusterv1.ManagedCluster) metric.Family {
@@ -39,11 +50,18 @@ var (
 			}),
 		},
 		{
-			Name: descRouteLabelsName,
+			Name: descClusterLabelsName,
 			Type: metric.MetricTypeGauge,
-			Help: descRouteLabelsHelp,
+			Help: descClusterLabelsHelp,
 			GenerateFunc: wrapManagedClusterFunc(func(d *managedclusterv1.ManagedCluster) metric.Family {
 				labelKeys, labelValues := kubeLabelsToPrometheusLabels(d.Labels)
+				createdVia := "hive"
+				_, err := client.Resource(cdGVR).Namespace(d.GetName()).Get(context.TODO(), d.GetName(), metav1.GetOptions{})
+				if errors.IsNotFound(err) {
+					createdVia = "imported"
+				}
+				labelKeys = append(labelKeys, "created_via")
+				labelValues = append(labelValues, createdVia)
 				return metric.Family{Metrics: []*metric.Metric{
 					{
 						LabelKeys:   labelKeys,
@@ -54,7 +72,7 @@ var (
 			}),
 		},
 	}
-)
+}
 
 func wrapManagedClusterFunc(f func(*managedclusterv1.ManagedCluster) metric.Family) func(interface{}) metric.Family {
 	return func(obj interface{}) metric.Family {
@@ -63,7 +81,7 @@ func wrapManagedClusterFunc(f func(*managedclusterv1.ManagedCluster) metric.Fami
 		metricFamily := f(Cluster)
 
 		for _, m := range metricFamily.Metrics {
-			m.LabelKeys = append(descRouteLabelsDefaultLabels, m.LabelKeys...)
+			m.LabelKeys = append(descClusterLabelsDefaultLabels, m.LabelKeys...)
 			m.LabelValues = append([]string{Cluster.Name}, m.LabelValues...)
 		}
 
@@ -74,7 +92,7 @@ func wrapManagedClusterFunc(f func(*managedclusterv1.ManagedCluster) metric.Fami
 func createManagedClusterListWatch(apiserver string, kubeconfig string, ns string) cache.ListWatch {
 	managedclusterclient, err := createManagedClusterClient(apiserver, kubeconfig)
 	if err != nil {
-		klog.Fatalf("cannot create Route client: %v", err)
+		klog.Fatalf("cannot create ManagedCluster client: %v", err)
 	}
 	return cache.ListWatch{
 		ListFunc: func(opts metav1.ListOptions) (runtime.Object, error) {

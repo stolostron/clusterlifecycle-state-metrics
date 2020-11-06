@@ -104,7 +104,7 @@ func telemetryServer(registry prometheus.Gatherer, host string, port int) {
 	// Address to listen on for web interface and telemetry
 	listenAddress := net.JoinHostPort(host, strconv.Itoa(port))
 
-	klog.Infof("Starting openshift-state-metrics self metrics server: %s", listenAddress)
+	klog.Infof("Starting ocm-state-metrics self metrics server: %s", listenAddress)
 
 	mux := http.NewServeMux()
 
