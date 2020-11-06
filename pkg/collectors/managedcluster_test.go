@@ -12,7 +12,7 @@ import (
 	"k8s.io/kube-state-metrics/pkg/metric"
 )
 
-func Test_getManagedClusterrMetricFamilies2(t *testing.T) {
+func Test_getManagedClusterrMetricFamilies(t *testing.T) {
 	s := scheme.Scheme
 
 	s.AddKnownTypes(managedclusterv1.SchemeGroupVersion, &managedclusterv1.ManagedCluster{})
@@ -73,7 +73,7 @@ func Test_getManagedClusterrMetricFamilies2(t *testing.T) {
 		},
 	}
 	for i, c := range tests {
-		c.Func = metric.ComposeMetricGenFuncs(getManagedClusterrMetricFamilies(client))
+		c.Func = metric.ComposeMetricGenFuncs(getManagedClusterMetricFamilies(client))
 		if err := c.run(); err != nil {
 			t.Errorf("unexpected collecting result in %vth run:\n%s", i, err)
 		}

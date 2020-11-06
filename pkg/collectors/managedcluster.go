@@ -13,9 +13,9 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/kube-state-metrics/pkg/metric"
 
+	clientset "github.com/open-cluster-management/api/client/cluster/clientset/versioned"
 	"k8s.io/klog/v2"
 
-	clientset "github.com/open-cluster-management/api/client/cluster/clientset/versioned"
 	managedclusterv1 "github.com/open-cluster-management/api/cluster/v1"
 )
 
@@ -31,18 +31,18 @@ var (
 	}
 )
 
-func getManagedClusterrMetricFamilies(client dynamic.Interface) []metric.FamilyGenerator {
+func getManagedClusterMetricFamilies(client dynamic.Interface) []metric.FamilyGenerator {
 	return []metric.FamilyGenerator{
 		{
-			Name: "ocm_cluster_created",
+			Name: "ocm_managedcluster_created",
 			Type: metric.MetricTypeGauge,
 			Help: "Unix creation timestamp",
-			GenerateFunc: wrapManagedClusterFunc(func(c *managedclusterv1.ManagedCluster) metric.Family {
+			GenerateFunc: wrapManagedClusterFunc(func(mc *managedclusterv1.ManagedCluster) metric.Family {
 				f := metric.Family{}
 
-				if !c.CreationTimestamp.IsZero() {
+				if !mc.CreationTimestamp.IsZero() {
 					f.Metrics = append(f.Metrics, &metric.Metric{
-						Value: float64(c.CreationTimestamp.Unix()),
+						Value: float64(mc.CreationTimestamp.Unix()),
 					})
 				}
 
@@ -53,14 +53,14 @@ func getManagedClusterrMetricFamilies(client dynamic.Interface) []metric.FamilyG
 			Name: descClusterLabelsName,
 			Type: metric.MetricTypeGauge,
 			Help: descClusterLabelsHelp,
-			GenerateFunc: wrapManagedClusterFunc(func(d *managedclusterv1.ManagedCluster) metric.Family {
+			GenerateFunc: wrapManagedClusterFunc(func(mc *managedclusterv1.ManagedCluster) metric.Family {
 				createdVia := "hive"
-				_, err := client.Resource(cdGVR).Namespace(d.GetName()).Get(context.TODO(), d.GetName(), metav1.GetOptions{})
+				_, err := client.Resource(cdGVR).Namespace(mc.GetName()).Get(context.TODO(), mc.GetName(), metav1.GetOptions{})
 				if errors.IsNotFound(err) {
 					createdVia = "imported"
 				}
-				labels := d.GetLabels()
-				labelsValues := []string{labels["vendor"], labels["cloud"], createdVia, d.Status.Version.Kubernetes}
+				labels := mc.GetLabels()
+				labelsValues := []string{labels["vendor"], labels["cloud"], createdVia, mc.Status.Version.Kubernetes}
 				return metric.Family{Metrics: []*metric.Metric{
 					{
 						LabelKeys:   descClusterLabelsDefaultLabels,

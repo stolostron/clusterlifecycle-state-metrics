@@ -14,6 +14,7 @@ func init() {
 var (
 	DefaultNamespaces = koptions.NamespaceList{metav1.NamespaceAll}
 	DefaultCollectors = koptions.CollectorSet{
-		"managedclusters": struct{}{},
+		"managedclusters":    struct{}{},
+		"clusterdeployments": struct{}{},
 	}
 )

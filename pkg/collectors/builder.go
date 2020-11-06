@@ -14,6 +14,7 @@ import (
 	"k8s.io/client-go/tools/cache"
 
 	managedclusterv1 "github.com/open-cluster-management/api/cluster/v1"
+	hivev1 "github.com/openshift/hive/pkg/apis/hive/v1"
 	"golang.org/x/net/context"
 	"k8s.io/klog/v2"
 )
@@ -106,7 +107,8 @@ func (b *Builder) Build() []*collector.Collector {
 }
 
 var availableCollectors = map[string]func(f *Builder) *collector.Collector{
-	"managedclusters": func(b *Builder) *collector.Collector { return b.buildManagedClusterCollector() },
+	"managedclusters":    func(b *Builder) *collector.Collector { return b.buildManagedClusterCollector() },
+	"clusterdeployments": func(b *Builder) *collector.Collector { return b.buildClusterDeploymentCollector() },
 }
 
 func (b *Builder) buildManagedClusterCollector() *collector.Collector {
@@ -116,7 +118,7 @@ func (b *Builder) buildManagedClusterCollector() *collector.Collector {
 	}
 	client := dynamic.NewForConfigOrDie(config)
 
-	filteredMetricFamilies := metric.FilterMetricFamilies(b.whiteBlackList, getManagedClusterrMetricFamilies(client))
+	filteredMetricFamilies := metric.FilterMetricFamilies(b.whiteBlackList, getManagedClusterMetricFamilies(client))
 	composedMetricGenFuncs := metric.ComposeMetricGenFuncs(filteredMetricFamilies)
 
 	familyHeaders := metric.ExtractMetricFamilyHeaders(filteredMetricFamilies)
@@ -127,6 +129,22 @@ func (b *Builder) buildManagedClusterCollector() *collector.Collector {
 	)
 	reflectorPerNamespace(b.ctx, &managedclusterv1.ManagedCluster{}, store,
 		b.apiserver, b.kubeconfig, b.namespaces, createManagedClusterListWatch)
+
+	return collector.NewCollector(store)
+}
+
+func (b *Builder) buildClusterDeploymentCollector() *collector.Collector {
+	filteredMetricFamilies := metric.FilterMetricFamilies(b.whiteBlackList, clusterDeploymentrMetricFamilies)
+	composedMetricGenFuncs := metric.ComposeMetricGenFuncs(filteredMetricFamilies)
+
+	familyHeaders := metric.ExtractMetricFamilyHeaders(filteredMetricFamilies)
+
+	store := metricsstore.NewMetricsStore(
+		familyHeaders,
+		composedMetricGenFuncs,
+	)
+	reflectorPerNamespace(b.ctx, &hivev1.ClusterDeployment{}, store,
+		b.apiserver, b.kubeconfig, b.namespaces, createClusterDeploymentListWatch)
 
 	return collector.NewCollector(store)
 }
