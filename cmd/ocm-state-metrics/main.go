@@ -90,10 +90,12 @@ func main() {
 	collectorBuilder.WithWhiteBlackList(whiteBlackList)
 
 	ocmMetricsRegistry := prometheus.NewRegistry()
-	ocmMetricsRegistry.Register(ocollectors.ResourcesPerScrapeMetric)
-	ocmMetricsRegistry.Register(ocollectors.ScrapeErrorTotalMetric)
-	ocmMetricsRegistry.Register(prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{}))
-	ocmMetricsRegistry.Register(prometheus.NewGoCollector())
+	if ocmMetricsRegistry.Register(prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{})) != nil {
+		panic(err)
+	}
+	if ocmMetricsRegistry.Register(prometheus.NewGoCollector()) != nil {
+		panic(err)
+	}
 	go telemetryServer(ocmMetricsRegistry, opts.TelemetryHost, opts.TelemetryPort)
 
 	collectors := collectorBuilder.Build()
