@@ -8,9 +8,8 @@ ARG GITHUB_TOKEN
 
 ENV OPERATOR=/usr/local/bin/ocm-state-metrics \
     USER_UID=1001 \
-    USER_NAME=ocm-state-metrics \
-    KLUSTERLET_CRD_FILE=/usr/local/resources/agent.open-cluster-management.io_v1beta1_klusterlet_crd.yaml
-
+    USER_NAME=ocm-state-metrics
+    
 USER root
 # Install unzip
 RUN microdnf update

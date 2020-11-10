@@ -5,6 +5,7 @@
 *.so
 *.dylib
 ocm-state-metrics
+ocm-state-metrics-coverage
 .build-harness-bootstrap
 
 # Test binary, built with `go test -c`

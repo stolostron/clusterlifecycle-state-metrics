@@ -13,7 +13,6 @@ ENV COMPONENT_TAG_EXTENSION=" "
 
 COPY $REMOTE_SOURCE $REMOTE_SOURCE_DIR/app/
 WORKDIR $REMOTE_SOURCE_DIR/app
-RUN git config --global url."https://${GITHUB_TOKEN}:x-oauth-basic@github.com/".insteadOf "https://github.com/"
 RUN GOFLAGS="" go build ./cmd/ocm-state-metrics
 RUN GOFLAGS="" go test -covermode=atomic -coverpkg=github.com/open-cluster-management/ocm-state-metrics/pkg/... -c -tags testrunmain ./cmd/ocm-state-metrics -o ocm-state-metrics-coverage
 
@@ -30,8 +29,7 @@ ARG BUILD_HARNESS_EXTENSIONS_PROJECT
 
 ENV OPERATOR=/usr/local/bin/ocm-state-metrics \
     USER_UID=1001 \
-    USER_NAME=ocm-state-metrics \
-    KLUSTERLET_CRD_FILE=/usr/local/resources/agent.open-cluster-management.io_v1beta1_klusterlet_crd.yaml
+    USER_NAME=ocm-state-metrics
 
 # install operator binary
 COPY --from=builder $REMOTE_SOURCE_DIR/app/ocm-state-metrics ${OPERATOR}
