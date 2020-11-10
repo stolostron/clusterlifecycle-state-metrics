@@ -129,7 +129,6 @@ func telemetryServer(registry prometheus.Gatherer, host string, port int) {
 	log.Fatal(http.ListenAndServe(listenAddress, mux))
 }
 
-// TODO: How about accepting an interface Collector instead?
 func serveMetrics(collectors []*kcollectors.Collector, host string, port int, enableGZIPEncoding bool) {
 	// Address to listen on for web interface and telemetry
 	listenAddress := net.JoinHostPort(host, strconv.Itoa(port))
@@ -138,7 +137,6 @@ func serveMetrics(collectors []*kcollectors.Collector, host string, port int, en
 
 	mux := http.NewServeMux()
 
-	// TODO: This doesn't belong into serveMetrics
 	mux.Handle("/debug/pprof/", http.HandlerFunc(pprof.Index))
 	mux.Handle("/debug/pprof/cmdline", http.HandlerFunc(pprof.Cmdline))
 	mux.Handle("/debug/pprof/profile", http.HandlerFunc(pprof.Profile))

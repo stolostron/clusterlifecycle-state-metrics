@@ -38,7 +38,7 @@ COPY --from=builder \
     $REMOTE_SOURCE_DIR/app/$BUILD_HARNESS_EXTENSIONS_PROJECT/modules/component/bin/component/coverage-entrypoint-func.sh \
     /usr/local/bin/coverage-entrypoint-func.sh
 COPY --from=builder $REMOTE_SOURCE_DIR/app/build/bin /usr/local/bin
-COPY --from=builder $REMOTE_SOURCE_DIR/app/build/resources /usr/local/resources
+# COPY --from=builder $REMOTE_SOURCE_DIR/app/build/resources /usr/local/resources
 RUN  /usr/local/bin/user_setup
 
 ENTRYPOINT ["/usr/local/bin/entrypoint"]
