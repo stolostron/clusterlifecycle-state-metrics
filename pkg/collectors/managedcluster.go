@@ -21,8 +21,8 @@ import (
 
 var (
 	descClusterInfoName          = "ocm_managedcluster_info"
-	descClusterInfoHelp          = "Kubernetes labels converted to Prometheus labels."
-	descClusterInfoDefaultLabels = []string{"cluster_id", "cluster_domain", "managedcluster_name", "vendor", "cloud", "version"}
+	descClusterInfoHelp          = "Managed cluster information"
+	descClusterInfoDefaultLabels = []string{"cluster_id", "name", "vendor", "cloud", "version"}
 
 	cdGVR = schema.GroupVersionResource{
 		Group:    "hive.openshift.io",
@@ -60,73 +60,16 @@ func getHubClusterId(c dynamic.Interface) string {
 
 }
 
-func getHubClusterDomain(c dynamic.Interface) string {
-
-	infraObj, errInfra := c.Resource(infraGVR).Get(context.TODO(), "cluster", metav1.GetOptions{})
-	if errInfra != nil {
-		klog.Fatalf("Error getting infrastructure cluster %v \n", errInfra)
-		panic(errInfra.Error())
-	}
-	infra := &ocinfrav1.Infrastructure{}
-	err := runtime.DefaultUnstructuredConverter.FromUnstructured(infraObj.UnstructuredContent(), &infra)
-	if err != nil {
-		klog.Fatalf("Error unmarshal infrastructure cluster object%v \n", err)
-		panic(errInfra.Error())
-	}
-	return infra.Status.EtcdDiscoveryDomain
-
-}
-
 func getManagedClusterMetricFamilies(client dynamic.Interface) []metric.FamilyGenerator {
 	hubID := getHubClusterId(client)
-	hubDomain := getHubClusterDomain(client)
 	return []metric.FamilyGenerator{
-		// {
-		// 	Name: "ocm_managedcluster_created",
-		// 	Type: metric.MetricTypeGauge,
-		// 	Help: "Unix creation timestamp",
-		// 	GenerateFunc: wrapManagedClusterFunc(func(mc *managedclusterv1.ManagedCluster) metric.Family {
-		// 		f := metric.Family{}
-
-		// 		if !mc.CreationTimestamp.IsZero() {
-		// 			f.Metrics = append(f.Metrics, &metric.Metric{
-		// 				Value: float64(mc.CreationTimestamp.Unix()),
-		// 			})
-		// 		}
-
-		// 		return f
-		// 	}),
-		// },
-		// Read the clusterdeployment to define if hive or imported
-		// {
-		// 	Name: descClusterLabelsName,
-		// 	Type: metric.MetricTypeGauge,
-		// 	Help: descClusterLabelsHelp,
-		// 	GenerateFunc: wrapManagedClusterFunc(func(mc *managedclusterv1.ManagedCluster) metric.Family {
-		// 		createdVia := "hive"
-		// 		_, err := client.Resource(cdGVR).Namespace(mc.GetName()).Get(context.TODO(), mc.GetName(), metav1.GetOptions{})
-		// 		if errors.IsNotFound(err) {
-		// 			createdVia = "imported"
-		// 		}
-		// 		labels := mc.GetLabels()
-		// 		labelsValues := []string{hubID, hubDomain, mc.Name, labels["vendor"], labels["cloud"], createdVia, mc.Status.Version.Kubernetes}
-		// 		return metric.Family{Metrics: []*metric.Metric{
-		// 			{
-		// 				LabelKeys:   descClusterLabelsDefaultLabels,
-		// 				LabelValues: labelsValues,
-		// 				Value:       1,
-		// 			},
-		// 		}}
-		// 	}),
-		// },
-		//Does not read the clusterdeployment
 		{
 			Name: descClusterInfoName,
 			Type: metric.MetricTypeGauge,
 			Help: descClusterInfoHelp,
 			GenerateFunc: wrapManagedClusterFunc(func(mc *managedclusterv1.ManagedCluster) metric.Family {
 				labels := mc.GetLabels()
-				labelsValues := []string{hubID, hubDomain, mc.Name, labels["vendor"], labels["cloud"], mc.Status.Version.Kubernetes}
+				labelsValues := []string{hubID, mc.Name, labels["vendor"], labels["cloud"], mc.Status.Version.Kubernetes}
 				return metric.Family{Metrics: []*metric.Metric{
 					{
 						LabelKeys:   descClusterInfoDefaultLabels,

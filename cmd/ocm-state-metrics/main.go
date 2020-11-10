@@ -90,6 +90,8 @@ func main() {
 	collectorBuilder.WithWhiteBlackList(whiteBlackList)
 
 	ocmMetricsRegistry := prometheus.NewRegistry()
+	ocmMetricsRegistry.Register(ocollectors.ResourcesPerScrapeMetric)
+	ocmMetricsRegistry.Register(ocollectors.ScrapeErrorTotalMetric)
 	if ocmMetricsRegistry.Register(prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{})) != nil {
 		panic(err)
 	}

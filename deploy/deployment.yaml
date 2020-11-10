@@ -1,0 +1,24 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: ocm-state-metrics
+  labels:
+    app: ocm-state-metrics
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ocm-state-metrics
+  template:
+    metadata:
+      labels:
+        app: ocm-state-metrics
+    spec:
+      serviceAccountName: ocm-state-metrics
+      containers:
+      - name: ocm-state-metrics
+        image: quay.io/open-cluster-management/ocm-state-metrics:latest
+        imagePullPolicy: IfNotPresent
+        args:
+          - "-port=8080"
+          - "-telemetry=8081"

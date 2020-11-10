@@ -1,0 +1,24 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: open-cluster-management:ocm-state-metrics
+rules:
+# Allow hub to monitor and update status of csr
+- apiGroups: ["hive.openshift.io"]
+  resources: ["clusterdeployemtns"]
+  verbs: ["list","watch"]
+- apiGroups: ["cluster.open-cluster-management.io"]
+  resources: ["managedclusters"]
+  verbs: ["list","watch"]
+# Allow to query the CVO on the Hub Cluster to get the ClusterId
+- apiGroups: ["config.openshift.io"]
+  resources: ["clusterversions"]
+  verbs: ["get"]  
+- apiGroups: ["authentication.k8s.io"]
+  resources: ["tokenreviews"]
+  verbs: ["create"]
+- apiGroups: ["authorization.k8s.io"]
+  resources: ["subjectaccessreviews"]
+  verbs: ["create"]
+- nonResourceURLs: ["/metrics"]
+  verbs: ["get"]

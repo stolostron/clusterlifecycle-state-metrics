@@ -1,0 +1,618 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>collectors: Go Coverage Report</title>
+		<style>
+			body {
+				background: black;
+				color: rgb(80, 80, 80);
+			}
+			body, pre, #legend span {
+				font-family: Menlo, monospace;
+				font-weight: bold;
+			}
+			#topbar {
+				background: black;
+				position: fixed;
+				top: 0; left: 0; right: 0;
+				height: 42px;
+				border-bottom: 1px solid rgb(80, 80, 80);
+			}
+			#content {
+				margin-top: 50px;
+			}
+			#nav, #legend {
+				float: left;
+				margin-left: 10px;
+			}
+			#legend {
+				margin-top: 12px;
+			}
+			#nav {
+				margin-top: 10px;
+			}
+			#legend span {
+				margin: 0 5px;
+			}
+			.cov0 { color: rgb(192, 0, 0) }
+.cov1 { color: rgb(128, 128, 128) }
+.cov2 { color: rgb(116, 140, 131) }
+.cov3 { color: rgb(104, 152, 134) }
+.cov4 { color: rgb(92, 164, 137) }
+.cov5 { color: rgb(80, 176, 140) }
+.cov6 { color: rgb(68, 188, 143) }
+.cov7 { color: rgb(56, 200, 146) }
+.cov8 { color: rgb(44, 212, 149) }
+.cov9 { color: rgb(32, 224, 152) }
+.cov10 { color: rgb(20, 236, 155) }
+
+		</style>
+	</head>
+	<body>
+		<div id="topbar">
+			<div id="nav">
+				<select id="files">
+				
+				<option value="file0">github.com/open-cluster-management/ocm-state-metrics/pkg/collectors/builder.go (0.0%)</option>
+				
+				<option value="file1">github.com/open-cluster-management/ocm-state-metrics/pkg/collectors/clusterdeployment.go (63.2%)</option>
+				
+				<option value="file2">github.com/open-cluster-management/ocm-state-metrics/pkg/collectors/managedcluster.go (54.5%)</option>
+				
+				<option value="file3">github.com/open-cluster-management/ocm-state-metrics/pkg/collectors/testutils.go (92.5%)</option>
+				
+				</select>
+			</div>
+			<div id="legend">
+				<span>not tracked</span>
+			
+				<span class="cov0">no coverage</span>
+				<span class="cov1">low coverage</span>
+				<span class="cov2">*</span>
+				<span class="cov3">*</span>
+				<span class="cov4">*</span>
+				<span class="cov5">*</span>
+				<span class="cov6">*</span>
+				<span class="cov7">*</span>
+				<span class="cov8">*</span>
+				<span class="cov9">*</span>
+				<span class="cov10">high coverage</span>
+			
+			</div>
+		</div>
+		<div id="content">
+		
+		<pre class="file" id="file0" style="display: none">package collectors
+
+import (
+        "sort"
+        "strings"
+
+        "k8s.io/client-go/tools/clientcmd"
+        "k8s.io/kube-state-metrics/pkg/collector"
+        "k8s.io/kube-state-metrics/pkg/metric"
+        metricsstore "k8s.io/kube-state-metrics/pkg/metrics_store"
+        "k8s.io/kube-state-metrics/pkg/options"
+
+        "k8s.io/client-go/dynamic"
+        "k8s.io/client-go/tools/cache"
+
+        managedclusterv1 "github.com/open-cluster-management/api/cluster/v1"
+        hivev1 "github.com/openshift/hive/pkg/apis/hive/v1"
+        "golang.org/x/net/context"
+        "k8s.io/klog/v2"
+)
+
+type whiteBlackLister interface {
+        IsIncluded(string) bool
+        IsExcluded(string) bool
+}
+
+// Builder helps to build collectors. It follows the builder pattern
+// (https://en.wikipedia.org/wiki/Builder_pattern).
+type Builder struct {
+        apiserver         string
+        kubeconfig        string
+        namespaces        options.NamespaceList
+        ctx               context.Context
+        enabledCollectors []string
+        whiteBlackList    whiteBlackLister
+}
+
+// NewBuilder returns a new builder.
+func NewBuilder(
+        ctx context.Context,
+) *Builder <span class="cov0" title="0">{
+        return &amp;Builder{
+                ctx: ctx,
+        }
+}</span>
+
+func (b *Builder) WithApiserver(apiserver string) *Builder <span class="cov0" title="0">{
+        b.apiserver = apiserver
+        return b
+}</span>
+
+func (b *Builder) WithKubeConfig(kubeconfig string) *Builder <span class="cov0" title="0">{
+        b.kubeconfig = kubeconfig
+        return b
+}</span>
+
+// WithEnabledCollectors sets the enabledCollectors property of a Builder.
+func (b *Builder) WithEnabledCollectors(c []string) *Builder <span class="cov0" title="0">{
+        copy := []string{}
+        for _, s := range c </span><span class="cov0" title="0">{
+                copy = append(copy, s)
+        }</span>
+
+        <span class="cov0" title="0">sort.Strings(copy)
+
+        b.enabledCollectors = copy
+        return b</span>
+}
+
+// WithNamespaces sets the namespaces property of a Builder.
+func (b *Builder) WithNamespaces(n options.NamespaceList) *Builder <span class="cov0" title="0">{
+        b.namespaces = n
+        return b
+}</span>
+
+// WithWhiteBlackList configures the white or blacklisted metrics to be exposed
+// by the collectors build by the Builder
+func (b *Builder) WithWhiteBlackList(l whiteBlackLister) *Builder <span class="cov0" title="0">{
+        b.whiteBlackList = l
+        return b
+}</span>
+
+// Build initializes and registers all enabled collectors.
+func (b *Builder) Build() []*collector.Collector <span class="cov0" title="0">{
+        if b.whiteBlackList == nil </span><span class="cov0" title="0">{
+                panic("whiteBlackList should not be nil")</span>
+        }
+
+        <span class="cov0" title="0">collectors := []*collector.Collector{}
+        activeCollectorNames := []string{}
+
+        for _, c := range b.enabledCollectors </span><span class="cov0" title="0">{
+                constructor, ok := availableCollectors[c]
+                if !ok </span><span class="cov0" title="0">{
+                        klog.Fatalf("collector %s is not correct", c)
+                }</span>
+
+                <span class="cov0" title="0">collector := constructor(b)
+                activeCollectorNames = append(activeCollectorNames, c)
+                collectors = append(collectors, collector)</span>
+
+        }
+
+        <span class="cov0" title="0">klog.Infof("Active collectors: %s", strings.Join(activeCollectorNames, ","))
+
+        return collectors</span>
+}
+
+var availableCollectors = map[string]func(f *Builder) *collector.Collector{
+        "managedclusters":    func(b *Builder) *collector.Collector <span class="cov0" title="0">{ return b.buildManagedClusterCollector() }</span>,
+        "clusterdeployments": func(b *Builder) *collector.Collector <span class="cov0" title="0">{ return b.buildClusterDeploymentCollector() }</span>,
+}
+
+func (b *Builder) buildManagedClusterCollector() *collector.Collector <span class="cov0" title="0">{
+        config, err := clientcmd.BuildConfigFromFlags(b.apiserver, b.kubeconfig)
+        if err != nil </span><span class="cov0" title="0">{
+                klog.Fatalf("cannot create Dynamic client: %v", err)
+        }</span>
+        <span class="cov0" title="0">client := dynamic.NewForConfigOrDie(config)
+
+        filteredMetricFamilies := metric.FilterMetricFamilies(b.whiteBlackList, getManagedClusterMetricFamilies(client))
+        composedMetricGenFuncs := metric.ComposeMetricGenFuncs(filteredMetricFamilies)
+
+        familyHeaders := metric.ExtractMetricFamilyHeaders(filteredMetricFamilies)
+
+        store := metricsstore.NewMetricsStore(
+                familyHeaders,
+                composedMetricGenFuncs,
+        )
+        reflectorPerNamespace(b.ctx, &amp;managedclusterv1.ManagedCluster{}, store,
+                b.apiserver, b.kubeconfig, b.namespaces, createManagedClusterListWatch)
+
+        return collector.NewCollector(store)</span>
+}
+
+func (b *Builder) buildClusterDeploymentCollector() *collector.Collector <span class="cov0" title="0">{
+        filteredMetricFamilies := metric.FilterMetricFamilies(b.whiteBlackList, clusterDeploymentrMetricFamilies)
+        composedMetricGenFuncs := metric.ComposeMetricGenFuncs(filteredMetricFamilies)
+
+        familyHeaders := metric.ExtractMetricFamilyHeaders(filteredMetricFamilies)
+
+        store := metricsstore.NewMetricsStore(
+                familyHeaders,
+                composedMetricGenFuncs,
+        )
+        reflectorPerNamespace(b.ctx, &amp;hivev1.ClusterDeployment{}, store,
+                b.apiserver, b.kubeconfig, b.namespaces, createClusterDeploymentListWatch)
+
+        return collector.NewCollector(store)
+}</span>
+
+// reflectorPerNamespace creates a Kubernetes client-go reflector with the given
+// listWatchFunc for each given namespace and registers it with the given store.
+func reflectorPerNamespace(
+        ctx context.Context,
+        expectedType interface{},
+        store cache.Store,
+        apiserver string,
+        kubeconfig string,
+        namespaces []string,
+        listWatchFunc func(apiserver string, kubeconfig string, ns string) cache.ListWatch,
+) <span class="cov0" title="0">{
+        for _, ns := range namespaces </span><span class="cov0" title="0">{
+                lw := listWatchFunc(apiserver, kubeconfig, ns)
+                reflector := cache.NewReflector(&amp;lw, expectedType, store, 0)
+                go reflector.Run(ctx.Done())
+        }</span>
+}
+</pre>
+		
+		<pre class="file" id="file1" style="display: none">package collectors
+
+import (
+        "context"
+
+        metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+        "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+        "k8s.io/apimachinery/pkg/runtime"
+        "k8s.io/apimachinery/pkg/watch"
+        "k8s.io/client-go/dynamic"
+        "k8s.io/client-go/tools/cache"
+        "k8s.io/client-go/tools/clientcmd"
+        "k8s.io/kube-state-metrics/pkg/metric"
+
+        "k8s.io/klog/v2"
+)
+
+var (
+        // descClusterDeploymentLabelsName          = "ocm_clusterdeployment_created"
+        // descClusterDeploymentLabelsHelp          = "Kubernetes labels converted to Prometheus labels."
+        descClusterDeploymentLabelsDefaultLabels = []string{"namespace", "name"}
+        clusterDeploymentrMetricFamilies         = []metric.FamilyGenerator{
+                {
+                        Name: "ocm_clusterdeployment_created",
+                        Type: metric.MetricTypeGauge,
+                        Help: "Unix creation timestamp",
+                        GenerateFunc: wrapClusterDeploymentFunc(func(c *unstructured.Unstructured) metric.Family <span class="cov8" title="1">{
+                                f := metric.Family{}
+                                t := c.GetCreationTimestamp()
+                                if !t.IsZero() </span><span class="cov8" title="1">{
+                                        f.Metrics = append(f.Metrics, &amp;metric.Metric{
+                                                Value: float64(c.GetCreationTimestamp().Unix()),
+                                        })
+                                }</span>
+
+                                <span class="cov8" title="1">return f</span>
+                        }),
+                },
+        }
+)
+
+func wrapClusterDeploymentFunc(f func(*unstructured.Unstructured) metric.Family) func(interface{}) metric.Family <span class="cov8" title="1">{
+        return func(obj interface{}) metric.Family </span><span class="cov8" title="1">{
+                Cluster := obj.(*unstructured.Unstructured)
+
+                metricFamily := f(Cluster)
+
+                for _, m := range metricFamily.Metrics </span><span class="cov8" title="1">{
+                        m.LabelKeys = append(descClusterDeploymentLabelsDefaultLabels, m.LabelKeys...)
+                        m.LabelValues = append([]string{Cluster.GetName(), Cluster.GetName()}, m.LabelValues...)
+                }</span>
+
+                <span class="cov8" title="1">return metricFamily</span>
+        }
+}
+
+func createClusterDeploymentListWatch(apiserver string, kubeconfig string, ns string) cache.ListWatch <span class="cov0" title="0">{
+        config, err := clientcmd.BuildConfigFromFlags(apiserver, kubeconfig)
+        if err != nil </span><span class="cov0" title="0">{
+                klog.Fatalf("cannot create Dynamic client: %v", err)
+        }</span>
+        <span class="cov0" title="0">client := dynamic.NewForConfigOrDie(config)
+        return cache.ListWatch{
+                ListFunc: func(opts metav1.ListOptions) (runtime.Object, error) </span><span class="cov0" title="0">{
+                        return client.Resource(cdGVR).Namespace(ns).List(context.TODO(), opts)
+                }</span>,
+                WatchFunc: func(opts metav1.ListOptions) (watch.Interface, error) <span class="cov0" title="0">{
+                        return client.Resource(cdGVR).Namespace(ns).Watch(context.TODO(), opts)
+                }</span>,
+        }
+}
+</pre>
+		
+		<pre class="file" id="file2" style="display: none">package collectors
+
+import (
+        "context"
+
+        ocinfrav1 "github.com/openshift/api/config/v1"
+        metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+        "k8s.io/apimachinery/pkg/runtime"
+        "k8s.io/apimachinery/pkg/runtime/schema"
+        "k8s.io/apimachinery/pkg/watch"
+        "k8s.io/client-go/dynamic"
+        "k8s.io/client-go/tools/cache"
+        "k8s.io/client-go/tools/clientcmd"
+        "k8s.io/kube-state-metrics/pkg/metric"
+
+        clientset "github.com/open-cluster-management/api/client/cluster/clientset/versioned"
+        "k8s.io/klog/v2"
+
+        managedclusterv1 "github.com/open-cluster-management/api/cluster/v1"
+)
+
+var (
+        descClusterInfoName          = "ocm_managedcluster_info"
+        descClusterInfoHelp          = "Managed cluster information"
+        descClusterInfoDefaultLabels = []string{"cluster_id", "name", "vendor", "cloud", "version"}
+
+        cdGVR = schema.GroupVersionResource{
+                Group:    "hive.openshift.io",
+                Version:  "v1",
+                Resource: "clusterdeployments",
+        }
+
+        cvGVR = schema.GroupVersionResource{
+                Group:    "config.openshift.io",
+                Version:  "v1",
+                Resource: "clusterversions",
+        }
+
+        infraGVR = schema.GroupVersionResource{
+                Group:    "config.openshift.io",
+                Version:  "v1",
+                Resource: "infrastructures",
+        }
+)
+
+func getHubClusterId(c dynamic.Interface) string <span class="cov8" title="1">{
+
+        cvObj, errCv := c.Resource(cvGVR).Get(context.TODO(), "version", metav1.GetOptions{})
+        if errCv != nil </span><span class="cov0" title="0">{
+                klog.Fatalf("Error getting cluster version %v \n", errCv)
+                panic(errCv.Error())</span>
+        }
+        <span class="cov8" title="1">cv := &amp;ocinfrav1.ClusterVersion{}
+        err := runtime.DefaultUnstructuredConverter.FromUnstructured(cvObj.UnstructuredContent(), &amp;cv)
+        if err != nil </span><span class="cov0" title="0">{
+                klog.Fatalf("Error unmarshal cluster version object%v \n", err)
+                panic(errCv.Error())</span>
+        }
+        <span class="cov8" title="1">return string(cv.Spec.ClusterID)</span>
+
+}
+
+func getManagedClusterMetricFamilies(client dynamic.Interface) []metric.FamilyGenerator <span class="cov8" title="1">{
+        hubID := getHubClusterId(client)
+        return []metric.FamilyGenerator{
+                {
+                        Name: descClusterInfoName,
+                        Type: metric.MetricTypeGauge,
+                        Help: descClusterInfoHelp,
+                        GenerateFunc: wrapManagedClusterFunc(func(mc *managedclusterv1.ManagedCluster) metric.Family </span><span class="cov8" title="1">{
+                                labels := mc.GetLabels()
+                                labelsValues := []string{hubID, mc.Name, labels["vendor"], labels["cloud"], mc.Status.Version.Kubernetes}
+                                return metric.Family{Metrics: []*metric.Metric{
+                                        {
+                                                LabelKeys:   descClusterInfoDefaultLabels,
+                                                LabelValues: labelsValues,
+                                                Value:       1,
+                                        },
+                                }}
+                        }</span>),
+                },
+        }
+}
+
+func wrapManagedClusterFunc(f func(*managedclusterv1.ManagedCluster) metric.Family) func(interface{}) metric.Family <span class="cov8" title="1">{
+        return func(obj interface{}) metric.Family </span><span class="cov8" title="1">{
+                Cluster := obj.(*managedclusterv1.ManagedCluster)
+
+                metricFamily := f(Cluster)
+
+                for _, m := range metricFamily.Metrics </span><span class="cov8" title="1">{
+                        m.LabelKeys = append([]string{}, m.LabelKeys...)
+                        m.LabelValues = append([]string{}, m.LabelValues...)
+                }</span>
+
+                <span class="cov8" title="1">return metricFamily</span>
+        }
+}
+
+func createManagedClusterListWatch(apiserver string, kubeconfig string, ns string) cache.ListWatch <span class="cov0" title="0">{
+        managedclusterclient, err := createManagedClusterClient(apiserver, kubeconfig)
+        if err != nil </span><span class="cov0" title="0">{
+                klog.Fatalf("cannot create ManagedCluster client: %v", err)
+        }</span>
+        <span class="cov0" title="0">return cache.ListWatch{
+                ListFunc: func(opts metav1.ListOptions) (runtime.Object, error) </span><span class="cov0" title="0">{
+                        return managedclusterclient.ClusterV1().ManagedClusters().List(context.TODO(), opts)
+                }</span>,
+                WatchFunc: func(opts metav1.ListOptions) (watch.Interface, error) <span class="cov0" title="0">{
+                        return managedclusterclient.ClusterV1().ManagedClusters().Watch(context.TODO(), opts)
+                }</span>,
+        }
+}
+
+func createManagedClusterClient(apiserver string, kubeconfig string) (*clientset.Clientset, error) <span class="cov0" title="0">{
+        config, err := clientcmd.BuildConfigFromFlags(apiserver, kubeconfig)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov0" title="0">client, err := clientset.NewForConfig(config)
+        return client, err</span>
+
+}
+</pre>
+		
+		<pre class="file" id="file3" style="display: none">package collectors
+
+import (
+        "fmt"
+        "regexp"
+        "sort"
+        "strings"
+
+        metricsstore "k8s.io/kube-state-metrics/pkg/metrics_store"
+)
+
+type generateMetricsTestCase struct {
+        Obj         interface{}
+        MetricNames []string
+        Want        string
+        Func        func(interface{}) []metricsstore.FamilyStringer
+}
+
+func (testCase *generateMetricsTestCase) run() error <span class="cov3" title="2">{
+        metricFamilies := testCase.Func(testCase.Obj)
+        metricFamilyStrings := []string{}
+        for _, f := range metricFamilies </span><span class="cov3" title="2">{
+                metricFamilyStrings = append(metricFamilyStrings, f.String())
+        }</span>
+
+        <span class="cov3" title="2">metrics := strings.Split(strings.Join(metricFamilyStrings, ""), "\n")
+
+        metrics = filterMetrics(metrics, testCase.MetricNames)
+
+        out := strings.Join(metrics, "\n")
+
+        if err := compareOutput(testCase.Want, out); err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("expected wanted output to equal output: %v", err.Error())
+        }</span>
+
+        <span class="cov3" title="2">return nil</span>
+}
+
+func compareOutput(a, b string) error <span class="cov3" title="2">{
+        entities := []string{a, b}
+
+        // Align a and b
+        for i := 0; i &lt; len(entities); i++ </span><span class="cov6" title="4">{
+                for _, f := range []func(string) string{removeUnusedWhitespace, sortLabels, sortByLine} </span><span class="cov10" title="12">{
+                        entities[i] = f(entities[i])
+                }</span>
+        }
+
+        <span class="cov3" title="2">if entities[0] != entities[1] </span><span class="cov0" title="0">{
+                return fmt.Errorf("expected a to equal b but got:\n%v\nand:\n%v", entities[0], entities[1])
+        }</span>
+
+        <span class="cov3" title="2">return nil</span>
+}
+
+// sortLabels sorts the order of labels in each line of the given metrics. The
+// Prometheus exposition format does not force ordering of labels. Hence a test
+// should not fail due to different metric orders.
+func sortLabels(s string) string <span class="cov6" title="4">{
+        sorted := []string{}
+
+        for _, line := range strings.Split(s, "\n") </span><span class="cov6" title="4">{
+                split := strings.Split(line, "{")
+                if len(split) != 2 </span><span class="cov0" title="0">{
+                        panic(fmt.Sprintf("failed to sort labels in \"%v\"", line))</span>
+                }
+                <span class="cov6" title="4">name := split[0]
+
+                split = strings.Split(split[1], "}")
+                value := split[1]
+
+                labels := strings.Split(split[0], ",")
+                sort.Strings(labels)
+
+                sorted = append(sorted, fmt.Sprintf("%v{%v}%v", name, strings.Join(labels, ","), value))</span>
+        }
+
+        <span class="cov6" title="4">return strings.Join(sorted, "\n")</span>
+}
+
+func sortByLine(s string) string <span class="cov6" title="4">{
+        split := strings.Split(s, "\n")
+        sort.Strings(split)
+        return strings.Join(split, "\n")
+}</span>
+
+func filterMetrics(ms []string, names []string) []string <span class="cov3" title="2">{
+        // In case the test case is based on all returned metrics, MetricNames does
+        // not need to me defined.
+        if names == nil </span><span class="cov0" title="0">{
+                return ms
+        }</span>
+        <span class="cov3" title="2">filtered := []string{}
+
+        regexps := []*regexp.Regexp{}
+        for _, n := range names </span><span class="cov3" title="2">{
+                regexps = append(regexps, regexp.MustCompile(fmt.Sprintf("^%v", n)))
+        }</span>
+
+        <span class="cov3" title="2">for _, m := range ms </span><span class="cov6" title="4">{
+                drop := true
+                for _, r := range regexps </span><span class="cov6" title="4">{
+                        if r.MatchString(m) </span><span class="cov3" title="2">{
+                                drop = false
+                                break</span>
+                        }
+                }
+                <span class="cov6" title="4">if !drop </span><span class="cov3" title="2">{
+                        filtered = append(filtered, m)
+                }</span>
+        }
+        <span class="cov3" title="2">return filtered</span>
+}
+
+func removeUnusedWhitespace(s string) string <span class="cov6" title="4">{
+        var (
+                trimmedLine  string
+                trimmedLines []string
+                lines        = strings.Split(s, "\n")
+        )
+
+        for _, l := range lines </span><span class="cov8" title="8">{
+                trimmedLine = strings.TrimSpace(l)
+
+                if len(trimmedLine) &gt; 0 </span><span class="cov6" title="4">{
+                        trimmedLines = append(trimmedLines, trimmedLine)
+                }</span>
+        }
+
+        <span class="cov6" title="4">return strings.Join(trimmedLines, "\n")</span>
+}
+</pre>
+		
+		</div>
+	</body>
+	<script>
+	(function() {
+		var files = document.getElementById('files');
+		var visible;
+		files.addEventListener('change', onChange, false);
+		function select(part) {
+			if (visible)
+				visible.style.display = 'none';
+			visible = document.getElementById(part);
+			if (!visible)
+				return;
+			files.value = part;
+			visible.style.display = 'block';
+			location.hash = part;
+		}
+		function onChange() {
+			select(files.value);
+			window.scrollTo(0, 0);
+		}
+		if (location.hash != "") {
+			select(location.hash.substr(1));
+		}
+		if (!visible) {
+			select("file0");
+		}
+	})();
+	</script>
+</html>

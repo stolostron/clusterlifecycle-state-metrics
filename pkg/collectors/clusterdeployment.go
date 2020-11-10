@@ -18,7 +18,7 @@ import (
 var (
 	// descClusterDeploymentLabelsName          = "ocm_clusterdeployment_created"
 	// descClusterDeploymentLabelsHelp          = "Kubernetes labels converted to Prometheus labels."
-	descClusterDeploymentLabelsDefaultLabels = []string{"namespace", "managedcluster"}
+	descClusterDeploymentLabelsDefaultLabels = []string{"namespace", "name"}
 	clusterDeploymentrMetricFamilies         = []metric.FamilyGenerator{
 		{
 			Name: "ocm_clusterdeployment_created",
