@@ -5,6 +5,7 @@
 *.so
 *.dylib
 ocm-state-metrics
+!cmd/ocm-state-metrics
 ocm-state-metrics-coverage
 .build-harness-bootstrap
 
