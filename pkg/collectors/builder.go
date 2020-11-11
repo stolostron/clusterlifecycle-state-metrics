@@ -117,7 +117,10 @@ func (b *Builder) buildManagedClusterCollector() *collector.Collector {
 		klog.Fatalf("cannot create Dynamic client: %v", err)
 	}
 	client := dynamic.NewForConfigOrDie(config)
+	return b.buildManagedClusterCollectorWithClient(client)
+}
 
+func (b *Builder) buildManagedClusterCollectorWithClient(client dynamic.Interface) *collector.Collector {
 	filteredMetricFamilies := metric.FilterMetricFamilies(b.whiteBlackList, getManagedClusterMetricFamilies(client))
 	composedMetricGenFuncs := metric.ComposeMetricGenFuncs(filteredMetricFamilies)
 

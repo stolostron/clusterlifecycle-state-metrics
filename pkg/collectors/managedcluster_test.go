@@ -13,7 +13,7 @@ import (
 	"k8s.io/kube-state-metrics/pkg/metric"
 )
 
-func Test_getManagedClusterrMetricFamilies(t *testing.T) {
+func Test_getManagedClusterMetricFamilies(t *testing.T) {
 	s := scheme.Scheme
 
 	s.AddKnownTypes(managedclusterv1.SchemeGroupVersion, &managedclusterv1.ManagedCluster{})

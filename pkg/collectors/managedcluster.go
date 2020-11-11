@@ -96,6 +96,10 @@ func createManagedClusterListWatch(apiserver string, kubeconfig string, ns strin
 	if err != nil {
 		klog.Fatalf("cannot create ManagedCluster client: %v", err)
 	}
+	return createManagedClusterListWatchWithClient(managedclusterclient)
+}
+
+func createManagedClusterListWatchWithClient(managedclusterclient clientset.Interface) cache.ListWatch {
 	return cache.ListWatch{
 		ListFunc: func(opts metav1.ListOptions) (runtime.Object, error) {
 			return managedclusterclient.ClusterV1().ManagedClusters().List(context.TODO(), opts)
