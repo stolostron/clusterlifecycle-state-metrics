@@ -1,0 +1,19 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  labels:
+    app: ocm-state-metrics
+  annotations:
+    ingress.open-cluster-management.io/auth-type: access-token
+    ingress.open-cluster-management.io/secure-backends: 'true'
+    ingress.open-cluster-management.io/rewrite-target: /
+    kubernetes.io/ingress.class: ingress-open-cluster-management
+  name: ocm-state-metrics
+spec:
+  rules:
+  - http:
+      paths:
+      - backend:
+          serviceName: ocm-state-metrics
+          servicePort: 8443
+        path: /ocm-state-metrics

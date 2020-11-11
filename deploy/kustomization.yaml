@@ -31,4 +31,6 @@ resources:
 - ./clusterrole.yaml
 - ./cert_issuer.yaml
 - ./certificate.yaml
+- ./service.yaml
+- ./ingress.yaml
 - ./deployment.yaml

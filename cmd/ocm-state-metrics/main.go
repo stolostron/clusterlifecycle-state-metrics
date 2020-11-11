@@ -135,7 +135,12 @@ func telemetryServer(registry prometheus.Gatherer, host string, port int) {
 	log.Fatal(http.ListenAndServe(listenAddress, mux))
 }
 
-func serveMetrics(collectors []*kcollectors.Collector, host string, port int, tlsCrtFile string, tlsKeyFile string, enableGZIPEncoding bool) {
+func serveMetrics(collectors []*kcollectors.Collector,
+	host string,
+	port int,
+	tlsCrtFile string,
+	tlsKeyFile string,
+	enableGZIPEncoding bool) {
 	// Address to listen on for web interface and telemetry
 	listenAddress := net.JoinHostPort(host, strconv.Itoa(port))
 
