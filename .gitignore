@@ -8,6 +8,11 @@ ocm-state-metrics
 !cmd/ocm-state-metrics
 ocm-state-metrics-coverage
 .build-harness-bootstrap
+test/unit/coverage
+test/out
+overlays/deploy
+test/e2e/resources/clusters
+test/e2e/resources/hub/kube
 
 # Test binary, built with `go test -c`
 *.test
