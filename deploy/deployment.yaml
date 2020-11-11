@@ -22,5 +22,16 @@ spec:
         args:
           - "--port=8080"
           - "--telemetry-port=8081"
+          - "--tls-crt-file=/var/run/ocm-state-metrics/tls.crt"
+          - "--tls-key-file=/var/run/ocm-state-metrics/tls.key"
+        volumeMounts:
+          - mountPath: "/var/run/ocm-state-metrics"
+            name: certs
+            readOnly: true
+  
       imagePullSecrets:
       - name: multiclusterhub-operator-pull-secret
+      volumes:
+        - name: certs
+          secret:
+            secretName: ocm-state-metrics-cert

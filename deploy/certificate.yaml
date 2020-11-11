@@ -1,0 +1,18 @@
+apiVersion: certmanager.k8s.io/v1alpha1
+kind: Certificate
+metadata:
+  name: ocm-state-metrics
+spec:
+  secretName: ocm-state-metrics-cert
+  isCA: true
+  issuerRef:
+    name: ocm-state-metrics
+    kind: Issuer
+  commonName: ocm-state-metrics.open-cluster-management.svc
+  duration: 43800h
+  renewBefore: 720h
+  organization:
+  - "OpenShift ACM"
+  keySize: 4096
+  dnsNames:
+  - ocm-state-metrics.open-cluster-management.svc

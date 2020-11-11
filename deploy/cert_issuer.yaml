@@ -1,0 +1,8 @@
+
+# Create a selfsigned Issuer, in order to create a root CA certificate for RHACM
+apiVersion: certmanager.k8s.io/v1alpha1
+kind: Issuer
+metadata:
+  name: ocm-state-metrics
+spec:
+  selfSigned: {}

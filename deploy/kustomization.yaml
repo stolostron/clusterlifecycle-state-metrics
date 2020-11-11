@@ -29,4 +29,6 @@ resources:
 - ./service_account.yaml
 - ./clusterrole_binding.yaml
 - ./clusterrole.yaml
+- ./cert_issuer.yaml
+- ./certificate.yaml
 - ./deployment.yaml

@@ -106,7 +106,7 @@ func main() {
 
 	collectors := collectorBuilder.Build()
 
-	serveMetrics(collectors, opts.Host, opts.Port, opts.EnableGZIPEncoding)
+	serveMetrics(collectors, opts.Host, opts.Port, opts.TLSCrtFile, opts.TLSKeyFile, opts.EnableGZIPEncoding)
 }
 func telemetryServer(registry prometheus.Gatherer, host string, port int) {
 	// Address to listen on for web interface and telemetry
@@ -120,7 +120,7 @@ func telemetryServer(registry prometheus.Gatherer, host string, port int) {
 	mux.Handle(metricsPath, promhttp.HandlerFor(registry, promhttp.HandlerOpts{ErrorLog: promLogger{}}))
 	// Add index
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		if err := w.Write([]byte(`<html>
+		if _, err := w.Write([]byte(`<html>
              <head><title>openshift-State-Metrics Metrics Server</title></head>
              <body>
              <h1>openshift-State-Metrics Metrics</h1>
@@ -135,7 +135,7 @@ func telemetryServer(registry prometheus.Gatherer, host string, port int) {
 	log.Fatal(http.ListenAndServe(listenAddress, mux))
 }
 
-func serveMetrics(collectors []*kcollectors.Collector, host string, port int, enableGZIPEncoding bool) {
+func serveMetrics(collectors []*kcollectors.Collector, host string, port int, tlsCrtFile string, tlsKeyFile string, enableGZIPEncoding bool) {
 	// Address to listen on for web interface and telemetry
 	listenAddress := net.JoinHostPort(host, strconv.Itoa(port))
 
@@ -154,13 +154,13 @@ func serveMetrics(collectors []*kcollectors.Collector, host string, port int, en
 	// Add healthzPath
 	mux.HandleFunc(healthzPath, func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(200)
-		if err := w.Write([]byte("ok")); err != nil {
+		if _, err := w.Write([]byte("ok")); err != nil {
 			panic(err)
 		}
 	})
 	// Add index
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		if err := w.Write([]byte(`<html>
+		if _, err := w.Write([]byte(`<html>
              <head><title>Open Cluster Managementt Metrics Server</title></head>
              <body>
              <h1>Kube Metrics</h1>
@@ -170,10 +170,14 @@ func serveMetrics(collectors []*kcollectors.Collector, host string, port int, en
 			 </ul>
              </body>
              </html>`)); err != nil {
-				 panic(err)
-			 }
+			panic(err)
+		}
 	})
-	log.Fatal(http.ListenAndServe(listenAddress, mux))
+	if tlsCrtFile == "" || tlsKeyFile == "" {
+		log.Fatal(http.ListenAndServe(listenAddress, mux))
+	} else {
+		log.Fatal(http.ListenAndServeTLS(listenAddress, tlsCrtFile, tlsKeyFile, mux))
+	}
 }
 
 type metricHandler struct {
@@ -207,7 +211,7 @@ func (m *metricHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// In case we gziped the response, we have to close the writer.
 	if closer, ok := writer.(io.Closer); ok {
-		if err := closer.Close() {
+		if err := closer.Close(); err != nil {
 			panic(err)
 		}
 	}
