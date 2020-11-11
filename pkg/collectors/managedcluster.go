@@ -22,7 +22,7 @@ import (
 var (
 	descClusterInfoName          = "ocm_managedcluster_info"
 	descClusterInfoHelp          = "Managed cluster information"
-	descClusterInfoDefaultLabels = []string{"cluster_id", "name", "vendor", "cloud", "version"}
+	descClusterInfoDefaultLabels = []string{"hub_cluster_id", "cluster", "vendor", "cloud", "version"}
 
 	cdGVR = schema.GroupVersionResource{
 		Group:    "hive.openshift.io",
@@ -34,12 +34,6 @@ var (
 		Group:    "config.openshift.io",
 		Version:  "v1",
 		Resource: "clusterversions",
-	}
-
-	infraGVR = schema.GroupVersionResource{
-		Group:    "config.openshift.io",
-		Version:  "v1",
-		Resource: "infrastructures",
 	}
 )
 
@@ -61,7 +55,7 @@ func getHubClusterId(c dynamic.Interface) string {
 }
 
 func getManagedClusterMetricFamilies(client dynamic.Interface) []metric.FamilyGenerator {
-	hubID := getHubClusterId(client)
+	hubClusterID := getHubClusterId(client)
 	return []metric.FamilyGenerator{
 		{
 			Name: descClusterInfoName,
@@ -69,7 +63,7 @@ func getManagedClusterMetricFamilies(client dynamic.Interface) []metric.FamilyGe
 			Help: descClusterInfoHelp,
 			GenerateFunc: wrapManagedClusterFunc(func(mc *managedclusterv1.ManagedCluster) metric.Family {
 				labels := mc.GetLabels()
-				labelsValues := []string{hubID, mc.Name, labels["vendor"], labels["cloud"], mc.Status.Version.Kubernetes}
+				labelsValues := []string{hubClusterID, mc.Name, labels["vendor"], labels["cloud"], mc.Status.Version.Kubernetes}
 				return metric.Family{Metrics: []*metric.Metric{
 					{
 						LabelKeys:   descClusterInfoDefaultLabels,

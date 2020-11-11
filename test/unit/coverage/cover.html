@@ -55,13 +55,15 @@
 			<div id="nav">
 				<select id="files">
 				
-				<option value="file0">github.com/open-cluster-management/ocm-state-metrics/pkg/collectors/builder.go (0.0%)</option>
+				<option value="file0">github.com/open-cluster-management/ocm-state-metrics/pkg/collectors/builder.go (42.0%)</option>
 				
 				<option value="file1">github.com/open-cluster-management/ocm-state-metrics/pkg/collectors/clusterdeployment.go (63.2%)</option>
 				
 				<option value="file2">github.com/open-cluster-management/ocm-state-metrics/pkg/collectors/managedcluster.go (54.5%)</option>
 				
 				<option value="file3">github.com/open-cluster-management/ocm-state-metrics/pkg/collectors/testutils.go (92.5%)</option>
+				
+				<option value="file4">github.com/open-cluster-management/ocm-state-metrics/pkg/version/version.go (100.0%)</option>
 				
 				</select>
 			</div>
@@ -130,38 +132,38 @@ func NewBuilder(
         }
 }</span>
 
-func (b *Builder) WithApiserver(apiserver string) *Builder <span class="cov0" title="0">{
+func (b *Builder) WithApiserver(apiserver string) *Builder <span class="cov1" title="1">{
         b.apiserver = apiserver
         return b
 }</span>
 
-func (b *Builder) WithKubeConfig(kubeconfig string) *Builder <span class="cov0" title="0">{
+func (b *Builder) WithKubeConfig(kubeconfig string) *Builder <span class="cov1" title="1">{
         b.kubeconfig = kubeconfig
         return b
 }</span>
 
 // WithEnabledCollectors sets the enabledCollectors property of a Builder.
-func (b *Builder) WithEnabledCollectors(c []string) *Builder <span class="cov0" title="0">{
+func (b *Builder) WithEnabledCollectors(c []string) *Builder <span class="cov1" title="1">{
         copy := []string{}
-        for _, s := range c </span><span class="cov0" title="0">{
+        for _, s := range c </span><span class="cov10" title="2">{
                 copy = append(copy, s)
         }</span>
 
-        <span class="cov0" title="0">sort.Strings(copy)
+        <span class="cov1" title="1">sort.Strings(copy)
 
         b.enabledCollectors = copy
         return b</span>
 }
 
 // WithNamespaces sets the namespaces property of a Builder.
-func (b *Builder) WithNamespaces(n options.NamespaceList) *Builder <span class="cov0" title="0">{
+func (b *Builder) WithNamespaces(n options.NamespaceList) *Builder <span class="cov1" title="1">{
         b.namespaces = n
         return b
 }</span>
 
 // WithWhiteBlackList configures the white or blacklisted metrics to be exposed
 // by the collectors build by the Builder
-func (b *Builder) WithWhiteBlackList(l whiteBlackLister) *Builder <span class="cov0" title="0">{
+func (b *Builder) WithWhiteBlackList(l whiteBlackLister) *Builder <span class="cov1" title="1">{
         b.whiteBlackList = l
         return b
 }</span>
@@ -219,7 +221,7 @@ func (b *Builder) buildManagedClusterCollector() *collector.Collector <span clas
         return collector.NewCollector(store)</span>
 }
 
-func (b *Builder) buildClusterDeploymentCollector() *collector.Collector <span class="cov0" title="0">{
+func (b *Builder) buildClusterDeploymentCollector() *collector.Collector <span class="cov1" title="1">{
         filteredMetricFamilies := metric.FilterMetricFamilies(b.whiteBlackList, clusterDeploymentrMetricFamilies)
         composedMetricGenFuncs := metric.ComposeMetricGenFuncs(filteredMetricFamilies)
 
@@ -245,7 +247,7 @@ func reflectorPerNamespace(
         kubeconfig string,
         namespaces []string,
         listWatchFunc func(apiserver string, kubeconfig string, ns string) cache.ListWatch,
-) <span class="cov0" title="0">{
+) <span class="cov1" title="1">{
         for _, ns := range namespaces </span><span class="cov0" title="0">{
                 lw := listWatchFunc(apiserver, kubeconfig, ns)
                 reflector := cache.NewReflector(&amp;lw, expectedType, store, 0)
@@ -351,7 +353,7 @@ import (
 var (
         descClusterInfoName          = "ocm_managedcluster_info"
         descClusterInfoHelp          = "Managed cluster information"
-        descClusterInfoDefaultLabels = []string{"cluster_id", "name", "vendor", "cloud", "version"}
+        descClusterInfoDefaultLabels = []string{"hub_cluster_id", "cluster", "vendor", "cloud", "version"}
 
         cdGVR = schema.GroupVersionResource{
                 Group:    "hive.openshift.io",
@@ -363,12 +365,6 @@ var (
                 Group:    "config.openshift.io",
                 Version:  "v1",
                 Resource: "clusterversions",
-        }
-
-        infraGVR = schema.GroupVersionResource{
-                Group:    "config.openshift.io",
-                Version:  "v1",
-                Resource: "infrastructures",
         }
 )
 
@@ -390,7 +386,7 @@ func getHubClusterId(c dynamic.Interface) string <span class="cov8" title="1">{
 }
 
 func getManagedClusterMetricFamilies(client dynamic.Interface) []metric.FamilyGenerator <span class="cov8" title="1">{
-        hubID := getHubClusterId(client)
+        hubClusterID := getHubClusterId(client)
         return []metric.FamilyGenerator{
                 {
                         Name: descClusterInfoName,
@@ -398,7 +394,7 @@ func getManagedClusterMetricFamilies(client dynamic.Interface) []metric.FamilyGe
                         Help: descClusterInfoHelp,
                         GenerateFunc: wrapManagedClusterFunc(func(mc *managedclusterv1.ManagedCluster) metric.Family </span><span class="cov8" title="1">{
                                 labels := mc.GetLabels()
-                                labelsValues := []string{hubID, mc.Name, labels["vendor"], labels["cloud"], mc.Status.Version.Kubernetes}
+                                labelsValues := []string{hubClusterID, mc.Name, labels["vendor"], labels["cloud"], mc.Status.Version.Kubernetes}
                                 return metric.Family{Metrics: []*metric.Metric{
                                         {
                                                 LabelKeys:   descClusterInfoDefaultLabels,
@@ -584,6 +580,52 @@ func removeUnusedWhitespace(s string) string <span class="cov6" title="4">{
 
         <span class="cov6" title="4">return strings.Join(trimmedLines, "\n")</span>
 }
+</pre>
+		
+		<pre class="file" id="file4" style="display: none">package version
+
+import (
+        "fmt"
+        "os"
+        "path/filepath"
+        "runtime"
+)
+
+var (
+        // Release returns the release version
+        Release = "UNKNOWN"
+        // Commit returns the short sha from git
+        Commit = "UNKNOWN"
+        // BuildDate is the build date
+        BuildDate = ""
+)
+
+type Version struct {
+        GitCommit string
+        BuildDate string
+        Release   string
+        GoVersion string
+        Compiler  string
+        Platform  string
+}
+
+func (v Version) String() string <span class="cov8" title="1">{
+        return fmt.Sprintf("%s/%s (%s/%s) ocm-state-metrics/%s",
+                filepath.Base(os.Args[0]), v.Release,
+                runtime.GOOS, runtime.GOARCH, v.GitCommit)
+}</span>
+
+// GetVersion returns openshift-state-metrics version
+func GetVersion() Version <span class="cov8" title="1">{
+        return Version{
+                GitCommit: Commit,
+                BuildDate: BuildDate,
+                Release:   Release,
+                GoVersion: runtime.Version(),
+                Compiler:  runtime.Compiler,
+                Platform:  fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH),
+        }
+}</span>
 </pre>
 		
 		</div>

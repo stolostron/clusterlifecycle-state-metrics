@@ -72,7 +72,7 @@ func Test_getManagedClusterrMetricFamilies(t *testing.T) {
 			Obj:         mcHive,
 			MetricNames: []string{"ocm_managedcluster_info"},
 			Want: `
-			ocm_managedcluster_info{cloud="aws",cluster_id="mycluster_id",name="hive-cluster",vendor="OpneShift",version="v1.16.2"} 1
+			ocm_managedcluster_info{cloud="aws",hub_cluster_id="mycluster_id",cluster="hive-cluster",vendor="OpneShift",version="v1.16.2"} 1
 				`,
 		},
 	}
