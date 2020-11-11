@@ -17,8 +17,10 @@ spec:
       serviceAccountName: ocm-state-metrics
       containers:
       - name: ocm-state-metrics
-        image: quay.io/open-cluster-management/ocm-state-metrics:latest
+        image: quay.io/open-cluster-management/ocm-state-metrics:2.2.0-PR1-b47e1d7d4f4abaf2fc72217b36868b5168f90b75
         imagePullPolicy: IfNotPresent
         args:
-          - "-port=8080"
-          - "-telemetry=8081"
+          - "--port=8080"
+          - "--telemetry-port=8081"
+      imagePullSecrets:
+      - name: multiclusterhub-operator-pull-secret
