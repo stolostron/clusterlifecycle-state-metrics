@@ -4,6 +4,7 @@ import (
 	"sort"
 	"strings"
 
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/kube-state-metrics/pkg/collector"
 	"k8s.io/kube-state-metrics/pkg/metric"
@@ -13,8 +14,6 @@ import (
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/tools/cache"
 
-	managedclusterv1 "github.com/open-cluster-management/api/cluster/v1"
-	hivev1 "github.com/openshift/hive/pkg/apis/hive/v1"
 	"golang.org/x/net/context"
 	"k8s.io/klog/v2"
 )
@@ -130,7 +129,7 @@ func (b *Builder) buildManagedClusterCollectorWithClient(client dynamic.Interfac
 		familyHeaders,
 		composedMetricGenFuncs,
 	)
-	reflectorPerNamespace(b.ctx, &managedclusterv1.ManagedCluster{}, store,
+	reflectorPerNamespace(b.ctx, &unstructured.Unstructured{}, store,
 		b.apiserver, b.kubeconfig, b.namespaces, createManagedClusterListWatch)
 
 	return collector.NewCollector(store)
@@ -146,7 +145,7 @@ func (b *Builder) buildClusterDeploymentCollector() *collector.Collector {
 		familyHeaders,
 		composedMetricGenFuncs,
 	)
-	reflectorPerNamespace(b.ctx, &hivev1.ClusterDeployment{}, store,
+	reflectorPerNamespace(b.ctx, &unstructured.Unstructured{}, store,
 		b.apiserver, b.kubeconfig, b.namespaces, createClusterDeploymentListWatch)
 
 	return collector.NewCollector(store)

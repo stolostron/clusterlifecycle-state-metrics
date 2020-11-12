@@ -4,7 +4,9 @@ import (
 	"context"
 
 	ocinfrav1 "github.com/openshift/api/config/v1"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/watch"
@@ -13,16 +15,14 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/kube-state-metrics/pkg/metric"
 
-	clientset "github.com/open-cluster-management/api/client/cluster/clientset/versioned"
+	mciv1beta1 "github.com/open-cluster-management/multicloud-operators-foundation/pkg/apis/internal.open-cluster-management.io/v1beta1"
 	"k8s.io/klog/v2"
-
-	managedclusterv1 "github.com/open-cluster-management/api/cluster/v1"
 )
 
 var (
 	descClusterInfoName          = "ocm_managedcluster_info"
 	descClusterInfoHelp          = "Managed cluster information"
-	descClusterInfoDefaultLabels = []string{"hub_cluster_id", "cluster", "vendor", "cloud", "version"}
+	descClusterInfoDefaultLabels = []string{"hub_cluster_id", "cluster_id", "cluster", "vendor", "cloud", "version"}
 
 	cdGVR = schema.GroupVersionResource{
 		Group:    "hive.openshift.io",
@@ -34,6 +34,12 @@ var (
 		Group:    "config.openshift.io",
 		Version:  "v1",
 		Resource: "clusterversions",
+	}
+
+	mciGVR = schema.GroupVersionResource{
+		Group:    "internal.open-cluster-management.io",
+		Version:  "v1beta1",
+		Resource: "managedclusterinfos",
 	}
 )
 
@@ -51,7 +57,6 @@ func getHubClusterId(c dynamic.Interface) string {
 		panic(errCv.Error())
 	}
 	return string(cv.Spec.ClusterID)
-
 }
 
 func getManagedClusterMetricFamilies(client dynamic.Interface) []metric.FamilyGenerator {
@@ -61,9 +66,16 @@ func getManagedClusterMetricFamilies(client dynamic.Interface) []metric.FamilyGe
 			Name: descClusterInfoName,
 			Type: metric.MetricTypeGauge,
 			Help: descClusterInfoHelp,
-			GenerateFunc: wrapManagedClusterFunc(func(mc *managedclusterv1.ManagedCluster) metric.Family {
-				labels := mc.GetLabels()
-				labelsValues := []string{hubClusterID, mc.Name, labels["vendor"], labels["cloud"], mc.Status.Version.Kubernetes}
+			GenerateFunc: wrapManagedClusterFunc(func(mciObj *unstructured.Unstructured) metric.Family {
+				mci := &mciv1beta1.ManagedClusterInfo{}
+				err := runtime.DefaultUnstructuredConverter.FromUnstructured(mciObj.UnstructuredContent(), &mci)
+				if err != nil {
+					return metric.Family{Metrics: []*metric.Metric{}}
+				}
+				if mci.Status.ClusterID == "" || mci.Status.KubeVendor == "" || mci.Status.CloudVendor == "" || mci.Status.Version == "" {
+					return metric.Family{Metrics: []*metric.Metric{}}
+				}
+				labelsValues := []string{hubClusterID, mci.Status.ClusterID, mci.GetName(), string(mci.Status.KubeVendor), string(mci.Status.CloudVendor), string(mci.Status.Version)}
 				return metric.Family{Metrics: []*metric.Metric{
 					{
 						LabelKeys:   descClusterInfoDefaultLabels,
@@ -76,9 +88,9 @@ func getManagedClusterMetricFamilies(client dynamic.Interface) []metric.FamilyGe
 	}
 }
 
-func wrapManagedClusterFunc(f func(*managedclusterv1.ManagedCluster) metric.Family) func(interface{}) metric.Family {
+func wrapManagedClusterFunc(f func(*unstructured.Unstructured) metric.Family) func(interface{}) metric.Family {
 	return func(obj interface{}) metric.Family {
-		Cluster := obj.(*managedclusterv1.ManagedCluster)
+		Cluster := obj.(*unstructured.Unstructured)
 
 		metricFamily := f(Cluster)
 
@@ -92,31 +104,21 @@ func wrapManagedClusterFunc(f func(*managedclusterv1.ManagedCluster) metric.Fami
 }
 
 func createManagedClusterListWatch(apiserver string, kubeconfig string, ns string) cache.ListWatch {
-	managedclusterclient, err := createManagedClusterClient(apiserver, kubeconfig)
-	if err != nil {
-		klog.Fatalf("cannot create ManagedCluster client: %v", err)
-	}
-	return createManagedClusterListWatchWithClient(managedclusterclient)
-}
-
-func createManagedClusterListWatchWithClient(managedclusterclient clientset.Interface) cache.ListWatch {
-	return cache.ListWatch{
-		ListFunc: func(opts metav1.ListOptions) (runtime.Object, error) {
-			return managedclusterclient.ClusterV1().ManagedClusters().List(context.TODO(), opts)
-		},
-		WatchFunc: func(opts metav1.ListOptions) (watch.Interface, error) {
-			return managedclusterclient.ClusterV1().ManagedClusters().Watch(context.TODO(), opts)
-		},
-	}
-}
-
-func createManagedClusterClient(apiserver string, kubeconfig string) (*clientset.Clientset, error) {
 	config, err := clientcmd.BuildConfigFromFlags(apiserver, kubeconfig)
 	if err != nil {
-		return nil, err
+		klog.Fatalf("cannot create Dynamic client: %v", err)
 	}
+	client := dynamic.NewForConfigOrDie(config)
+	return createManagedClusterListWatchWithClient(client, ns)
+}
 
-	client, err := clientset.NewForConfig(config)
-	return client, err
-
+func createManagedClusterListWatchWithClient(client dynamic.Interface, ns string) cache.ListWatch {
+	return cache.ListWatch{
+		ListFunc: func(opts metav1.ListOptions) (runtime.Object, error) {
+			return client.Resource(mciGVR).Namespace(ns).List(context.TODO(), opts)
+		},
+		WatchFunc: func(opts metav1.ListOptions) (watch.Interface, error) {
+			return client.Resource(mciGVR).Namespace(ns).Watch(context.TODO(), opts)
+		},
+	}
 }

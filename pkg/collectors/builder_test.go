@@ -330,7 +330,7 @@ func TestBuilder_buildClusterDeploymentCollector(t *testing.T) {
 				kubeconfig:        "",
 				namespaces:        options.NamespaceList{},
 				ctx:               ctx,
-				enabledCollectors: []string{"managedclusters"},
+				enabledCollectors: []string{"clusterdeployements"},
 				whiteBlackList:    w,
 			},
 			want: nil,
