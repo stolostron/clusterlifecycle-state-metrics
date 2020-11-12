@@ -106,21 +106,21 @@ func (b *Builder) Build() []*collector.Collector {
 }
 
 var availableCollectors = map[string]func(f *Builder) *collector.Collector{
-	"managedclusters":    func(b *Builder) *collector.Collector { return b.buildManagedClusterCollector() },
-	"clusterdeployments": func(b *Builder) *collector.Collector { return b.buildClusterDeploymentCollector() },
+	"managedclusterinfos": func(b *Builder) *collector.Collector { return b.buildManagedClusterInfoCollector() },
+	"clusterdeployments":  func(b *Builder) *collector.Collector { return b.buildClusterDeploymentCollector() },
 }
 
-func (b *Builder) buildManagedClusterCollector() *collector.Collector {
+func (b *Builder) buildManagedClusterInfoCollector() *collector.Collector {
 	config, err := clientcmd.BuildConfigFromFlags(b.apiserver, b.kubeconfig)
 	if err != nil {
 		klog.Fatalf("cannot create Dynamic client: %v", err)
 	}
 	client := dynamic.NewForConfigOrDie(config)
-	return b.buildManagedClusterCollectorWithClient(client)
+	return b.buildManagedClusterInfoCollectorWithClient(client)
 }
 
-func (b *Builder) buildManagedClusterCollectorWithClient(client dynamic.Interface) *collector.Collector {
-	filteredMetricFamilies := metric.FilterMetricFamilies(b.whiteBlackList, getManagedClusterMetricFamilies(client))
+func (b *Builder) buildManagedClusterInfoCollectorWithClient(client dynamic.Interface) *collector.Collector {
+	filteredMetricFamilies := metric.FilterMetricFamilies(b.whiteBlackList, getManagedClusterInfoMetricFamilies(client))
 	composedMetricGenFuncs := metric.ComposeMetricGenFuncs(filteredMetricFamilies)
 
 	familyHeaders := metric.ExtractMetricFamilyHeaders(filteredMetricFamilies)
@@ -130,7 +130,7 @@ func (b *Builder) buildManagedClusterCollectorWithClient(client dynamic.Interfac
 		composedMetricGenFuncs,
 	)
 	reflectorPerNamespace(b.ctx, &unstructured.Unstructured{}, store,
-		b.apiserver, b.kubeconfig, b.namespaces, createManagedClusterListWatch)
+		b.apiserver, b.kubeconfig, b.namespaces, createManagedClusterInfoListWatch)
 
 	return collector.NewCollector(store)
 }

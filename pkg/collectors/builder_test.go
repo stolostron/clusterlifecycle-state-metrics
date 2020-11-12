@@ -411,7 +411,7 @@ func TestBuilder_buildManagedClusterCollectorWithClient(t *testing.T) {
 				kubeconfig:        "",
 				namespaces:        options.NamespaceList{},
 				ctx:               ctx,
-				enabledCollectors: []string{"managedclusters"},
+				enabledCollectors: []string{"managedclusterinfos"},
 				whiteBlackList:    w,
 			},
 			args: args{
@@ -430,7 +430,7 @@ func TestBuilder_buildManagedClusterCollectorWithClient(t *testing.T) {
 				enabledCollectors: tt.fields.enabledCollectors,
 				whiteBlackList:    tt.fields.whiteBlackList,
 			}
-			if got := b.buildManagedClusterCollectorWithClient(tt.args.client); got == nil {
+			if got := b.buildManagedClusterInfoCollectorWithClient(tt.args.client); got == nil {
 				t.Errorf("Builder.buildManagedClusterCollectorWithClient() = %v, want %v", got, tt.want)
 			}
 		})

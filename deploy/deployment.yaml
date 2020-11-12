@@ -15,7 +15,7 @@ spec:
       serviceAccountName: ocm-state-metrics
       containers:
       - name: ocm-state-metrics
-        image: quay.io/open-cluster-management/ocm-state-metrics:2.2.0-PR1-3e9d4417784c01a1a48a8153b91f03fe0f23e983
+        image: quay.io/open-cluster-management/ocm-state-metrics:2.2.0-PR1-d4c0223fc52d8ab9ccebeb57bd30821a5bbd79f5
         imagePullPolicy: IfNotPresent
         args:
           - "--port=8443"
