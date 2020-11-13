@@ -1,0 +1,25 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: ocm-state-metrics
+spec:
+  template:
+    spec:
+      containers:
+      - name: ocm-state-metrics
+        image: REPLACE_IMAGE
+        imagePullPolicy: IfNotPresent
+        args:
+        volumeMounts:
+        - mountPath: /tmp/coverage
+          name: coverage-dir  
+      volumes:
+      - name: coverage-dir
+        hostPath:
+          # directory location on host
+          path: /tmp/coverage
+          # this field is optional
+          type: Directory
+      - name: certs
+        secret:
+          secretName: multiclusterhub-operator-pull-secret

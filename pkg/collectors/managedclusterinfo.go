@@ -43,24 +43,22 @@ var (
 	}
 )
 
-func getHubClusterId(c dynamic.Interface) string {
+func getHubClusterID(c dynamic.Interface) string {
 
 	cvObj, errCv := c.Resource(cvGVR).Get(context.TODO(), "version", metav1.GetOptions{})
 	if errCv != nil {
 		klog.Fatalf("Error getting cluster version %v \n", errCv)
-		panic(errCv.Error())
 	}
 	cv := &ocinfrav1.ClusterVersion{}
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(cvObj.UnstructuredContent(), &cv)
 	if err != nil {
 		klog.Fatalf("Error unmarshal cluster version object%v \n", err)
-		panic(errCv.Error())
 	}
 	return string(cv.Spec.ClusterID)
 }
 
 func getManagedClusterInfoMetricFamilies(client dynamic.Interface) []metric.FamilyGenerator {
-	hubClusterID := getHubClusterId(client)
+	hubClusterID := getHubClusterID(client)
 	return []metric.FamilyGenerator{
 		{
 			Name: descClusterInfoName,
@@ -83,7 +81,7 @@ func getManagedClusterInfoMetricFamilies(client dynamic.Interface) []metric.Fami
 					mci.GetName(),
 					string(mci.Status.KubeVendor),
 					string(mci.Status.CloudVendor),
-					string(mci.Status.Version)}
+					mci.Status.Version}
 				return metric.Family{Metrics: []*metric.Metric{
 					{
 						LabelKeys:   descClusterInfoDefaultLabels,

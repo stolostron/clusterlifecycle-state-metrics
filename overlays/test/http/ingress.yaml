@@ -1,0 +1,11 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: ocm-state-metrics
+spec:
+  rules:
+  - http:
+      paths:
+      - backend:
+          serviceName: ocm-state-metrics
+          servicePort: 8080

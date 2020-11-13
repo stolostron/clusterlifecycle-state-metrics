@@ -113,6 +113,13 @@ clean::
 run:
 	go run cmd/ocm-state-metrics/main.go --port=8080 --telemetry-port=8081 --kubeconfig=${KUBECONFIG} -v=4; \
 
+.PHONY: run-coverage
+## Run the operator against the kubeconfig targeted cluster
+run-coverage:
+	go test -v -covermode=atomic -coverpkg=github.com/open-cluster-management/ocm-state-metrics/pkg/... -c -tags testrunmain ./cmd/ocm-state-metrics -o ocm-state-metrics-coverage
+	# go test -v -covermode=atomic -coverpkg=github.com/open-cluster-management/ocm-state-metrics/pkg/... -tags testrunmain ./cmd/ocm-state-metrics -args -port 8080 -telemetry-port 8081 -kubeconfig ${KUBECONFIG}
+	# -args -port 8080 -telemetry-port 8081 -kubeconfig ${KUBECONFIG}
+
 .PHONY: lint
 ## Runs linter against go files
 lint:
@@ -140,27 +147,35 @@ deploy:
 .PHONY: install-fake-crds
 install-fake-crds:
 	@echo installing crds
+	kubectl apply -f test/functional/resources/certificates_crd.yaml
+	kubectl apply -f test/functional/resources/issuers_crd.yaml
+	kubectl apply -f test/functional/resources/managedclusterinfos_crd.yaml
 	kubectl apply -f test/functional/resources/hive_v1_clusterdeployment_crd.yaml
-	kubectl apply -f test/functional/resources/hive_v1_syncset.yaml 
-	kubectl apply -f test/functional/resources/infrastructure_crd.yaml 
-	kubectl apply -f test/functional/resources/apiserver_crd.yaml 
-	kubectl apply -f test/functional/resources/0000_00_clusters.open-cluster-management.io_managedclusters.crd.yaml
-	kubectl apply -f test/functional/resources/0000_00_work.open-cluster-management.io_manifestworks.crd.yaml
+	kubectl apply -f test/functional/resources/clusterversions_crd.yaml
+	# kubectl apply -f test/functional/resources/hive_v1_syncset.yaml 
+	# kubectl apply -f test/functional/resources/infrastructure_crd.yaml 
+	# kubectl apply -f test/functional/resources/apiserver_crd.yaml 
+	# kubectl apply -f test/functional/resources/0000_00_clusters.open-cluster-management.io_managedclusters.crd.yaml
+	# kubectl apply -f test/functional/resources/0000_00_work.open-cluster-management.io_manifestworks.crd.yaml
 	@sleep 10 
 
 .PHONY: kind-cluster-setup
 kind-cluster-setup: install-fake-crds
-	@echo installing fake infrastructure resource
-	kubectl apply -f test/functional/resources/fake_infrastructure_cr.yaml
-	kubectl apply -f test/functional/resources/fake_apiserver_cr.yaml
+	@echo installing fake resources
+	kubectl apply -f test/functional/resources/clusterversions_cr.yaml
+	# kubectl apply --validate=false -f https://github.com/jetstack/cert-manager/releases/download/v1.0.4/cert-manager.yaml	# kubectl apply -f test/functional/resources/fake_infrastructure_cr.yaml
+	# kubectl apply -f test/functional/resources/fake_apiserver_cr.yaml
 
 .PHONY: functional-test
 functional-test:
+	@echo executing test
+	sleep 90
 	# ginkgo -tags functional -v --focus="(.*)import-managedcluster(.*)" --slowSpecThreshold=10 test/managedcluster-import-controller-test -- -v=5
 	# ginkgo -tags functional -v --slowSpecThreshold=10 --focus="(.*)approve-csr(.*)" test/functional -- -v=1
 	# ginkgo -tags functional -v --slowSpecThreshold=30 --focus="import-hub/with-manifestwork" test/functional -- -v=5
-	ginkgo -tags functional -v --slowSpecThreshold=30 test/functional -- -v=5
+	# ginkgo -tags functional -v --slowSpecThreshold=30 test/functional -- -v=5
 
 .PHONY: functional-test-full
-functional-test-full: component/build-coverage
+functional-test-full: 
+# functional-test-full: component/build-coverage
 	$(SELF) component/test/functional

@@ -11,8 +11,11 @@ ocm-state-metrics-coverage
 test/unit/coverage
 test/out
 overlays/deploy
+test/functional/tmp
+test/functional/coverage
 test/e2e/resources/clusters
 test/e2e/resources/hub/kube
+kind_kubeconfig.yaml
 
 # Test binary, built with `go test -c`
 *.test

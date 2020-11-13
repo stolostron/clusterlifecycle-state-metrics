@@ -60,6 +60,7 @@ echo "setting up test coverage folder"
 mkdir -p "${FUNCT_TEST_COVERAGE}"
 
 echo "generating kind configfile"
+
 cat << EOF > "${FUNCT_TEST_TMPDIR}/kind-config/kind-config.yaml"
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
@@ -68,6 +69,15 @@ nodes:
   extraMounts:
   - hostPath: "${FUNCT_TEST_COVERAGE}"
     containerPath: /tmp/coverage
+  extraPortMappings:
+  - containerPort: 8080
+    hostPort: 8080
+    # optional: set the bind address on the host
+    # 0.0.0.0 is the current default
+    # listenAddress: "127.0.0.1"
+    # optional: set the protocol to one of TCP, UDP, SCTP.
+    # TCP is the default
+    # protocol: TCP
 EOF
 
 echo "creating cluster"
@@ -94,7 +104,7 @@ for dir in overlays/test/* ; do
 
   # patch image
   echo "Wait rollout"
-  kubectl rollout status -n open-cluster-management deployment managedcluster-import-controller --timeout=90s
+  kubectl rollout status -n open-cluster-management deployment ocm-state-metrics --timeout=90s
   
   echo "run functional test..."
   make functional-test
