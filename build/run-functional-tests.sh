@@ -88,6 +88,9 @@ networking:
   apiServerPort: 6443
 EOF
 
+echo "cluster configuration:"
+cat ${FUNCT_TEST_TMPDIR}/kind-config/kind-config.yaml
+
 echo "creating cluster"
 kind create cluster --name functional-test --config "${FUNCT_TEST_TMPDIR}/kind-config/kind-config.yaml"
 
@@ -131,6 +134,8 @@ kind delete cluster --name functional-test
 
 echo "Wait 20 sec for copy to coverage files from kind cluster to host"
 sleep 20
+
+ls $FUNCT_TEST_COVERAGE
 
 if [ `find $FUNCT_TEST_COVERAGE -prune -empty 2>/dev/null` ]; then
   echo "no coverage files found. skipping"
