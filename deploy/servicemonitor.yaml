@@ -1,0 +1,25 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    name: ocm-state-metrics
+  name: ocm-state-metrics
+  namespace: openshift-monitoring
+spec:
+  endpoints:
+  - interval: 30s
+    port: https
+    scheme: http
+    scrapeTimeout: 2m
+  # - bearerTokenSecret:
+  #     key: ""
+  #   tlsConfig:
+  #     serverName: ocm-state-metrics.open-cluster-management.svc
+  namespaceSelector: {}
+  jobLabel: ocm-app
+  selector:
+    matchLabels:
+      ocm-app: ocm-state-metrics
+  namespaceSelector:
+    matchNames:
+      - open-cluster-management

@@ -2,6 +2,9 @@ apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
   name: ocm-state-metrics
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+    kubernetes.io/ingress.class:
 spec:
   rules:
   - http:
@@ -9,3 +12,4 @@ spec:
       - backend:
           serviceName: ocm-state-metrics
           servicePort: 8080
+        path: /ocm-state-metrics(/|$)(.*)

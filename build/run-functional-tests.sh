@@ -34,7 +34,7 @@ if ! which kubectl > /dev/null; then
 fi
 if ! which kind > /dev/null; then
     echo "installing kind"
-    curl -Lo ./kind https://github.com/kubernetes-sigs/kind/releases/download/v0.7.0/kind-$(uname)-amd64
+    curl -Lo ./kind https://github.com/kubernetes-sigs/kind/releases/download/v0.9.0/kind-$(uname)-amd64
     chmod +x ./kind
     sudo mv ./kind /usr/local/bin/kind
 fi
@@ -66,18 +66,26 @@ kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
 nodes:
 - role: control-plane
+  kubeadmConfigPatches:
+  - |
+    kind: InitConfiguration
+    nodeRegistration:
+      kubeletExtraArgs:
+        node-labels: "ingress-ready=true"
   extraMounts:
   - hostPath: "${FUNCT_TEST_COVERAGE}"
     containerPath: /tmp/coverage
   extraPortMappings:
   - containerPort: 8080
     hostPort: 8080
-    # optional: set the bind address on the host
-    # 0.0.0.0 is the current default
-    # listenAddress: "127.0.0.1"
-    # optional: set the protocol to one of TCP, UDP, SCTP.
-    # TCP is the default
-    # protocol: TCP
+  - containerPort: 80
+    hostPort: 80
+    protocol: TCP
+  - containerPort: 443
+    hostPort: 443
+    protocol: TCP
+networking:
+  apiServerPort: 6443
 EOF
 
 echo "creating cluster"
@@ -106,6 +114,8 @@ for dir in overlays/test/* ; do
   echo "Wait rollout"
   kubectl rollout status -n open-cluster-management deployment ocm-state-metrics --timeout=90s
   
+  # exit 1
+
   echo "run functional test..."
   make functional-test
 

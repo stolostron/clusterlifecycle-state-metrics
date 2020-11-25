@@ -9,6 +9,7 @@ metadata:
     ingress.open-cluster-management.io/rewrite-target: /
     kubernetes.io/ingress.class: ingress-open-cluster-management
   name: ocm-state-metrics
+  namespace: open-cluster-management
 spec:
   rules:
   - http:

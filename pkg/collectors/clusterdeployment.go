@@ -26,12 +26,9 @@ var (
 			Help: "Unix creation timestamp",
 			GenerateFunc: wrapClusterDeploymentFunc(func(c *unstructured.Unstructured) metric.Family {
 				f := metric.Family{}
-				t := c.GetCreationTimestamp()
-				if !t.IsZero() {
-					f.Metrics = append(f.Metrics, &metric.Metric{
-						Value: float64(c.GetCreationTimestamp().Unix()),
-					})
-				}
+				f.Metrics = append(f.Metrics, &metric.Metric{
+					Value: 1,
+				})
 
 				return f
 			}),

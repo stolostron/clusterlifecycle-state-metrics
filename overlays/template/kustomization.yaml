@@ -1,2 +1,6 @@
 bases:
 - ../../deploy
+
+resources:
+./servicemonitor.yaml
+./clusterrole_binding_prom.yaml

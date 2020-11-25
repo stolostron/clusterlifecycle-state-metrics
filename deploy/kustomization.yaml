@@ -1,6 +1,6 @@
 
 # Adds namespace to all resources.
-namespace: open-cluster-management
+#namespace: open-cluster-management
 
 # Value of this field is prepended to the
 # names of all resources, e.g. a deployment named
@@ -25,12 +25,14 @@ namespace: open-cluster-management
 # here. These are deployed via a "make install" dependency.
 
 resources:
-- ./namespace.yaml
+- ./namespace_ocm.yaml
 - ./service_account.yaml
 - ./clusterrole_binding.yaml
+- ./clusterrole_binding_prom.yaml
 - ./clusterrole.yaml
 - ./cert_issuer.yaml
 - ./certificate.yaml
 - ./service.yaml
 - ./ingress.yaml
+- ./servicemonitor.yaml
 - ./deployment.yaml

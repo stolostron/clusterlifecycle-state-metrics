@@ -2,6 +2,7 @@ kind: Deployment
 apiVersion: apps/v1
 metadata:
   name: ocm-state-metrics
+  namespace: open-cluster-management
 spec:
   replicas: 1
   selector:
@@ -20,13 +21,12 @@ spec:
         args:
           - "--port=8443"
           - "--telemetry-port=8444"
-          - "--tls-crt-file=/var/run/ocm-state-metrics/tls.crt"
-          - "--tls-key-file=/var/run/ocm-state-metrics/tls.key"
+          # - "--tls-crt-file=/var/run/ocm-state-metrics/tls.crt"
+          # - "--tls-key-file=/var/run/ocm-state-metrics/tls.key"
         volumeMounts:
           - mountPath: "/var/run/ocm-state-metrics"
             name: certs
             readOnly: true
-  
       imagePullSecrets:
       - name: multiclusterhub-operator-pull-secret
       volumes:

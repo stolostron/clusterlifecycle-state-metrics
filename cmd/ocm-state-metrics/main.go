@@ -102,13 +102,20 @@ func main() {
 	if err := ocmMetricsRegistry.Register(prometheus.NewGoCollector()); err != nil {
 		panic(err)
 	}
-	go telemetryServer(ocmMetricsRegistry, opts.TelemetryHost, opts.TelemetryPort)
+	go telemetryServer(ocmMetricsRegistry, opts.TelemetryHost, opts.TelemetryPort, opts.TLSCrtFile, opts.TLSKeyFile)
 
 	collectors := collectorBuilder.Build()
 
 	serveMetrics(collectors, opts.Host, opts.Port, opts.TLSCrtFile, opts.TLSKeyFile, opts.EnableGZIPEncoding)
 }
-func telemetryServer(registry prometheus.Gatherer, host string, port int) {
+
+func telemetryServer(
+	registry prometheus.Gatherer,
+	host string,
+	port int,
+	tlsCrtFile string,
+	tlsKeyFile string,
+) {
 	// Address to listen on for web interface and telemetry
 	listenAddress := net.JoinHostPort(host, strconv.Itoa(port))
 
@@ -132,7 +139,13 @@ func telemetryServer(registry prometheus.Gatherer, host string, port int) {
 			panic(err)
 		}
 	})
-	log.Fatal(http.ListenAndServe(listenAddress, mux))
+	if tlsCrtFile == "" || tlsKeyFile == "" {
+		klog.Infof("Listening http: %s", listenAddress)
+		log.Fatal(http.ListenAndServe(listenAddress, mux))
+	} else {
+		klog.Infof("Listening https: %s", listenAddress)
+		log.Fatal(http.ListenAndServeTLS(listenAddress, tlsCrtFile, tlsKeyFile, mux))
+	}
 }
 
 func serveMetrics(collectors []*kcollectors.Collector,
@@ -168,7 +181,7 @@ func serveMetrics(collectors []*kcollectors.Collector,
 		if _, err := w.Write([]byte(`<html>
              <head><title>Open Cluster Managementt Metrics Server</title></head>
              <body>
-             <h1>Kube Metrics</h1>
+             <h1>OCM Metrics</h1>
 			 <ul>
              <li><a href='` + metricsPath + `'>metrics</a></li>
              <li><a href='` + healthzPath + `'>healthz</a></li>
@@ -179,8 +192,10 @@ func serveMetrics(collectors []*kcollectors.Collector,
 		}
 	})
 	if tlsCrtFile == "" || tlsKeyFile == "" {
+		klog.Infof("Listening http: %s", listenAddress)
 		log.Fatal(http.ListenAndServe(listenAddress, mux))
 	} else {
+		klog.Infof("Listening https: %s", listenAddress)
 		log.Fatal(http.ListenAndServeTLS(listenAddress, tlsCrtFile, tlsKeyFile, mux))
 	}
 }

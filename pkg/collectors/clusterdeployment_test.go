@@ -26,7 +26,7 @@ func Test_getClusterDeploymentMetricFamilies(t *testing.T) {
 			Obj:         cd,
 			MetricNames: []string{"ocm_clusterdeployment_created"},
 			Want: `
-			ocm_clusterdeployment_created{name="hive-cluster",namespace="hive-cluster"} 1.5e+09
+			ocm_clusterdeployment_created{name="hive-cluster",namespace="hive-cluster"} 1
 				`,
 		},
 	}

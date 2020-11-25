@@ -3,7 +3,9 @@ module github.com/open-cluster-management/ocm-state-metrics
 go 1.14
 
 replace k8s.io/client-go => k8s.io/client-go v0.19.0
+
 replace k8s.io/kube-state-metrics => k8s.io/kube-state-metrics v0.0.0-20190129120824-7bfed92869b6
+
 // Determined by go.mod in github.com/openshift/hive
 replace (
 	github.com/Azure/go-autorest => github.com/tombuildsstuff/go-autorest v14.0.1-0.20200416184303-d4e299a3c04a+incompatible
@@ -21,8 +23,10 @@ replace (
 )
 
 require (
-	github.com/kr/pretty v0.2.1 // indirect
+	github.com/onsi/ginkgo v1.14.0
+	github.com/onsi/gomega v1.10.1
 	github.com/open-cluster-management/api v0.0.0-20201007180356-41d07eee4294
+	github.com/open-cluster-management/library-go v0.0.0-20200828173847-299c21e6c3fc
 	github.com/open-cluster-management/multicloud-operators-foundation v0.0.0-20201112041030-60ef45157161
 	github.com/openshift/api v3.9.1-0.20191112184635-86def77f6f90+incompatible
 	github.com/openshift/build-machinery-go v0.0.0-20200819073603-48aa266c95f7
@@ -30,9 +34,10 @@ require (
 	github.com/prometheus/client_golang v1.7.1
 	github.com/spf13/pflag v1.0.5
 	golang.org/x/net v0.0.0-20200707034311-ab3426394381
-	gopkg.in/yaml.v2 v2.3.0 // indirect
+	k8s.io/api v0.19.0
 	k8s.io/apimachinery v0.19.2
 	k8s.io/client-go v12.0.0+incompatible
+	k8s.io/klog v1.0.0
 	k8s.io/klog/v2 v2.3.0
 	k8s.io/kube-state-metrics v1.7.2
 	sigs.k8s.io/controller-runtime v0.6.3 // indirect

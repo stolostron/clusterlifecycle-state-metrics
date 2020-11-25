@@ -152,30 +152,30 @@ install-fake-crds:
 	kubectl apply -f test/functional/resources/managedclusterinfos_crd.yaml
 	kubectl apply -f test/functional/resources/hive_v1_clusterdeployment_crd.yaml
 	kubectl apply -f test/functional/resources/clusterversions_crd.yaml
-	# kubectl apply -f test/functional/resources/hive_v1_syncset.yaml 
-	# kubectl apply -f test/functional/resources/infrastructure_crd.yaml 
-	# kubectl apply -f test/functional/resources/apiserver_crd.yaml 
-	# kubectl apply -f test/functional/resources/0000_00_clusters.open-cluster-management.io_managedclusters.crd.yaml
-	# kubectl apply -f test/functional/resources/0000_00_work.open-cluster-management.io_manifestworks.crd.yaml
+	kubectl apply -f test/functional/resources/servicemonitor_crd.yaml
 	@sleep 10 
 
 .PHONY: kind-cluster-setup
 kind-cluster-setup: install-fake-crds
 	@echo installing fake resources
+	kubectl apply -f test/functional/resources/namespace_osm.yaml
 	kubectl apply -f test/functional/resources/clusterversions_cr.yaml
+	@echo "Install ingress NGNIX"
+	kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/master/deploy/static/provider/kind/deploy.yaml
+	@echo "Wait ingress NGNIX ready"
+	kubectl wait --namespace ingress-nginx --for=condition=ready pod --selector=app.kubernetes.io/component=controller --timeout=90s
 	# kubectl apply --validate=false -f https://github.com/jetstack/cert-manager/releases/download/v1.0.4/cert-manager.yaml	# kubectl apply -f test/functional/resources/fake_infrastructure_cr.yaml
 	# kubectl apply -f test/functional/resources/fake_apiserver_cr.yaml
 
 .PHONY: functional-test
 functional-test:
 	@echo executing test
-	sleep 90
 	# ginkgo -tags functional -v --focus="(.*)import-managedcluster(.*)" --slowSpecThreshold=10 test/managedcluster-import-controller-test -- -v=5
 	# ginkgo -tags functional -v --slowSpecThreshold=10 --focus="(.*)approve-csr(.*)" test/functional -- -v=1
 	# ginkgo -tags functional -v --slowSpecThreshold=30 --focus="import-hub/with-manifestwork" test/functional -- -v=5
-	# ginkgo -tags functional -v --slowSpecThreshold=30 test/functional -- -v=5
+	ginkgo -tags functional -v --slowSpecThreshold=30 test/functional -- -v=5
 
 .PHONY: functional-test-full
-functional-test-full: 
-# functional-test-full: component/build-coverage
+# functional-test-full: 
+functional-test-full: component/build-coverage
 	$(SELF) component/test/functional
