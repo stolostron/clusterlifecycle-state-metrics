@@ -61,12 +61,12 @@ jobs:
     #   - make component/build-e2e
     #   - make component/push-e2e
 
-    # - stage: functional-test
-    #   name: "Run functional-test"
-    #   script:
-    #     - if [ "$TRAVIS_PULL_REQUEST" != "false" ]; then export COMPONENT_TAG_EXTENSION="-PR${TRAVIS_PULL_REQUEST}-${TRAVIS_COMMIT}"; fi; 
-    #     - make component/pull
-    #     - make component/test/functional
+    - stage: functional-test
+      name: "Run functional-test"
+      script:
+        - if [ "$TRAVIS_PULL_REQUEST" != "false" ]; then export COMPONENT_TAG_EXTENSION="-PR${TRAVIS_PULL_REQUEST}-${TRAVIS_COMMIT}"; fi; 
+        - make component/pull
+        - make component/test/functional
     
     - stage: release-ff
       name: "Push commits to current release branch"
