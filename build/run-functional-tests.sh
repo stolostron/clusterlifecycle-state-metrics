@@ -9,7 +9,7 @@
 ###############################################################################
 
 set -e
-#set -x
+set -x
 
 CURR_FOLDER_PATH="$( cd "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
 KIND_KUBECONFIG="${CURR_FOLDER_PATH}/../kind_kubeconfig.yaml"
@@ -123,11 +123,14 @@ for dir in overlays/test/* ; do
   kubectl delete --wait=true -k "$dir"
 done;
 
-echo "Wait 10 sec for copy to AWS"
-sleep 10
+echo "Wait 20 sec for copy to coverage files to external storage if setup"
+sleep 20
 
 echo "delete cluster"
 kind delete cluster --name functional-test
+
+echo "Wait 20 sec for copy to coverage files from kind cluster to host"
+sleep 20
 
 if [ `find $FUNCT_TEST_COVERAGE -prune -empty 2>/dev/null` ]; then
   echo "no coverage files found. skipping"
