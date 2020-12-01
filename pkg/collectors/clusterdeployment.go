@@ -16,40 +16,28 @@ import (
 )
 
 var (
-	hubClusterID                             string
 	descClusterDeploymentName                = "ocm_clusterdeployment_created"
 	descClusterDeploymentHelp                = "Hive Cluster deployment"
 	descClusterDeploymentLabelsDefaultLabels = []string{"hub_cluster_id", "namespace", "name"}
-	clusterDeploymentrMetricFamilies         = []metric.FamilyGenerator{
-		{
-			Name: "ocm_clusterdeployment_created",
-			Type: metric.MetricTypeGauge,
-			Help: "Unix creation timestamp",
-			GenerateFunc: wrapClusterDeploymentFunc(func(c *unstructured.Unstructured) metric.Family {
-				f := metric.Family{}
-				f.Metrics = append(f.Metrics, &metric.Metric{
-					Value: 1,
-				})
-
-				return f
-			}),
-		},
-	}
 )
 
-func getClusterDeploymentMetricFamilies(hubClusterID string, client dynamic.Interface) []metric.FamilyGenerator {
+func getClusterDeploymentMetricFamilies(hubClusterID string) []metric.FamilyGenerator {
 	return []metric.FamilyGenerator{
 		{
 			Name: descClusterDeploymentName,
 			Type: metric.MetricTypeGauge,
 			Help: descClusterDeploymentHelp,
-			GenerateFunc: wrapManagedClusterInfoFunc(func(mciObj *unstructured.Unstructured) metric.Family {
-				f := metric.Family{}
-				f.Metrics = append(f.Metrics, &metric.Metric{
-					Value: 1,
-				})
-
-				return f
+			GenerateFunc: wrapClusterDeploymentFunc(func(c *unstructured.Unstructured) metric.Family {
+				labelsValues := []string{hubClusterID,
+					c.GetName(),
+					c.GetName()}
+				return metric.Family{Metrics: []*metric.Metric{
+					{
+						LabelKeys:   descClusterDeploymentLabelsDefaultLabels,
+						LabelValues: labelsValues,
+						Value:       1,
+					},
+				}}
 			}),
 		},
 	}
@@ -62,8 +50,8 @@ func wrapClusterDeploymentFunc(f func(*unstructured.Unstructured) metric.Family)
 		metricFamily := f(Cluster)
 
 		for _, m := range metricFamily.Metrics {
-			m.LabelKeys = append(descClusterDeploymentLabelsDefaultLabels, m.LabelKeys...)
-			m.LabelValues = append([]string{hubClusterID, Cluster.GetName(), Cluster.GetName()}, m.LabelValues...)
+			m.LabelKeys = append([]string{}, m.LabelKeys...)
+			m.LabelValues = append([]string{}, m.LabelValues...)
 		}
 
 		return metricFamily

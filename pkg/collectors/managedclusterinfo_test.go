@@ -6,8 +6,6 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 
 	mciv1beta1 "github.com/open-cluster-management/multicloud-operators-foundation/pkg/apis/internal.open-cluster-management.io/v1beta1"
-	ocinfrav1 "github.com/openshift/api/config/v1"
-	hivev1 "github.com/openshift/hive/pkg/apis/hive/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/dynamic/fake"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -18,8 +16,6 @@ func Test_getManagedClusterMetricFamilies(t *testing.T) {
 	s := scheme.Scheme
 
 	s.AddKnownTypes(mciv1beta1.GroupVersion, &mciv1beta1.ManagedClusterInfo{})
-	s.AddKnownTypes(hivev1.SchemeGroupVersion, &hivev1.ClusterDeployment{})
-	s.AddKnownTypes(ocinfrav1.SchemeGroupVersion, &ocinfrav1.ClusterVersion{})
 
 	mcHive := &mciv1beta1.ManagedClusterInfo{
 		ObjectMeta: metav1.ObjectMeta{
@@ -38,23 +34,7 @@ func Test_getManagedClusterMetricFamilies(t *testing.T) {
 		t.Error(err)
 	}
 
-	cd := &hivev1.ClusterDeployment{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "hive-cluster",
-			Namespace: "hive-cluster",
-		},
-	}
-
-	version := &ocinfrav1.ClusterVersion{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "version",
-		},
-		Spec: ocinfrav1.ClusterVersionSpec{
-			ClusterID: "mycluster_id",
-		},
-	}
-
-	client := fake.NewSimpleDynamicClient(s, mcHiveU, cd, version)
+	client := fake.NewSimpleDynamicClient(s, mcHiveU)
 	tests := []generateMetricsTestCase{
 		{
 			Obj:         mcHiveU,

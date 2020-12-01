@@ -26,12 +26,12 @@ func Test_getClusterDeploymentMetricFamilies(t *testing.T) {
 			Obj:         cd,
 			MetricNames: []string{"ocm_clusterdeployment_created"},
 			Want: `
-			ocm_clusterdeployment_created{hub_cluster_id="",name="hive-cluster",namespace="hive-cluster"} 1
+			ocm_clusterdeployment_created{hub_cluster_id="mycluster_id",name="hive-cluster",namespace="hive-cluster"} 1
 				`,
 		},
 	}
 	for i, c := range tests {
-		c.Func = metric.ComposeMetricGenFuncs(clusterDeploymentrMetricFamilies)
+		c.Func = metric.ComposeMetricGenFuncs(getClusterDeploymentMetricFamilies("mycluster_id"))
 		if err := c.run(); err != nil {
 			t.Errorf("unexpected collecting result in %vth run:\n%s", i, err)
 		}
