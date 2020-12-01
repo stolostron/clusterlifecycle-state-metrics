@@ -3,8 +3,6 @@ package collectors
 import (
 	"context"
 
-	ocinfrav1 "github.com/openshift/api/config/v1"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -43,22 +41,7 @@ var (
 	}
 )
 
-func getHubClusterID(c dynamic.Interface) string {
-
-	cvObj, errCv := c.Resource(cvGVR).Get(context.TODO(), "version", metav1.GetOptions{})
-	if errCv != nil {
-		klog.Fatalf("Error getting cluster version %v \n", errCv)
-	}
-	cv := &ocinfrav1.ClusterVersion{}
-	err := runtime.DefaultUnstructuredConverter.FromUnstructured(cvObj.UnstructuredContent(), &cv)
-	if err != nil {
-		klog.Fatalf("Error unmarshal cluster version object%v \n", err)
-	}
-	return string(cv.Spec.ClusterID)
-}
-
-func getManagedClusterInfoMetricFamilies(client dynamic.Interface) []metric.FamilyGenerator {
-	hubClusterID := getHubClusterID(client)
+func getManagedClusterInfoMetricFamilies(hubClusterID string, client dynamic.Interface) []metric.FamilyGenerator {
 	return []metric.FamilyGenerator{
 		{
 			Name: descClusterInfoName,
@@ -70,7 +53,7 @@ func getManagedClusterInfoMetricFamilies(client dynamic.Interface) []metric.Fami
 				if err != nil {
 					return metric.Family{Metrics: []*metric.Metric{}}
 				}
-				if mci.Status.ClusterID == "" ||
+				if (mci.Status.ClusterID == "" && mci.Status.KubeVendor != mciv1beta1.KubeVendorOpenShift) ||
 					mci.Status.KubeVendor == "" ||
 					mci.Status.CloudVendor == "" ||
 					mci.Status.Version == "" {

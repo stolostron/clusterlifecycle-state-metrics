@@ -1,7 +1,13 @@
 package collectors
 
 import (
+	ocinfrav1 "github.com/openshift/api/config/v1"
 	"github.com/prometheus/client_golang/prometheus"
+	"golang.org/x/net/context"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/dynamic"
+	"k8s.io/klog/v2"
 )
 
 var (
@@ -21,3 +27,17 @@ var (
 		[]string{"resource"},
 	)
 )
+
+func getHubClusterID(c dynamic.Interface) string {
+
+	cvObj, errCv := c.Resource(cvGVR).Get(context.TODO(), "version", metav1.GetOptions{})
+	if errCv != nil {
+		klog.Fatalf("Error getting cluster version %v \n", errCv)
+	}
+	cv := &ocinfrav1.ClusterVersion{}
+	err := runtime.DefaultUnstructuredConverter.FromUnstructured(cvObj.UnstructuredContent(), &cv)
+	if err != nil {
+		klog.Fatalf("Error unmarshal cluster version object%v \n", err)
+	}
+	return string(cv.Spec.ClusterID)
+}

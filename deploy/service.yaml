@@ -5,6 +5,8 @@ metadata:
   namespace: open-cluster-management
   labels:
     ocm-app: ocm-state-metrics
+  annotations:
+    service.beta.openshift.io/serving-cert-secret-name: ocm-state-metrics
 spec:
   type: ClusterIP
   ports:

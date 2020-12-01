@@ -308,7 +308,22 @@ func TestBuilder_WithWhiteBlackList(t *testing.T) {
 	}
 }
 
-func TestBuilder_buildClusterDeploymentCollector(t *testing.T) {
+func TestBuilder_buildClusterDeploymentCollectorWithClient(t *testing.T) {
+	s := scheme.Scheme
+
+	s.AddKnownTypes(ocinfrav1.SchemeGroupVersion, &ocinfrav1.ClusterVersion{})
+
+	version := &ocinfrav1.ClusterVersion{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "version",
+		},
+		Spec: ocinfrav1.ClusterVersionSpec{
+			ClusterID: "mycluster_id",
+		},
+	}
+
+	client := fake.NewSimpleDynamicClient(s, version)
+
 	w, _ := whiteblacklist.New(map[string]struct{}{}, map[string]struct{}{})
 	type fields struct {
 		apiserver         string
@@ -318,8 +333,12 @@ func TestBuilder_buildClusterDeploymentCollector(t *testing.T) {
 		enabledCollectors []string
 		whiteBlackList    whiteBlackLister
 	}
+	type args struct {
+		client dynamic.Interface
+	}
 	tests := []struct {
 		name   string
+		args   args
 		fields fields
 		want   *collector.Collector
 	}{
@@ -332,6 +351,9 @@ func TestBuilder_buildClusterDeploymentCollector(t *testing.T) {
 				ctx:               ctx,
 				enabledCollectors: []string{"clusterdeployements"},
 				whiteBlackList:    w,
+			},
+			args: args{
+				client: client,
 			},
 			want: nil,
 		},
@@ -346,7 +368,7 @@ func TestBuilder_buildClusterDeploymentCollector(t *testing.T) {
 				enabledCollectors: tt.fields.enabledCollectors,
 				whiteBlackList:    tt.fields.whiteBlackList,
 			}
-			if got := b.buildClusterDeploymentCollector(); got == nil {
+			if got := b.buildClusterDeploymentCollectorWithClient(tt.args.client); got == nil {
 				t.Errorf("Builder.buildClusterDeploymentCollector() = %v, want %v", got, tt.want)
 			}
 		})

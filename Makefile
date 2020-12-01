@@ -139,9 +139,17 @@ endif
 .PHONY: deploy
 deploy:
 	mkdir -p overlays/deploy
-	cp overlays/template/kustomization.yaml overlays/deploy
+	cp overlays/template/* overlays/deploy
 	cd overlays/deploy
 	kustomize build overlays/deploy | kubectl apply -f -
+	rm -rf overlays/deploy
+
+.PHONY: undeploy
+undeploy:
+	mkdir -p overlays/deploy
+	cp overlays/template/* overlays/deploy
+	cd overlays/deploy
+	kubectl delete --wait=true -k overlays/deploy
 	rm -rf overlays/deploy
 
 .PHONY: install-fake-crds
@@ -159,6 +167,7 @@ install-fake-crds:
 kind-cluster-setup: install-fake-crds
 	@echo installing fake resources
 	kubectl apply -f test/functional/resources/namespace_osm.yaml
+	kubectl apply -f test/functional/resources/namespace_ocm.yaml
 	kubectl apply -f test/functional/resources/clusterversions_cr.yaml
 	@echo "Install ingress NGNIX"
 	kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/master/deploy/static/provider/kind/deploy.yaml

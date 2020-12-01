@@ -16,13 +16,13 @@ spec:
       serviceAccountName: ocm-state-metrics
       containers:
       - name: ocm-state-metrics
-        image: quay.io/open-cluster-management/ocm-state-metrics:2.2.0-PR1-d4c0223fc52d8ab9ccebeb57bd30821a5bbd79f5
+        image: IMAGE_HOLDER
         imagePullPolicy: IfNotPresent
         args:
           - "--port=8443"
           - "--telemetry-port=8444"
-          # - "--tls-crt-file=/var/run/ocm-state-metrics/tls.crt"
-          # - "--tls-key-file=/var/run/ocm-state-metrics/tls.key"
+          - "--tls-crt-file=/var/run/ocm-state-metrics/tls.crt"
+          - "--tls-key-file=/var/run/ocm-state-metrics/tls.key"
         volumeMounts:
           - mountPath: "/var/run/ocm-state-metrics"
             name: certs
@@ -32,4 +32,4 @@ spec:
       volumes:
         - name: certs
           secret:
-            secretName: ocm-state-metrics-cert
+            secretName: ocm-state-metrics

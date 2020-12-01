@@ -120,7 +120,8 @@ func (b *Builder) buildManagedClusterInfoCollector() *collector.Collector {
 }
 
 func (b *Builder) buildManagedClusterInfoCollectorWithClient(client dynamic.Interface) *collector.Collector {
-	filteredMetricFamilies := metric.FilterMetricFamilies(b.whiteBlackList, getManagedClusterInfoMetricFamilies(client))
+	hubClusterID := getHubClusterID(client)
+	filteredMetricFamilies := metric.FilterMetricFamilies(b.whiteBlackList, getManagedClusterInfoMetricFamilies(hubClusterID, client))
 	composedMetricGenFuncs := metric.ComposeMetricGenFuncs(filteredMetricFamilies)
 
 	familyHeaders := metric.ExtractMetricFamilyHeaders(filteredMetricFamilies)
@@ -136,7 +137,17 @@ func (b *Builder) buildManagedClusterInfoCollectorWithClient(client dynamic.Inte
 }
 
 func (b *Builder) buildClusterDeploymentCollector() *collector.Collector {
-	filteredMetricFamilies := metric.FilterMetricFamilies(b.whiteBlackList, clusterDeploymentrMetricFamilies)
+	config, err := clientcmd.BuildConfigFromFlags(b.apiserver, b.kubeconfig)
+	if err != nil {
+		klog.Fatalf("cannot create Dynamic client: %v", err)
+	}
+	client := dynamic.NewForConfigOrDie(config)
+	return b.buildClusterDeploymentCollectorWithClient(client)
+}
+
+func (b *Builder) buildClusterDeploymentCollectorWithClient(client dynamic.Interface) *collector.Collector {
+	hubClusterID := getHubClusterID(client)
+	filteredMetricFamilies := metric.FilterMetricFamilies(b.whiteBlackList, getClusterDeploymentMetricFamilies(hubClusterID, client))
 	composedMetricGenFuncs := metric.ComposeMetricGenFuncs(filteredMetricFamilies)
 
 	familyHeaders := metric.ExtractMetricFamilyHeaders(filteredMetricFamilies)

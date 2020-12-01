@@ -16,9 +16,10 @@ import (
 )
 
 var (
-	// descClusterDeploymentLabelsName          = "ocm_clusterdeployment_created"
-	// descClusterDeploymentLabelsHelp          = "Kubernetes labels converted to Prometheus labels."
-	descClusterDeploymentLabelsDefaultLabels = []string{"namespace", "name"}
+	hubClusterID                             string
+	descClusterDeploymentName                = "ocm_clusterdeployment_created"
+	descClusterDeploymentHelp                = "Hive Cluster deployment"
+	descClusterDeploymentLabelsDefaultLabels = []string{"hub_cluster_id", "namespace", "name"}
 	clusterDeploymentrMetricFamilies         = []metric.FamilyGenerator{
 		{
 			Name: "ocm_clusterdeployment_created",
@@ -36,6 +37,24 @@ var (
 	}
 )
 
+func getClusterDeploymentMetricFamilies(hubClusterID string, client dynamic.Interface) []metric.FamilyGenerator {
+	return []metric.FamilyGenerator{
+		{
+			Name: descClusterDeploymentName,
+			Type: metric.MetricTypeGauge,
+			Help: descClusterDeploymentHelp,
+			GenerateFunc: wrapManagedClusterInfoFunc(func(mciObj *unstructured.Unstructured) metric.Family {
+				f := metric.Family{}
+				f.Metrics = append(f.Metrics, &metric.Metric{
+					Value: 1,
+				})
+
+				return f
+			}),
+		},
+	}
+}
+
 func wrapClusterDeploymentFunc(f func(*unstructured.Unstructured) metric.Family) func(interface{}) metric.Family {
 	return func(obj interface{}) metric.Family {
 		Cluster := obj.(*unstructured.Unstructured)
@@ -44,7 +63,7 @@ func wrapClusterDeploymentFunc(f func(*unstructured.Unstructured) metric.Family)
 
 		for _, m := range metricFamily.Metrics {
 			m.LabelKeys = append(descClusterDeploymentLabelsDefaultLabels, m.LabelKeys...)
-			m.LabelValues = append([]string{Cluster.GetName(), Cluster.GetName()}, m.LabelValues...)
+			m.LabelValues = append([]string{hubClusterID, Cluster.GetName(), Cluster.GetName()}, m.LabelValues...)
 		}
 
 		return metricFamily
