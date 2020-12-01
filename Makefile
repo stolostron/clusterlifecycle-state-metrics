@@ -138,19 +138,17 @@ endif
 
 .PHONY: deploy
 deploy:
-	mkdir -p overlays/deploy
-	cp overlays/template/* overlays/deploy
 	cd overlays/deploy
 	kustomize build overlays/deploy | kubectl apply -f -
-	rm -rf overlays/deploy
 
 .PHONY: undeploy
 undeploy:
-	mkdir -p overlays/deploy
-	cp overlays/template/* overlays/deploy
 	cd overlays/deploy
 	kubectl delete --wait=true -k overlays/deploy
-	rm -rf overlays/deploy
+
+############################################################
+# functional test section
+############################################################
 
 .PHONY: install-fake-crds
 install-fake-crds:
@@ -173,8 +171,6 @@ kind-cluster-setup: install-fake-crds
 	kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/master/deploy/static/provider/kind/deploy.yaml
 	@echo "Wait ingress NGNIX ready"
 	kubectl wait --namespace ingress-nginx --for=condition=ready pod --selector=app.kubernetes.io/component=controller --timeout=90s
-	# kubectl apply --validate=false -f https://github.com/jetstack/cert-manager/releases/download/v1.0.4/cert-manager.yaml	# kubectl apply -f test/functional/resources/fake_infrastructure_cr.yaml
-	# kubectl apply -f test/functional/resources/fake_apiserver_cr.yaml
 
 .PHONY: functional-test
 functional-test:

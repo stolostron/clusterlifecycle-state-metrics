@@ -8,4 +8,4 @@ spec:
     spec:
       containers:
       - name: ocm-state-metrics
-        image: quay.io/open-cluster-management/ocm-state-metrics:2.2.0-PR1-75f4f732ed14b611603be54de421207acb6f913a
+        image: quay.io/open-cluster-management/ocm-state-metrics:2.2.0-PR1-ee5ca28e2030a928b00bc18abab9ef8974c7a9f8

@@ -53,7 +53,7 @@ func getManagedClusterInfoMetricFamilies(hubClusterID string, client dynamic.Int
 				if err != nil {
 					return metric.Family{Metrics: []*metric.Metric{}}
 				}
-				if (mci.Status.ClusterID == "" && mci.Status.KubeVendor != mciv1beta1.KubeVendorOpenShift) ||
+				if (mci.Status.ClusterID == "" && mci.Status.KubeVendor == mciv1beta1.KubeVendorOpenShift) ||
 					mci.Status.KubeVendor == "" ||
 					mci.Status.CloudVendor == "" ||
 					mci.Status.Version == "" {

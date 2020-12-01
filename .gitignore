@@ -10,7 +10,6 @@ ocm-state-metrics-coverage
 .build-harness-bootstrap
 test/unit/coverage
 test/out
-overlays/deploy
 test/functional/tmp
 test/functional/coverage
 test/e2e/resources/clusters
