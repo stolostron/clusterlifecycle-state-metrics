@@ -16,9 +16,9 @@ import (
 )
 
 var (
-	descClusterDeploymentName                = "ocm_clusterdeployment_created"
+	descClusterDeploymentName                = "clc_clusterdeployment_created"
 	descClusterDeploymentHelp                = "Hive Cluster deployment"
-	descClusterDeploymentLabelsDefaultLabels = []string{"hub_cluster_id", "namespace", "name"}
+	descClusterDeploymentLabelsDefaultLabels = []string{"hub_cluster_id", "name"}
 )
 
 func getClusterDeploymentMetricFamilies(hubClusterID string) []metric.FamilyGenerator {
@@ -29,7 +29,6 @@ func getClusterDeploymentMetricFamilies(hubClusterID string) []metric.FamilyGene
 			Help: descClusterDeploymentHelp,
 			GenerateFunc: wrapClusterDeploymentFunc(func(c *unstructured.Unstructured) metric.Family {
 				labelsValues := []string{hubClusterID,
-					c.GetName(),
 					c.GetName()}
 				return metric.Family{Metrics: []*metric.Metric{
 					{

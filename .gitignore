@@ -4,9 +4,9 @@
 *.dll
 *.so
 *.dylib
-ocm-state-metrics
-!cmd/ocm-state-metrics
-ocm-state-metrics-coverage
+clusterlifecycle-state-metrics
+!cmd/clusterlifecycle-state-metrics
+clusterlifecycle-state-metrics-coverage
 .build-harness-bootstrap
 test/unit/coverage
 test/out

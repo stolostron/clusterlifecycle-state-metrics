@@ -38,9 +38,9 @@ func Test_getManagedClusterMetricFamilies(t *testing.T) {
 	tests := []generateMetricsTestCase{
 		{
 			Obj:         mcHiveU,
-			MetricNames: []string{"ocm_managedcluster_info"},
+			MetricNames: []string{"clc_managedcluster_info"},
 			Want: `
-			ocm_managedcluster_info{cloud="Amazon",cluster="hive-cluster",cluster_id="managed_cluster_id",hub_cluster_id="mycluster_id",vendor="OpenShift",version="v1.16.2"} 1
+			clc_managedcluster_info{cloud="Amazon",cluster="hive-cluster",cluster_id="managed_cluster_id",hub_cluster_id="mycluster_id",vendor="OpenShift",version="v1.16.2"} 1
 				`,
 		},
 	}

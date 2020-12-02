@@ -1,4 +1,4 @@
-module github.com/open-cluster-management/ocm-state-metrics
+module github.com/open-cluster-management/clusterlifecycle-state-metrics
 
 go 1.14
 

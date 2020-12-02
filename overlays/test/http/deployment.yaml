@@ -1,12 +1,12 @@
 kind: Deployment
 apiVersion: apps/v1
 metadata:
-  name: ocm-state-metrics
+  name: clusterlifecycle-state-metrics
 spec:
   template:
     spec:
       containers:
-      - name: ocm-state-metrics
+      - name: clusterlifecycle-state-metrics
         image: REPLACE_IMAGE
         imagePullPolicy: IfNotPresent
         args:

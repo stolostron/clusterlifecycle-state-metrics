@@ -29,8 +29,6 @@ resources:
 - ./clusterrole_binding.yaml
 - ./clusterrole_binding_prom.yaml
 - ./clusterrole.yaml
-- ./cert_issuer.yaml
-- ./certificate.yaml
 - ./service.yaml
 - ./ingress.yaml
 - ./servicemonitor.yaml

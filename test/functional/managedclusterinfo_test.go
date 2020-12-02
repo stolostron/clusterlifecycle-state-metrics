@@ -18,26 +18,26 @@ import (
 )
 
 const (
-	clusterDeploymentResponse = `# HELP ocm_clusterdeployment_created Hive Cluster deployment
-# TYPE ocm_clusterdeployment_created gauge
-ocm_clusterdeployment_created{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",namespace="cluster-hive",name="cluster-hive"} 1
-# HELP ocm_managedcluster_info Managed cluster information
-# TYPE ocm_managedcluster_info gauge
+	clusterDeploymentResponse = `# HELP clc_clusterdeployment_created Hive Cluster deployment
+# TYPE clc_clusterdeployment_created gauge
+clc_clusterdeployment_created{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",name="cluster-hive"} 1
+# HELP clc_managedcluster_info Managed cluster information
+# TYPE clc_managedcluster_info gauge
 `
-	managedClusterResponse = `# HELP ocm_clusterdeployment_created Hive Cluster deployment
-# TYPE ocm_clusterdeployment_created gauge
-ocm_clusterdeployment_created{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",namespace="cluster-hive",name="cluster-hive"} 1
-# HELP ocm_managedcluster_info Managed cluster information
-# TYPE ocm_managedcluster_info gauge
-ocm_managedcluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",cluster_id="import_cluster_id",cluster="cluster-import",vendor="OpenShift",cloud="Amazon",version="v1.16.2"} 1
-ocm_managedcluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",cluster_id="local_cluster_id",cluster="local-cluster",vendor="OpenShift",cloud="Amazon",version="v1.16.2"} 1
+	managedClusterResponse = `# HELP clc_clusterdeployment_created Hive Cluster deployment
+# TYPE clc_clusterdeployment_created gauge
+clc_clusterdeployment_created{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",name="cluster-hive"} 1
+# HELP clc_managedcluster_info Managed cluster information
+# TYPE clc_managedcluster_info gauge
+clc_managedcluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",cluster_id="import_cluster_id",cluster="cluster-import",vendor="OpenShift",cloud="Amazon",version="v1.16.2"} 1
+clc_managedcluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",cluster_id="local_cluster_id",cluster="local-cluster",vendor="OpenShift",cloud="Amazon",version="v1.16.2"} 1
 `
-	managedClusterHiveResponse = `# HELP ocm_clusterdeployment_created Hive Cluster deployment
-# TYPE ocm_clusterdeployment_created gauge
-ocm_clusterdeployment_created{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",namespace="cluster-hive",name="cluster-hive"} 1
-# HELP ocm_managedcluster_info Managed cluster information
-# TYPE ocm_managedcluster_info gauge
-ocm_managedcluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",cluster_id="hive_cluster_id",cluster="cluster-hive",vendor="OpenShift",cloud="Amazon",version="v1.16.2"} 1
+	managedClusterHiveResponse = `# HELP clc_clusterdeployment_created Hive Cluster deployment
+# TYPE clc_clusterdeployment_created gauge
+clc_clusterdeployment_created{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",name="cluster-hive"} 1
+# HELP clc_managedcluster_info Managed cluster information
+# TYPE clc_managedcluster_info gauge
+clc_managedcluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",cluster_id="hive_cluster_id",cluster="cluster-hive",vendor="OpenShift",cloud="Amazon",version="v1.16.2"} 1
 `
 )
 
@@ -115,7 +115,7 @@ var _ = Describe("Metrics", func() {
 })
 
 func getMetrics() (resp *http.Response, bodyString string, err error) {
-	resp, err = http.Get("http://localhost/ocm-state-metrics/metrics")
+	resp, err = http.Get("http://localhost/clusterlifecycle-state-metrics/metrics")
 	defer resp.Body.Close()
 	if resp.StatusCode == http.StatusOK {
 		bodyBytes, err := ioutil.ReadAll(resp.Body)

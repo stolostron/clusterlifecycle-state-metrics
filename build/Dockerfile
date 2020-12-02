@@ -6,15 +6,15 @@ ARG GITHUB_TOKEN
 ARG COMPONENT_VERSION
 
 ENV USE_VENDORIZED_BUILD_HARNESS=true
-ENV COMPONENT_NAME=ocm-state-metrics
+ENV COMPONENT_NAME=clusterlifecycle-state-metrics
 ENV COMPONENT_VERSION="${COMPONENT_VERSION}"
 ENV COMPONENT_TAG_EXTENSION=" "
 #RUN yum install -y tar gzip make which
 
 COPY $REMOTE_SOURCE $REMOTE_SOURCE_DIR/app/
 WORKDIR $REMOTE_SOURCE_DIR/app
-RUN GOFLAGS="" go build ./cmd/ocm-state-metrics
-RUN GOFLAGS="" go test -covermode=atomic -coverpkg=github.com/open-cluster-management/ocm-state-metrics/pkg/... -c -tags testrunmain ./cmd/ocm-state-metrics -o ocm-state-metrics-coverage
+RUN GOFLAGS="" go build ./cmd/clusterlifecycle-state-metrics
+RUN GOFLAGS="" go test -covermode=atomic -coverpkg=github.com/open-cluster-management/clusterlifecycle-state-metrics/pkg/... -c -tags testrunmain ./cmd/clusterlifecycle-state-metrics -o clusterlifecycle-state-metrics-coverage
 
 FROM registry.access.redhat.com/ubi8/ubi-minimal:latest
 RUN microdnf update
@@ -27,13 +27,13 @@ ARG ARCH_TYPE
 ARG REMOTE_SOURCE_DIR
 ARG BUILD_HARNESS_EXTENSIONS_PROJECT
 
-ENV OPERATOR=/usr/local/bin/ocm-state-metrics \
+ENV OPERATOR=/usr/local/bin/clusterlifecycle-state-metrics \
     USER_UID=1001 \
-    USER_NAME=ocm-state-metrics
+    USER_NAME=clusterlifecycle-state-metrics
 
 # install operator binary
-COPY --from=builder $REMOTE_SOURCE_DIR/app/ocm-state-metrics ${OPERATOR}
-COPY --from=builder $REMOTE_SOURCE_DIR/app/ocm-state-metrics-coverage ${OPERATOR}-coverage
+COPY --from=builder $REMOTE_SOURCE_DIR/app/clusterlifecycle-state-metrics ${OPERATOR}
+COPY --from=builder $REMOTE_SOURCE_DIR/app/clusterlifecycle-state-metrics-coverage ${OPERATOR}-coverage
 COPY --from=builder \
     $REMOTE_SOURCE_DIR/app/$BUILD_HARNESS_EXTENSIONS_PROJECT/modules/component/bin/component/coverage-entrypoint-func.sh \
     /usr/local/bin/coverage-entrypoint-func.sh
@@ -45,13 +45,13 @@ ENTRYPOINT ["/usr/local/bin/entrypoint"]
 
 USER ${USER_UID}
 
-LABEL com.redhat.component="ocm-state-metrics" \
-      name="ocm-state-metrics-rhel8" \
+LABEL com.redhat.component="clusterlifecycle-state-metrics" \
+      name="clusterlifecycle-state-metrics-rhel8" \
       version="${CI_CONTAINER_VERSION}" \
       release="${CI_CONTAINER_RELEASE}" \
-      summary="rocm-state-metrics" \
+      summary="rclusterlifecycle-state-metrics" \
       io.openshift.expose-services="" \
       io.openshift.tags="data,images" \
-      io.k8s.display-name="ocm-state-metrics" \
+      io.k8s.display-name="clusterlifecycle-state-metrics" \
       maintainer="['eisraeli@redhat.com', 'jbieren@redhat.com']" \
-      description="ocm-state-metrics"
+      description="clusterlifecycle-state-metrics"

@@ -7,7 +7,7 @@
 
 if ! whoami &>/dev/null; then
   if [ -w /etc/passwd ]; then
-    echo "${USER_NAME:-ocm-state-metrics}:x:$(id -u):$(id -g):${USER_NAME:-ocm-state-metrics} user:${HOME}:/sbin/nologin" >> /etc/passwd
+    echo "${USER_NAME:-clusterlifecycle-state-metrics}:x:$(id -u):$(id -g):${USER_NAME:-clusterlifecycle-state-metrics} user:${HOME}:/sbin/nologin" >> /etc/passwd
   fi
 fi
 

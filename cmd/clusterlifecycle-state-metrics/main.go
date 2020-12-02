@@ -19,13 +19,13 @@ import (
 
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
-	"github.com/open-cluster-management/ocm-state-metrics/pkg/version"
+	"github.com/open-cluster-management/clusterlifecycle-state-metrics/pkg/version"
 	kcollectors "k8s.io/kube-state-metrics/pkg/collector"
 	koptions "k8s.io/kube-state-metrics/pkg/options"
 	"k8s.io/kube-state-metrics/pkg/whiteblacklist"
 
-	ocollectors "github.com/open-cluster-management/ocm-state-metrics/pkg/collectors"
-	"github.com/open-cluster-management/ocm-state-metrics/pkg/options"
+	ocollectors "github.com/open-cluster-management/clusterlifecycle-state-metrics/pkg/collectors"
+	"github.com/open-cluster-management/clusterlifecycle-state-metrics/pkg/options"
 )
 
 const (
@@ -119,7 +119,7 @@ func telemetryServer(
 	// Address to listen on for web interface and telemetry
 	listenAddress := net.JoinHostPort(host, strconv.Itoa(port))
 
-	klog.Infof("Starting ocm-state-metrics self metrics server: %s", listenAddress)
+	klog.Infof("Starting clusterlifecycle-state-metrics self metrics server: %s", listenAddress)
 
 	mux := http.NewServeMux()
 

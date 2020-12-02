@@ -6,9 +6,9 @@ ARG REMOTE_SOURCE
 ARG REMOTE_SOURCE_DIR
 ARG GITHUB_TOKEN
 
-ENV OPERATOR=/usr/local/bin/ocm-state-metrics \
+ENV OPERATOR=/usr/local/bin/clusterlifecycle-state-metrics \
     USER_UID=1001 \
-    USER_NAME=ocm-state-metrics
+    USER_NAME=clusterlifecycle-state-metrics
     
 USER root
 # Install unzip
@@ -30,13 +30,13 @@ ARG IMAGE_DESCRIPTION
 ARG ARCH_TYPE
 ARG REMOTE_SOURCE_DIR
 
-LABEL com.redhat.component="ocm-state-metrics-container" \
-      name="rhacm1-tech-preview/ocm-state-metrics-rhel8" \
+LABEL com.redhat.component="clusterlifecycle-state-metrics-container" \
+      name="rhacm1-tech-preview/clusterlifecycle-state-metrics-rhel8" \
       version="${CI_CONTAINER_VERSION}" \
       release="${CI_CONTAINER_RELEASE}" \
-      summary="ocm-state-metrics" \
+      summary="clusterlifecycle-state-metrics" \
       io.openshift.expose-services="" \
       io.openshift.tags="data,images" \
-      io.k8s.display-name="ocm-state-metrics" \
+      io.k8s.display-name="clusterlifecycle-state-metrics" \
       maintainer="['eisraeli@redhat.com', 'jbieren@redhat.com']" \
-      description="ocm-state-metrics"
+      description="clusterlifecycle-state-metrics"

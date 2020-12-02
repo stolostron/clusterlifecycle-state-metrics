@@ -1,30 +1,30 @@
 kind: Deployment
 apiVersion: apps/v1
 metadata:
-  name: ocm-state-metrics
+  name: clusterlifecycle-state-metrics
   namespace: open-cluster-management
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: ocm-state-metrics
+      app: clusterlifecycle-state-metrics
   template:
     metadata:
       labels:
-        app: ocm-state-metrics
+        app: clusterlifecycle-state-metrics
     spec:
-      serviceAccountName: ocm-state-metrics
+      serviceAccountName: clusterlifecycle-state-metrics
       containers:
-      - name: ocm-state-metrics
+      - name: clusterlifecycle-state-metrics
         image: IMAGE_HOLDER
         imagePullPolicy: IfNotPresent
         args:
           - "--port=8443"
           - "--telemetry-port=8444"
-          - "--tls-crt-file=/var/run/ocm-state-metrics/tls.crt"
-          - "--tls-key-file=/var/run/ocm-state-metrics/tls.key"
+          - "--tls-crt-file=/var/run/clusterlifecycle-state-metrics/tls.crt"
+          - "--tls-key-file=/var/run/clusterlifecycle-state-metrics/tls.key"
         volumeMounts:
-          - mountPath: "/var/run/ocm-state-metrics"
+          - mountPath: "/var/run/clusterlifecycle-state-metrics"
             name: certs
             readOnly: true
       imagePullSecrets:
@@ -32,4 +32,4 @@ spec:
       volumes:
         - name: certs
           secret:
-            secretName: ocm-state-metrics
+            secretName: clusterlifecycle-state-metrics

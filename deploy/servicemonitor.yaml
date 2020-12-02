@@ -2,8 +2,8 @@ apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   labels:
-    name: ocm-state-metrics
-  name: ocm-state-metrics
+    name: clusterlifecycle-state-metrics
+  name: clusterlifecycle-state-metrics
   namespace: openshift-monitoring
 spec:
   endpoints:
@@ -13,12 +13,11 @@ spec:
     scrapeTimeout: 20s
     bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
     tlsConfig:
-      # serverName: ocm-state-metrics.open-cluster-management.svc
       insecureSkipVerify: true
   jobLabel: ocm-app
   selector:
     matchLabels:
-      ocm-app: ocm-state-metrics
+      ocm-app: clusterlifecycle-state-metrics
   namespaceSelector:
     matchNames:
       - open-cluster-management

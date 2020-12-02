@@ -31,7 +31,7 @@ func TestVersion_String(t *testing.T) {
 				Compiler:  runtime.Compiler,
 				Platform:  fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH),
 			},
-			want: fmt.Sprintf("version.test/%s (%s/%s) ocm-state-metrics/%s", Release, runtime.GOOS, runtime.GOARCH, Commit),
+			want: fmt.Sprintf("version.test/%s (%s/%s) clusterlifecycle-state-metrics/%s", Release, runtime.GOOS, runtime.GOARCH, Commit),
 		},
 	}
 	for _, tt := range tests {

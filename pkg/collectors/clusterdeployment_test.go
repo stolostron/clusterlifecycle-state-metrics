@@ -24,9 +24,9 @@ func Test_getClusterDeploymentMetricFamilies(t *testing.T) {
 	tests := []generateMetricsTestCase{
 		{
 			Obj:         cd,
-			MetricNames: []string{"ocm_clusterdeployment_created"},
+			MetricNames: []string{"clc_clusterdeployment_created"},
 			Want: `
-			ocm_clusterdeployment_created{hub_cluster_id="mycluster_id",name="hive-cluster",namespace="hive-cluster"} 1
+			clc_clusterdeployment_created{hub_cluster_id="mycluster_id",name="hive-cluster"} 1
 				`,
 		},
 	}

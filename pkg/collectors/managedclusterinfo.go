@@ -18,7 +18,7 @@ import (
 )
 
 var (
-	descClusterInfoName          = "ocm_managedcluster_info"
+	descClusterInfoName          = "clc_managedcluster_info"
 	descClusterInfoHelp          = "Managed cluster information"
 	descClusterInfoDefaultLabels = []string{"hub_cluster_id", "cluster_id", "cluster", "vendor", "cloud", "version"}
 

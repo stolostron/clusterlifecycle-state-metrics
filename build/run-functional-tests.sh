@@ -101,7 +101,7 @@ make kind-cluster-setup
 for dir in overlays/test/* ; do
   echo ">>>>>>>>>>>>>>>Executing test: $dir"
 
-  # install ocm-state-metrics
+  # install clusterlifecycle-state-metrics
   echo "install managedcluster-import-controller"
   kubectl apply -k "$dir" --dry-run=true -o yaml | sed "s|REPLACE_IMAGE|${DOCKER_IMAGE_AND_TAG}|g" | kubectl apply -f -
 
@@ -110,7 +110,7 @@ for dir in overlays/test/* ; do
 
   # patch image
   echo "Wait rollout"
-  kubectl rollout status -n open-cluster-management deployment ocm-state-metrics --timeout=90s
+  kubectl rollout status -n open-cluster-management deployment clusterlifecycle-state-metrics --timeout=90s
   
   # exit 1
 
