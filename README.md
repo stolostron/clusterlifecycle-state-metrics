@@ -17,7 +17,7 @@ This project generates a number of metrics used for business analysis.
 curl http://localhost:8080/metrics
 # HELP clc_managedcluster_info Managed cluster information
 # TYPE clc_managedcluster_info gauge
-clc_managedcluster_info{hub_cluster_id="faddba46-201e-4d5d-bf52-9918517a9e6a",cluster_id="faddba46-201e-4d5d-bf52-9918517a9e6a",cluster="local-cluster",vendor="OpenShift",cloud="Amazon",version="v1.16.2",created_via="Other"} 1
+clc_managedcluster_info{hub_cluster_id="faddba46-201e-4d5d-bf52-9918517a9e6a",cluster_id="faddba46-201e-4d5d-bf52-9918517a9e6a",vendor="OpenShift",cloud="Amazon",version="v1.16.2",created_via="Other"} 1
 ```
 
 ## Deploy on RHACM

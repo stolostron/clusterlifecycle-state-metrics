@@ -52,7 +52,7 @@ func Test_getManagedClusterMetricFamilies(t *testing.T) {
 			Obj:         mcU,
 			MetricNames: []string{"clc_managedcluster_info"},
 			Want: `
-			clc_managedcluster_info{cloud="Amazon",cluster="hive-cluster",cluster_id="managed_cluster_id",created_via="Other",hub_cluster_id="mycluster_id",vendor="OpenShift",version="v1.16.2"} 1
+			clc_managedcluster_info{cloud="Amazon",cluster_id="managed_cluster_id",created_via="Other",hub_cluster_id="mycluster_id",vendor="OpenShift",version="v1.16.2"} 1
 				`,
 		},
 	}
@@ -67,7 +67,7 @@ func Test_getManagedClusterMetricFamilies(t *testing.T) {
 			Obj:         mcU,
 			MetricNames: []string{"clc_managedcluster_info"},
 			Want: `
-			clc_managedcluster_info{cloud="Amazon",cluster="hive-cluster",cluster_id="managed_cluster_id",created_via="Hive",hub_cluster_id="mycluster_id",vendor="OpenShift",version="v1.16.2"} 1
+			clc_managedcluster_info{cloud="Amazon",cluster_id="managed_cluster_id",created_via="Hive",hub_cluster_id="mycluster_id",vendor="OpenShift",version="v1.16.2"} 1
 				`,
 		},
 	}

@@ -27,7 +27,6 @@ var (
 	descClusterInfoHelp          = "Managed cluster information"
 	descClusterInfoDefaultLabels = []string{"hub_cluster_id",
 		"cluster_id",
-		"cluster",
 		"vendor",
 		"cloud",
 		"version",
@@ -83,7 +82,6 @@ func getManagedClusterInfoMetricFamilies(hubClusterID string, client dynamic.Int
 				}
 				labelsValues := []string{hubClusterID,
 					mci.Status.ClusterID,
-					mci.GetName(),
 					string(mci.Status.KubeVendor),
 					string(mci.Status.CloudVendor),
 					mci.Status.Version,
