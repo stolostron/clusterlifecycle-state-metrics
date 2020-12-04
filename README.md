@@ -23,7 +23,7 @@ clc_managedcluster_info{hub_cluster_id="faddba46-201e-4d5d-bf52-9918517a9e6a",cl
 ## Deploy on RHACM
 
 1. `oc login` your hub RHACM cluster.
-2. Set the image you want to deploy in [deployment.yaml](overlays/template/deployment.yaml)
+2. Set the image you want to deploy in [deployment.yaml](overlays/deploy/deployment.yaml)
 3. run `make deploy`
 4. Open Prometheus console and check for metrics "clc_managedcluster_info"
 

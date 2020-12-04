@@ -25,7 +25,13 @@ const (
 var (
 	descClusterInfoName          = "clc_managedcluster_info"
 	descClusterInfoHelp          = "Managed cluster information"
-	descClusterInfoDefaultLabels = []string{"hub_cluster_id", "cluster_id", "cluster", "vendor", "cloud", "version", "created_via"}
+	descClusterInfoDefaultLabels = []string{"hub_cluster_id",
+		"cluster_id",
+		"cluster",
+		"vendor",
+		"cloud",
+		"version",
+		"created_via"}
 
 	cdGVR = schema.GroupVersionResource{
 		Group:    "hive.openshift.io",
