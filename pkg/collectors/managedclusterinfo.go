@@ -17,10 +17,15 @@ import (
 	"k8s.io/klog/v2"
 )
 
+const (
+	createdViaHive  = "Hive"
+	createdViaOther = "Other"
+)
+
 var (
 	descClusterInfoName          = "clc_managedcluster_info"
 	descClusterInfoHelp          = "Managed cluster information"
-	descClusterInfoDefaultLabels = []string{"hub_cluster_id", "cluster_id", "cluster", "vendor", "cloud", "version"}
+	descClusterInfoDefaultLabels = []string{"hub_cluster_id", "cluster_id", "cluster", "vendor", "cloud", "version", "created_via"}
 
 	cdGVR = schema.GroupVersionResource{
 		Group:    "hive.openshift.io",
@@ -48,15 +53,26 @@ func getManagedClusterInfoMetricFamilies(hubClusterID string, client dynamic.Int
 			Type: metric.MetricTypeGauge,
 			Help: descClusterInfoHelp,
 			GenerateFunc: wrapManagedClusterInfoFunc(func(mciObj *unstructured.Unstructured) metric.Family {
+				klog.Infof("Wrap %s", mciObj.GetName())
 				mci := &mciv1beta1.ManagedClusterInfo{}
 				err := runtime.DefaultUnstructuredConverter.FromUnstructured(mciObj.UnstructuredContent(), &mci)
 				if err != nil {
 					return metric.Family{Metrics: []*metric.Metric{}}
 				}
+				createdVia := createdViaHive
+				cd, errCD := client.Resource(cdGVR).Namespace(mci.GetName()).Get(context.TODO(), mci.GetName(), metav1.GetOptions{})
+				if errCD != nil {
+					createdVia = createdViaOther
+					klog.Infof("Cluster Deployment %s not found, err: %s", mci.GetName(), errCD)
+				} else {
+					klog.Infof("Cluster Deployment: %v,", cd.Object)
+				}
 				if (mci.Status.ClusterID == "" && mci.Status.KubeVendor == mciv1beta1.KubeVendorOpenShift) ||
 					mci.Status.KubeVendor == "" ||
 					mci.Status.CloudVendor == "" ||
 					mci.Status.Version == "" {
+					klog.Infof("Not enough information available for %s", mci.GetName())
+					klog.Infof("Current info %v", mci.Status)
 					return metric.Family{Metrics: []*metric.Metric{}}
 				}
 				labelsValues := []string{hubClusterID,
@@ -64,14 +80,18 @@ func getManagedClusterInfoMetricFamilies(hubClusterID string, client dynamic.Int
 					mci.GetName(),
 					string(mci.Status.KubeVendor),
 					string(mci.Status.CloudVendor),
-					mci.Status.Version}
-				return metric.Family{Metrics: []*metric.Metric{
+					mci.Status.Version,
+					createdVia}
+
+				f := metric.Family{Metrics: []*metric.Metric{
 					{
 						LabelKeys:   descClusterInfoDefaultLabels,
 						LabelValues: labelsValues,
 						Value:       1,
 					},
 				}}
+				klog.Infof("Posting %v", f)
+				return f
 			}),
 		},
 	}

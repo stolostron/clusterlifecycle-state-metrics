@@ -17,7 +17,7 @@ func Test_getManagedClusterMetricFamilies(t *testing.T) {
 
 	s.AddKnownTypes(mciv1beta1.GroupVersion, &mciv1beta1.ManagedClusterInfo{})
 
-	mcHive := &mciv1beta1.ManagedClusterInfo{
+	mc := &mciv1beta1.ManagedClusterInfo{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "hive-cluster",
 		},
@@ -28,24 +28,51 @@ func Test_getManagedClusterMetricFamilies(t *testing.T) {
 			ClusterID:   "managed_cluster_id",
 		},
 	}
-	mcHiveU := &unstructured.Unstructured{}
-	err := scheme.Scheme.Convert(mcHive, mcHiveU, nil)
+	mcU := &unstructured.Unstructured{}
+	err := scheme.Scheme.Convert(mc, mcU, nil)
 	if err != nil {
 		t.Error(err)
 	}
 
-	client := fake.NewSimpleDynamicClient(s, mcHiveU)
+	cdU := &unstructured.Unstructured{
+		Object: map[string]interface{}{
+			"kind":       "ClusterDeployment",
+			"apiVersion": "hive.openshift.io/v1",
+			"metadata": map[string]interface{}{
+				"name":      "hive-cluster",
+				"namespace": "hive-cluster",
+			},
+		},
+	}
+
+	client := fake.NewSimpleDynamicClient(s, mcU)
+	clientHive := fake.NewSimpleDynamicClient(s, mcU, cdU)
 	tests := []generateMetricsTestCase{
 		{
-			Obj:         mcHiveU,
+			Obj:         mcU,
 			MetricNames: []string{"clc_managedcluster_info"},
 			Want: `
-			clc_managedcluster_info{cloud="Amazon",cluster="hive-cluster",cluster_id="managed_cluster_id",hub_cluster_id="mycluster_id",vendor="OpenShift",version="v1.16.2"} 1
+			clc_managedcluster_info{cloud="Amazon",cluster="hive-cluster",cluster_id="managed_cluster_id",created_via="Other",hub_cluster_id="mycluster_id",vendor="OpenShift",version="v1.16.2"} 1
 				`,
 		},
 	}
 	for i, c := range tests {
 		c.Func = metric.ComposeMetricGenFuncs(getManagedClusterInfoMetricFamilies("mycluster_id", client))
+		if err := c.run(); err != nil {
+			t.Errorf("unexpected collecting result in %vth run:\n%s", i, err)
+		}
+	}
+	tests = []generateMetricsTestCase{
+		{
+			Obj:         mcU,
+			MetricNames: []string{"clc_managedcluster_info"},
+			Want: `
+			clc_managedcluster_info{cloud="Amazon",cluster="hive-cluster",cluster_id="managed_cluster_id",created_via="Hive",hub_cluster_id="mycluster_id",vendor="OpenShift",version="v1.16.2"} 1
+				`,
+		},
+	}
+	for i, c := range tests {
+		c.Func = metric.ComposeMetricGenFuncs(getManagedClusterInfoMetricFamilies("mycluster_id", clientHive))
 		if err := c.run(); err != nil {
 			t.Errorf("unexpected collecting result in %vth run:\n%s", i, err)
 		}

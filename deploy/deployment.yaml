@@ -16,7 +16,6 @@ spec:
       serviceAccountName: clusterlifecycle-state-metrics
       containers:
       - name: clusterlifecycle-state-metrics
-        image: IMAGE_HOLDER
         imagePullPolicy: IfNotPresent
         args:
           - "--port=8443"

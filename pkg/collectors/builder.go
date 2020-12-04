@@ -107,7 +107,6 @@ func (b *Builder) Build() []*collector.Collector {
 
 var availableCollectors = map[string]func(f *Builder) *collector.Collector{
 	"managedclusterinfos": func(b *Builder) *collector.Collector { return b.buildManagedClusterInfoCollector() },
-	"clusterdeployments":  func(b *Builder) *collector.Collector { return b.buildClusterDeploymentCollector() },
 }
 
 func (b *Builder) buildManagedClusterInfoCollector() *collector.Collector {
@@ -133,33 +132,6 @@ func (b *Builder) buildManagedClusterInfoCollectorWithClient(client dynamic.Inte
 	)
 	reflectorPerNamespace(b.ctx, &unstructured.Unstructured{}, store,
 		b.apiserver, b.kubeconfig, b.namespaces, createManagedClusterInfoListWatch)
-
-	return collector.NewCollector(store)
-}
-
-func (b *Builder) buildClusterDeploymentCollector() *collector.Collector {
-	config, err := clientcmd.BuildConfigFromFlags(b.apiserver, b.kubeconfig)
-	if err != nil {
-		klog.Fatalf("cannot create Dynamic client: %v", err)
-	}
-	client := dynamic.NewForConfigOrDie(config)
-	return b.buildClusterDeploymentCollectorWithClient(client)
-}
-
-func (b *Builder) buildClusterDeploymentCollectorWithClient(client dynamic.Interface) *collector.Collector {
-	hubClusterID := getHubClusterID(client)
-	filteredMetricFamilies := metric.FilterMetricFamilies(b.whiteBlackList,
-		getClusterDeploymentMetricFamilies(hubClusterID))
-	composedMetricGenFuncs := metric.ComposeMetricGenFuncs(filteredMetricFamilies)
-
-	familyHeaders := metric.ExtractMetricFamilyHeaders(filteredMetricFamilies)
-
-	store := metricsstore.NewMetricsStore(
-		familyHeaders,
-		composedMetricGenFuncs,
-	)
-	reflectorPerNamespace(b.ctx, &unstructured.Unstructured{}, store,
-		b.apiserver, b.kubeconfig, b.namespaces, createClusterDeploymentListWatch)
 
 	return collector.NewCollector(store)
 }

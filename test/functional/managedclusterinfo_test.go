@@ -18,26 +18,17 @@ import (
 )
 
 const (
-	clusterDeploymentResponse = `# HELP clc_clusterdeployment_created Hive Cluster deployment
-# TYPE clc_clusterdeployment_created gauge
-clc_clusterdeployment_created{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",name="cluster-hive"} 1
-# HELP clc_managedcluster_info Managed cluster information
+	clusterDeploymentResponse = `# HELP clc_managedcluster_info Managed cluster information
 # TYPE clc_managedcluster_info gauge
 `
-	managedClusterResponse = `# HELP clc_clusterdeployment_created Hive Cluster deployment
-# TYPE clc_clusterdeployment_created gauge
-clc_clusterdeployment_created{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",name="cluster-hive"} 1
-# HELP clc_managedcluster_info Managed cluster information
+	managedClusterResponse = `# HELP clc_managedcluster_info Managed cluster information
 # TYPE clc_managedcluster_info gauge
-clc_managedcluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",cluster_id="import_cluster_id",cluster="cluster-import",vendor="OpenShift",cloud="Amazon",version="v1.16.2"} 1
-clc_managedcluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",cluster_id="local_cluster_id",cluster="local-cluster",vendor="OpenShift",cloud="Amazon",version="v1.16.2"} 1
+clc_managedcluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",cluster_id="import_cluster_id",cluster="cluster-import",vendor="OpenShift",cloud="Amazon",version="v1.16.2",created_via="Other"} 1
+clc_managedcluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",cluster_id="local_cluster_id",cluster="local-cluster",vendor="OpenShift",cloud="Amazon",version="v1.16.2",created_via="Other"} 1
 `
-	managedClusterHiveResponse = `# HELP clc_clusterdeployment_created Hive Cluster deployment
-# TYPE clc_clusterdeployment_created gauge
-clc_clusterdeployment_created{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",name="cluster-hive"} 1
-# HELP clc_managedcluster_info Managed cluster information
+	managedClusterHiveResponse = `# HELP clc_managedcluster_info Managed cluster information
 # TYPE clc_managedcluster_info gauge
-clc_managedcluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",cluster_id="hive_cluster_id",cluster="cluster-hive",vendor="OpenShift",cloud="Amazon",version="v1.16.2"} 1
+clc_managedcluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",cluster_id="hive_cluster_id",cluster="cluster-hive",vendor="OpenShift",cloud="Amazon",version="v1.16.2",created_via="Hive"} 1
 `
 )
 

@@ -6,7 +6,7 @@ rules:
 # Allow hub to monitor and update status of csr
 - apiGroups: ["hive.openshift.io"]
   resources: ["clusterdeployments"]
-  verbs: ["list","watch"]
+  verbs: ["get"]
 - apiGroups: ["internal.open-cluster-management.io"]
   resources: ["managedclusterinfos"]
   verbs: ["list","watch"]

@@ -8,4 +8,4 @@ spec:
     spec:
       containers:
       - name: clusterlifecycle-state-metrics
-        image: quay.io/open-cluster-management/clusterlifecycle-state-metrics:2.2.0-PR1-6ee2e9d7845bfa6b91dfd717014ba26ffdf95eb1
+        image: quay.io/open-cluster-management/clusterlifecycle-state-metrics:2.2.0-PR1-bd9abf64bca9b2b1097f6c9d2115fa6264b6c5c3

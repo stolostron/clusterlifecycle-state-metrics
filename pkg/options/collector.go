@@ -15,6 +15,5 @@ var (
 	DefaultNamespaces = koptions.NamespaceList{metav1.NamespaceAll}
 	DefaultCollectors = koptions.CollectorSet{
 		"managedclusterinfos": struct{}{},
-		"clusterdeployments":  struct{}{},
 	}
 )

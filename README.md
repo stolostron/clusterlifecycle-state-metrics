@@ -8,21 +8,16 @@ This project generates a number of metrics used for business analysis.
 
 ## testing
 
-1. `make build`
-2. `./clusterlifecycle-state-metrics --port=8080 --telemetry-port=8081 --kubeconfig=$KUBECONFIG`
-3. `curl http://localhost:8080/metrics`
+1. `make run`
+2. `curl http://localhost:8080/metrics`
 
 ## Generated metrics:
 
 ```
 curl http://localhost:8080/metrics
-# HELP clc_clusterdeployment_created Unix creation timestamp
-# TYPE clc_clusterdeployment_created gauge
-clc_clusterdeployment_created{namespace="itdove-aws-ss5t",managedcluster="itdove-aws-ss5t"} 1.604609472e+09
 # HELP clc_managedcluster_info Managed cluster information
 # TYPE clc_managedcluster_info gauge
-clc_managedcluster_info{cluster_id="faddba46-201e-4d5d-bf52-9918517a9e6a",managedcluster_name="local-cluster",vendor="OpenShift",cloud="Amazon",version="v1.16.2"} 1
-clc_managedcluster_info{cluster_id="faddba46-201e-4d5d-bf52-9918517a9e6a",managedcluster_name="itdove-test",vendor="Other",cloud="Other",version="v1.19.1"} 1
+clc_managedcluster_info{hub_cluster_id="faddba46-201e-4d5d-bf52-9918517a9e6a",cluster_id="faddba46-201e-4d5d-bf52-9918517a9e6a",cluster="local-cluster",vendor="OpenShift",cloud="Amazon",version="v1.16.2",created_via="Other"} 1
 ```
 
 ## Deploy on RHACM
@@ -66,16 +61,10 @@ sum by (hub_cluster_id, version) (
 ) 
 ```
 
-2. Retrieve the number of cluster created by hive per hub:
+## Add a new metric
 
-```
-sum by (hub_cluster_id) (
-   clc_clusterdeployment_created 
-) 
-```
-
-3. Retrieve the number of cluster created by hive vs imported in the hub:
-
-```
-sum(clc_managedcluster_info * on(hub_cluster_id) group_left(name) clc_clusterdeployment_created{}) by (hub_cluster_id)
-```
+1. Update the [pkg/options/collector.go](pkg/options/collector.go) `DefaultCollectors` varaible with your new metric name.
+2. Update the [pkg/collectors/builder.go](pkg/collectors/builder.go) `availableCollectors` variable with your new metric name and create similar methods than `buildManagedClusterInfoCollector`
+3. Clone the [pkg/collectors/managedclusterinfo.go](pkg/collectors/managedclusterinfo.go) to implement your metric and adapt it for your new metric.
+4. Create unit tests.
+5. Create functianal tests.
