@@ -10,7 +10,6 @@ import (
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/tools/cache"
-	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/kube-state-metrics/pkg/metric"
 
 	mciv1beta1 "github.com/open-cluster-management/multicloud-operators-foundation/pkg/apis/internal.open-cluster-management.io/v1beta1"
@@ -77,7 +76,11 @@ func getManagedClusterInfoMetricFamilies(hubClusterID string, client dynamic.Int
 					mci.Status.CloudVendor == "" ||
 					mci.Status.Version == "" {
 					klog.Infof("Not enough information available for %s", mci.GetName())
-					klog.Infof("Current info %v", mci.Status)
+					klog.Infof("\tClusterID=%s,KubeVendor=%s,CloudVendor=%s,Version=%s",
+						mci.Status.ClusterID,
+						mci.Status.KubeVendor,
+						mci.Status.CloudVendor,
+						mci.Status.Version)
 					return metric.Family{Metrics: []*metric.Metric{}}
 				}
 				labelsValues := []string{hubClusterID,
@@ -114,15 +117,6 @@ func wrapManagedClusterInfoFunc(f func(*unstructured.Unstructured) metric.Family
 
 		return metricFamily
 	}
-}
-
-func createManagedClusterInfoListWatch(apiserver string, kubeconfig string, ns string) cache.ListWatch {
-	config, err := clientcmd.BuildConfigFromFlags(apiserver, kubeconfig)
-	if err != nil {
-		klog.Fatalf("cannot create Dynamic client: %v", err)
-	}
-	client := dynamic.NewForConfigOrDie(config)
-	return createManagedClusterInfoListWatchWithClient(client, ns)
 }
 
 func createManagedClusterInfoListWatchWithClient(client dynamic.Interface, ns string) cache.ListWatch {

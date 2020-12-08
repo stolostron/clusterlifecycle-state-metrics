@@ -27,6 +27,9 @@ clc_managedcluster_info{hub_cluster_id="faddba46-201e-4d5d-bf52-9918517a9e6a",cl
 3. run `make deploy`
 4. Open Prometheus console and check for metrics "clc_managedcluster_info"
 
+The metrics should be accessible using url:
+`curl -H "Authorization: Bearer <Your_TOKEN>" -k "https://multicloud-console.apps.<your_domain>/clusterlifecycle-state-metrics/metrics"`
+
 ## promql examples:
 
 1. Retrieve the number of imported clusters per hub:

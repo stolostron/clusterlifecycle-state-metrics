@@ -37,6 +37,9 @@ func (testCase *generateMetricsTestCase) run() error {
 }
 
 func compareOutput(a, b string) error {
+	if a == "" && b == "" {
+		return nil
+	}
 	entities := []string{a, b}
 
 	// Align a and b
