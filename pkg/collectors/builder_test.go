@@ -13,7 +13,7 @@ import (
 	"k8s.io/client-go/dynamic/fake"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/kube-state-metrics/pkg/collector"
-	"k8s.io/kube-state-metrics/pkg/options"
+	koptions "k8s.io/kube-state-metrics/pkg/options"
 	"k8s.io/kube-state-metrics/pkg/whiteblacklist"
 )
 
@@ -25,7 +25,7 @@ func TestBuilder_WithApiserver(t *testing.T) {
 	type fields struct {
 		apiserver         string
 		kubeconfig        string
-		namespaces        options.NamespaceList
+		namespaces        koptions.NamespaceList
 		ctx               context.Context
 		enabledCollectors []string
 		whiteBlackList    whiteBlackLister
@@ -44,7 +44,7 @@ func TestBuilder_WithApiserver(t *testing.T) {
 			fields: fields{
 				apiserver:         "",
 				kubeconfig:        "",
-				namespaces:        options.NamespaceList{},
+				namespaces:        koptions.NamespaceList{},
 				ctx:               ctx,
 				enabledCollectors: []string{"col1", "col2"},
 				// whiteBlackList:    whiteBlackLister{func(s) { return false }, func(s) { return false }},
@@ -55,7 +55,7 @@ func TestBuilder_WithApiserver(t *testing.T) {
 			want: &Builder{
 				apiserver:         "apiserver",
 				kubeconfig:        "",
-				namespaces:        options.NamespaceList{},
+				namespaces:        koptions.NamespaceList{},
 				ctx:               ctx,
 				enabledCollectors: []string{"col1", "col2"},
 			},
@@ -82,7 +82,7 @@ func TestBuilder_WithKubeConfig(t *testing.T) {
 	type fields struct {
 		apiserver         string
 		kubeconfig        string
-		namespaces        options.NamespaceList
+		namespaces        koptions.NamespaceList
 		ctx               context.Context
 		enabledCollectors []string
 		whiteBlackList    whiteBlackLister
@@ -101,7 +101,7 @@ func TestBuilder_WithKubeConfig(t *testing.T) {
 			fields: fields{
 				apiserver:         "",
 				kubeconfig:        "",
-				namespaces:        options.NamespaceList{},
+				namespaces:        koptions.NamespaceList{},
 				ctx:               ctx,
 				enabledCollectors: []string{"col1", "col2"},
 				// whiteBlackList:    whiteBlackLister{func(s) { return false }, func(s) { return false }},
@@ -112,7 +112,7 @@ func TestBuilder_WithKubeConfig(t *testing.T) {
 			want: &Builder{
 				apiserver:         "",
 				kubeconfig:        "kubeconfig",
-				namespaces:        options.NamespaceList{},
+				namespaces:        koptions.NamespaceList{},
 				ctx:               ctx,
 				enabledCollectors: []string{"col1", "col2"},
 			},
@@ -139,7 +139,7 @@ func TestBuilder_WithEnabledCollectors(t *testing.T) {
 	type fields struct {
 		apiserver         string
 		kubeconfig        string
-		namespaces        options.NamespaceList
+		namespaces        koptions.NamespaceList
 		ctx               context.Context
 		enabledCollectors []string
 		whiteBlackList    whiteBlackLister
@@ -158,7 +158,7 @@ func TestBuilder_WithEnabledCollectors(t *testing.T) {
 			fields: fields{
 				apiserver:         "",
 				kubeconfig:        "",
-				namespaces:        options.NamespaceList{},
+				namespaces:        koptions.NamespaceList{},
 				ctx:               ctx,
 				enabledCollectors: []string{},
 				// whiteBlackList:    whiteBlackLister{func(s) { return false }, func(s) { return false }},
@@ -169,7 +169,7 @@ func TestBuilder_WithEnabledCollectors(t *testing.T) {
 			want: &Builder{
 				apiserver:         "",
 				kubeconfig:        "",
-				namespaces:        options.NamespaceList{},
+				namespaces:        koptions.NamespaceList{},
 				ctx:               ctx,
 				enabledCollectors: []string{"col1", "col2"},
 			},
@@ -196,13 +196,13 @@ func TestBuilder_WithNamespaces(t *testing.T) {
 	type fields struct {
 		apiserver         string
 		kubeconfig        string
-		namespaces        options.NamespaceList
+		namespaces        koptions.NamespaceList
 		ctx               context.Context
 		enabledCollectors []string
 		whiteBlackList    whiteBlackLister
 	}
 	type args struct {
-		n options.NamespaceList
+		n koptions.NamespaceList
 	}
 	tests := []struct {
 		name   string
@@ -215,7 +215,7 @@ func TestBuilder_WithNamespaces(t *testing.T) {
 			fields: fields{
 				apiserver:         "",
 				kubeconfig:        "",
-				namespaces:        options.NamespaceList{},
+				namespaces:        koptions.NamespaceList{},
 				ctx:               ctx,
 				enabledCollectors: []string{"col1", "col2"},
 				// whiteBlackList:    whiteBlackLister{func(s) { return false }, func(s) { return false }},
@@ -254,7 +254,7 @@ func TestBuilder_WithWhiteBlackList(t *testing.T) {
 	type fields struct {
 		apiserver         string
 		kubeconfig        string
-		namespaces        options.NamespaceList
+		namespaces        koptions.NamespaceList
 		ctx               context.Context
 		enabledCollectors []string
 		whiteBlackList    whiteBlackLister
@@ -273,7 +273,7 @@ func TestBuilder_WithWhiteBlackList(t *testing.T) {
 			fields: fields{
 				apiserver:         "",
 				kubeconfig:        "",
-				namespaces:        options.NamespaceList{},
+				namespaces:        koptions.NamespaceList{},
 				ctx:               ctx,
 				enabledCollectors: []string{"col1", "col2"},
 				whiteBlackList:    nil,
@@ -284,7 +284,7 @@ func TestBuilder_WithWhiteBlackList(t *testing.T) {
 			want: &Builder{
 				apiserver:         "",
 				kubeconfig:        "",
-				namespaces:        options.NamespaceList{},
+				namespaces:        koptions.NamespaceList{},
 				ctx:               ctx,
 				enabledCollectors: []string{"col1", "col2"},
 				whiteBlackList:    w,
@@ -345,7 +345,7 @@ func TestBuilder_buildManagedClusterCollectorWithClient(t *testing.T) {
 	type fields struct {
 		apiserver         string
 		kubeconfig        string
-		namespaces        options.NamespaceList
+		namespaces        koptions.NamespaceList
 		ctx               context.Context
 		enabledCollectors []string
 		whiteBlackList    whiteBlackLister
@@ -364,7 +364,7 @@ func TestBuilder_buildManagedClusterCollectorWithClient(t *testing.T) {
 			fields: fields{
 				apiserver:         "",
 				kubeconfig:        "",
-				namespaces:        options.NamespaceList{},
+				namespaces:        koptions.NamespaceList{},
 				ctx:               ctx,
 				enabledCollectors: []string{"managedclusterinfos"},
 				whiteBlackList:    w,

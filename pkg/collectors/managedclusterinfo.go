@@ -71,20 +71,24 @@ func getManagedClusterInfoMetricFamilies(hubClusterID string, client dynamic.Int
 				} else {
 					klog.Infof("Cluster Deployment: %v,", cd.Object)
 				}
-				if (mci.Status.ClusterID == "" && mci.Status.KubeVendor == mciv1beta1.KubeVendorOpenShift) ||
+				clusterID := mci.Status.ClusterID
+				if clusterID == "" && mci.Status.KubeVendor != mciv1beta1.KubeVendorOpenShift {
+					clusterID = mci.GetName()
+				}
+				if clusterID == "" ||
 					mci.Status.KubeVendor == "" ||
 					mci.Status.CloudVendor == "" ||
 					mci.Status.Version == "" {
 					klog.Infof("Not enough information available for %s", mci.GetName())
 					klog.Infof("\tClusterID=%s,KubeVendor=%s,CloudVendor=%s,Version=%s",
-						mci.Status.ClusterID,
+						clusterID,
 						mci.Status.KubeVendor,
 						mci.Status.CloudVendor,
 						mci.Status.Version)
 					return metric.Family{Metrics: []*metric.Metric{}}
 				}
 				labelsValues := []string{hubClusterID,
-					mci.Status.ClusterID,
+					clusterID,
 					string(mci.Status.KubeVendor),
 					string(mci.Status.CloudVendor),
 					mci.Status.Version,

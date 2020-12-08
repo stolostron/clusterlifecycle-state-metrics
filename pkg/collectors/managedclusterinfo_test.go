@@ -36,6 +36,23 @@ func Test_getManagedClusterMetricFamilies(t *testing.T) {
 		t.Error(err)
 	}
 
+	mcOther := &mciv1beta1.ManagedClusterInfo{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "cluster-other",
+			Namespace: "cluster-other",
+		},
+		Status: mciv1beta1.ClusterInfoStatus{
+			KubeVendor:  mciv1beta1.KubeVendorOther,
+			CloudVendor: mciv1beta1.CloudVendorAWS,
+			Version:     "v1.16.2",
+		},
+	}
+	mcUOther := &unstructured.Unstructured{}
+	err = scheme.Scheme.Convert(mcOther, mcUOther, nil)
+	if err != nil {
+		t.Error(err)
+	}
+
 	mcMissingInfo := &mciv1beta1.ManagedClusterInfo{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "hive-cluster-2",
@@ -64,7 +81,7 @@ func Test_getManagedClusterMetricFamilies(t *testing.T) {
 		},
 	}
 
-	client := fake.NewSimpleDynamicClient(s, mcU, mcMissingInfo)
+	client := fake.NewSimpleDynamicClient(s, mcU, mcUMissingInfo, mcUOther)
 	clientHive := fake.NewSimpleDynamicClient(s, mcU, cdU)
 	tests := []generateMetricsTestCase{
 		{
@@ -78,6 +95,13 @@ func Test_getManagedClusterMetricFamilies(t *testing.T) {
 			Obj:         mcUMissingInfo,
 			MetricNames: []string{"clc_managedcluster_info"},
 			Want:        "",
+		},
+		{
+			Obj:         mcUOther,
+			MetricNames: []string{"clc_managedcluster_info"},
+			Want: `
+			clc_managedcluster_info{cloud="Amazon",cluster_id="cluster-other",created_via="Other",hub_cluster_id="mycluster_id",vendor="Other",version="v1.16.2"} 1
+				`,
 		},
 	}
 	for i, c := range tests {
