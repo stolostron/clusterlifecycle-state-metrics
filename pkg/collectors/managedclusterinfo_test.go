@@ -28,6 +28,12 @@ func Test_getManagedClusterMetricFamilies(t *testing.T) {
 			CloudVendor: mciv1beta1.CloudVendorAWS,
 			Version:     "v1.16.2",
 			ClusterID:   "managed_cluster_id",
+			DistributionInfo: mciv1beta1.DistributionInfo{
+				Type: mciv1beta1.DistributionTypeOCP,
+				OCP: mciv1beta1.OCPDistributionInfo{
+					Version: "4.3.1",
+				},
+			},
 		},
 	}
 	mcU := &unstructured.Unstructured{}
@@ -88,7 +94,7 @@ func Test_getManagedClusterMetricFamilies(t *testing.T) {
 			Obj:         mcU,
 			MetricNames: []string{"clc_managedcluster_info"},
 			Want: `
-			clc_managedcluster_info{cloud="Amazon",cluster_id="managed_cluster_id",created_via="Other",hub_cluster_id="mycluster_id",vendor="OpenShift",version="v1.16.2"} 1
+			clc_managedcluster_info{cloud="Amazon",cluster_id="managed_cluster_id",created_via="Other",hub_cluster_id="mycluster_id",vendor="OpenShift",version="4.3.1"} 1
 				`,
 		},
 		{
@@ -107,7 +113,7 @@ func Test_getManagedClusterMetricFamilies(t *testing.T) {
 	for i, c := range tests {
 		c.Func = metric.ComposeMetricGenFuncs(getManagedClusterInfoMetricFamilies("mycluster_id", client))
 		if err := c.run(); err != nil {
-			t.Errorf("unexpected collecting result in %vth run:\n%s", i, err)
+			t.Errorf("unexpected collecting result in %v run:\n%s", i, err)
 		}
 	}
 	tests = []generateMetricsTestCase{
@@ -115,7 +121,7 @@ func Test_getManagedClusterMetricFamilies(t *testing.T) {
 			Obj:         mcU,
 			MetricNames: []string{"clc_managedcluster_info"},
 			Want: `
-			clc_managedcluster_info{cloud="Amazon",cluster_id="managed_cluster_id",created_via="Hive",hub_cluster_id="mycluster_id",vendor="OpenShift",version="v1.16.2"} 1
+			clc_managedcluster_info{cloud="Amazon",cluster_id="managed_cluster_id",created_via="Hive",hub_cluster_id="mycluster_id",vendor="OpenShift",version="4.3.1"} 1
 				`,
 		},
 	}

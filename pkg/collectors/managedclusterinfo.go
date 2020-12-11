@@ -75,10 +75,14 @@ func getManagedClusterInfoMetricFamilies(hubClusterID string, client dynamic.Int
 				if clusterID == "" && mci.Status.KubeVendor != mciv1beta1.KubeVendorOpenShift {
 					clusterID = mci.GetName()
 				}
+				version := mci.Status.Version
+				if mci.Status.KubeVendor == mciv1beta1.KubeVendorOpenShift {
+					version = distributionInfo(mci, mciv1beta1.DistributionTypeOCP)
+				}
 				if clusterID == "" ||
 					mci.Status.KubeVendor == "" ||
 					mci.Status.CloudVendor == "" ||
-					mci.Status.Version == "" {
+					version == "" {
 					klog.Infof("Not enough information available for %s", mci.GetName())
 					klog.Infof("\tClusterID=%s,KubeVendor=%s,CloudVendor=%s,Version=%s",
 						clusterID,
@@ -91,7 +95,7 @@ func getManagedClusterInfoMetricFamilies(hubClusterID string, client dynamic.Int
 					clusterID,
 					string(mci.Status.KubeVendor),
 					string(mci.Status.CloudVendor),
-					mci.Status.Version,
+					version,
 					createdVia}
 
 				f := metric.Family{Metrics: []*metric.Metric{
@@ -105,6 +109,18 @@ func getManagedClusterInfoMetricFamilies(hubClusterID string, client dynamic.Int
 				return f
 			}),
 		},
+	}
+}
+
+func distributionInfo(mci *mciv1beta1.ManagedClusterInfo, distributionType mciv1beta1.DistributionType) string {
+	if mci.Status.DistributionInfo.Type != distributionType {
+		return ""
+	}
+	switch mci.Status.DistributionInfo.Type {
+	case mciv1beta1.DistributionTypeOCP:
+		return mci.Status.DistributionInfo.OCP.Version
+	default:
+		return ""
 	}
 }
 

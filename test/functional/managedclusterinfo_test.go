@@ -23,12 +23,12 @@ const (
 `
 	managedClusterResponse = `# HELP clc_managedcluster_info Managed cluster information
 # TYPE clc_managedcluster_info gauge
-clc_managedcluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",cluster_id="import_cluster_id",vendor="OpenShift",cloud="Amazon",version="v1.16.2",created_via="Other"} 1
-clc_managedcluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",cluster_id="local_cluster_id",vendor="OpenShift",cloud="Amazon",version="v1.16.2",created_via="Other"} 1
+clc_managedcluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",cluster_id="import_cluster_id",vendor="OpenShift",cloud="Amazon",version="4.3.1",created_via="Other"} 1
+clc_managedcluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",cluster_id="local_cluster_id",vendor="OpenShift",cloud="Amazon",version="4.3.1",created_via="Other"} 1
 `
 	managedClusterHiveResponse = `# HELP clc_managedcluster_info Managed cluster information
 # TYPE clc_managedcluster_info gauge
-clc_managedcluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",cluster_id="hive_cluster_id",vendor="OpenShift",cloud="Amazon",version="v1.16.2",created_via="Hive"} 1
+clc_managedcluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",cluster_id="hive_cluster_id",vendor="OpenShift",cloud="Amazon",version="4.3.1",created_via="Hive"} 1
 `
 )
 
@@ -62,6 +62,12 @@ var _ = Describe("Metrics", func() {
 				CloudVendor: mciv1beta1.CloudVendorAWS,
 				Version:     "v1.16.2",
 				ClusterID:   "local_cluster_id",
+				DistributionInfo: mciv1beta1.DistributionInfo{
+					Type: mciv1beta1.DistributionTypeOCP,
+					OCP: mciv1beta1.OCPDistributionInfo{
+						Version: "4.3.1",
+					},
+				},
 			})).Should(BeNil())
 		})
 		By("Updating status cluster-import", func() {
@@ -70,6 +76,12 @@ var _ = Describe("Metrics", func() {
 				CloudVendor: mciv1beta1.CloudVendorAWS,
 				Version:     "v1.16.2",
 				ClusterID:   "import_cluster_id",
+				DistributionInfo: mciv1beta1.DistributionInfo{
+					Type: mciv1beta1.DistributionTypeOCP,
+					OCP: mciv1beta1.OCPDistributionInfo{
+						Version: "4.3.1",
+					},
+				},
 			})).Should(BeNil())
 		})
 		// Skip("Skip have to fix")
@@ -91,6 +103,12 @@ var _ = Describe("Metrics", func() {
 				CloudVendor: mciv1beta1.CloudVendorAWS,
 				Version:     "v1.16.2",
 				ClusterID:   "hive_cluster_id",
+				DistributionInfo: mciv1beta1.DistributionInfo{
+					Type: mciv1beta1.DistributionTypeOCP,
+					OCP: mciv1beta1.OCPDistributionInfo{
+						Version: "4.3.1",
+					},
+				},
 			})).Should(BeNil())
 		})
 		By("Getting metrics", func() {
