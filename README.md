@@ -24,6 +24,8 @@ clc_managedcluster_info{hub_cluster_id="faddba46-201e-4d5d-bf52-9918517a9e6a",cl
 
 This method is for test only as it deploys some parameters are hard-coded such as the `openshift-monitoring` and `open-cluster-management` namespaces. You can use the rcm-chart to have more control.
 
+It also creates an ingress which allows to retrieve the infomration from outside of the cluster.
+
 1. `oc login` your hub RHACM cluster.
 2. Set the image you want to deploy in [deployment.yaml](overlays/deploy/deployment.yaml)
 3. run `make deploy`
