@@ -18,8 +18,10 @@ spec:
       - name: clusterlifecycle-state-metrics
         imagePullPolicy: IfNotPresent
         args:
-          - "--port=8443"
-          - "--telemetry-port=8444"
+          - "--http-port=8080"
+          - "--http-telemetry-port=8081"
+          - "--https-port=8443"
+          - "--https-telemetry-port=8444"
           - "--tls-crt-file=/var/run/clusterlifecycle-state-metrics/tls.crt"
           - "--tls-key-file=/var/run/clusterlifecycle-state-metrics/tls.key"
         volumeMounts:

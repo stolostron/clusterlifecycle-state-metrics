@@ -12,20 +12,22 @@ import (
 )
 
 type Options struct {
-	Apiserver       string
-	Kubeconfig      string
-	Help            bool
-	Port            int
-	Host            string
-	TelemetryPort   int
-	TelemetryHost   string
-	TLSCrtFile      string
-	TLSKeyFile      string
-	Collectors      koptions.CollectorSet
-	Namespaces      koptions.NamespaceList
-	MetricBlacklist koptions.MetricSet
-	MetricWhitelist koptions.MetricSet
-	Version         bool
+	Apiserver          string
+	Kubeconfig         string
+	Help               bool
+	HTTPPort           int
+	HTTPSPort          int
+	Host               string
+	HTTPTelemetryPort  int
+	HTTPSTelemetryPort int
+	TelemetryHost      string
+	TLSCrtFile         string
+	TLSKeyFile         string
+	Collectors         koptions.CollectorSet
+	Namespaces         koptions.NamespaceList
+	MetricBlacklist    koptions.MetricSet
+	MetricWhitelist    koptions.MetricSet
+	Version            bool
 
 	EnableGZIPEncoding bool
 
@@ -60,9 +62,11 @@ func (o *Options) AddFlags() {
 	o.flags.StringVar(&o.Apiserver, "apiserver", "", `The URL of the apiserver to use as a master`)
 	o.flags.StringVar(&o.Kubeconfig, "kubeconfig", "", "Absolute path to the kubeconfig file")
 	o.flags.BoolVarP(&o.Help, "help", "h", false, "Print Help text")
-	o.flags.IntVar(&o.Port, "port", 8080, `Port to expose metrics on.`)
+	o.flags.IntVar(&o.HTTPPort, "http-port", 8080, `http Port to expose metrics on.`)
+	o.flags.IntVar(&o.HTTPSPort, "https-port", 8443, `https Port to expose metrics on.`)
 	o.flags.StringVar(&o.Host, "host", "0.0.0.0", `Host to expose metrics on.`)
-	o.flags.IntVar(&o.TelemetryPort, "telemetry-port", 8081, `Port to expose openshift-state-metrics self metrics on.`)
+	o.flags.IntVar(&o.HTTPTelemetryPort, "http-telemetry-port", 8081, `http Port to expose openshift-state-metrics self metrics on.`)
+	o.flags.IntVar(&o.HTTPSTelemetryPort, "https-telemetry-port", 8444, `https Port to expose openshift-state-metrics self metrics on.`)
 	o.flags.StringVar(&o.TelemetryHost, "telemetry-host", "0.0.0.0", `Host to expose openshift-state-metrics self metrics on.`)
 	o.flags.StringVar(&o.TLSCrtFile, "tls-crt-file", "", `TLS certificate file path.`)
 	o.flags.StringVar(&o.TLSKeyFile, "tls-key-file", "", `TLS key file path.`)

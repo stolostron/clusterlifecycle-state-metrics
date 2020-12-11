@@ -102,24 +102,21 @@ func main() {
 	if err := ocmMetricsRegistry.Register(prometheus.NewGoCollector()); err != nil {
 		panic(err)
 	}
-	go telemetryServer(ocmMetricsRegistry, opts.TelemetryHost, opts.TelemetryPort, opts.TLSCrtFile, opts.TLSKeyFile)
+	go telemetryServer(ocmMetricsRegistry, opts.TelemetryHost, opts.HTTPTelemetryPort, opts.HTTPSTelemetryPort, opts.TLSCrtFile, opts.TLSKeyFile)
 
 	collectors := collectorBuilder.Build()
 
-	serveMetrics(collectors, opts.Host, opts.Port, opts.TLSCrtFile, opts.TLSKeyFile, opts.EnableGZIPEncoding)
+	serveMetrics(collectors, opts.Host, opts.HTTPPort, opts.HTTPSPort, opts.TLSCrtFile, opts.TLSKeyFile, opts.EnableGZIPEncoding)
 }
 
 func telemetryServer(
 	registry prometheus.Gatherer,
 	host string,
-	port int,
+	httpPort int,
+	httpsPort int,
 	tlsCrtFile string,
 	tlsKeyFile string,
 ) {
-	// Address to listen on for web interface and telemetry
-	listenAddress := net.JoinHostPort(host, strconv.Itoa(port))
-
-	klog.Infof("Starting clusterlifecycle-state-metrics self metrics server: %s", listenAddress)
 
 	mux := http.NewServeMux()
 
@@ -139,25 +136,30 @@ func telemetryServer(
 			panic(err)
 		}
 	})
-	if tlsCrtFile == "" || tlsKeyFile == "" {
-		klog.Infof("Listening http: %s", listenAddress)
-		log.Fatal(http.ListenAndServe(listenAddress, mux))
-	} else {
+	if tlsCrtFile != "" && tlsKeyFile != "" {
+		// Address to listen on for web interface and telemetry
+		listenAddress := net.JoinHostPort(host, strconv.Itoa(httpsPort))
+
+		klog.Infof("Starting clusterlifecycle-state-metrics self metrics server: %s", listenAddress)
 		klog.Infof("Listening https: %s", listenAddress)
 		log.Fatal(http.ListenAndServeTLS(listenAddress, tlsCrtFile, tlsKeyFile, mux))
 	}
+	// Address to listen on for web interface and telemetry
+	listenAddress := net.JoinHostPort(host, strconv.Itoa(httpsPort))
+
+	klog.Infof("Starting clusterlifecycle-state-metrics self metrics server: %s", listenAddress)
+
+	klog.Infof("Listening http: %s", listenAddress)
+	log.Fatal(http.ListenAndServe(listenAddress, mux))
 }
 
 func serveMetrics(collectors []*kcollectors.Collector,
 	host string,
-	port int,
+	httpPort int,
+	httpsPort int,
 	tlsCrtFile string,
 	tlsKeyFile string,
 	enableGZIPEncoding bool) {
-	// Address to listen on for web interface and telemetry
-	listenAddress := net.JoinHostPort(host, strconv.Itoa(port))
-
-	klog.Infof("Starting metrics server: %s", listenAddress)
 
 	mux := http.NewServeMux()
 
@@ -192,9 +194,18 @@ func serveMetrics(collectors []*kcollectors.Collector,
 		}
 	})
 	if tlsCrtFile != "" && tlsKeyFile != "" {
+		// Address to listen on for web interface and telemetry
+		listenAddress := net.JoinHostPort(host, strconv.Itoa(httpsPort))
+
+		klog.Infof("Starting metrics server: %s", listenAddress)
 		klog.Infof("Listening https: %s", listenAddress)
 		go func() { log.Fatal(http.ListenAndServeTLS(listenAddress, tlsCrtFile, tlsKeyFile, mux)) }()
 	}
+	// Address to listen on for web interface and telemetry
+	listenAddress := net.JoinHostPort(host, strconv.Itoa(httpPort))
+
+	klog.Infof("Starting metrics server: %s", listenAddress)
+
 	klog.Infof("Listening http: %s", listenAddress)
 	log.Fatal(http.ListenAndServe(listenAddress, mux))
 }

@@ -109,7 +109,7 @@ clean::
 .PHONY: run
 ## Run the operator against the kubeconfig targeted cluster
 run:
-	go run cmd/clusterlifecycle-state-metrics/main.go --port=8080 --telemetry-port=8081 --kubeconfig=${KUBECONFIG} -v=4; \
+	go run cmd/clusterlifecycle-state-metrics/main.go --http-port=8080 --http-telemetry-port=8081 --kubeconfig=${KUBECONFIG} -v=4; \
 
 .PHONY: run-coverage
 ## Run the operator against the kubeconfig targeted cluster
