@@ -191,13 +191,12 @@ func serveMetrics(collectors []*kcollectors.Collector,
 			panic(err)
 		}
 	})
-	if tlsCrtFile == "" || tlsKeyFile == "" {
-		klog.Infof("Listening http: %s", listenAddress)
-		log.Fatal(http.ListenAndServe(listenAddress, mux))
-	} else {
+	if tlsCrtFile != "" && tlsKeyFile != "" {
 		klog.Infof("Listening https: %s", listenAddress)
-		log.Fatal(http.ListenAndServeTLS(listenAddress, tlsCrtFile, tlsKeyFile, mux))
+		go func() { log.Fatal(http.ListenAndServeTLS(listenAddress, tlsCrtFile, tlsKeyFile, mux)) }()
 	}
+	klog.Infof("Listening http: %s", listenAddress)
+	log.Fatal(http.ListenAndServe(listenAddress, mux))
 }
 
 type metricHandler struct {

@@ -22,13 +22,14 @@ clc_managedcluster_info{hub_cluster_id="faddba46-201e-4d5d-bf52-9918517a9e6a",cl
 
 ## Deploy on RHACM
 
+This method is for test only as it deploys some parameters are hard-coded such as the `openshift-monitoring` and `open-cluster-management` namespaces. You can use the rcm-chart to have more control.
+
 1. `oc login` your hub RHACM cluster.
 2. Set the image you want to deploy in [deployment.yaml](overlays/deploy/deployment.yaml)
 3. run `make deploy`
 4. Open Prometheus console and check for metrics "clc_managedcluster_info"
 
-The metrics should be accessible using url:
-`curl -H "Authorization: Bearer <Your_TOKEN>" -k "https://multicloud-console.apps.<your_domain>/clusterlifecycle-state-metrics/metrics"`
+The metrics then will appear on prometheus.
 
 ## promql examples:
 

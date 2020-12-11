@@ -29,6 +29,8 @@ export COMPONENT_VERSION ?= $(shell cat ./COMPONENT_VERSION 2> /dev/null)
 export SECURITYSCANS_IMAGE_NAME ?= $(shell cat ./COMPONENT_NAME 2> /dev/null)
 export SECURITYSCANS_IMAGE_VERSION ?= $(shell cat ./COMPONENT_VERSION 2> /dev/null)
 
+export RELEASE_MAIN_BRANCH ?= main
+
 ## WARNING: OPERATOR-SDK - IMAGE_DESCRIPTION & DOCKER_BUILD_OPTS MUST NOT CONTAIN ANY SPACES
 export IMAGE_DESCRIPTION ?= RCM_Controller
 export DOCKER_FILE        = $(BUILD_DIR)/Dockerfile
@@ -91,10 +93,6 @@ build: component/build
 .PHONY: build-coverage
 build-coverage:
 	$(SELF) component/build-coverage
-
-.PHONY: build-e2e
-build-e2e:
-	$(SELF) component/build-e2e
 
 .PHONY: copyright-check
 copyright-check:
