@@ -142,7 +142,7 @@ func telemetryServer(
 
 		klog.Infof("Starting clusterlifecycle-state-metrics self metrics server: %s", listenAddress)
 		klog.Infof("Listening https: %s", listenAddress)
-		log.Fatal(http.ListenAndServeTLS(listenAddress, tlsCrtFile, tlsKeyFile, mux))
+		go func() { log.Fatal(http.ListenAndServeTLS(listenAddress, tlsCrtFile, tlsKeyFile, mux)) }()
 	}
 	// Address to listen on for web interface and telemetry
 	listenAddress := net.JoinHostPort(host, strconv.Itoa(httpPort))
