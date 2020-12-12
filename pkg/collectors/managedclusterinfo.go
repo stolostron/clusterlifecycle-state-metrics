@@ -75,10 +75,7 @@ func getManagedClusterInfoMetricFamilies(hubClusterID string, client dynamic.Int
 				if clusterID == "" && mci.Status.KubeVendor != mciv1beta1.KubeVendorOpenShift {
 					clusterID = mci.GetName()
 				}
-				version := mci.Status.Version
-				if mci.Status.KubeVendor == mciv1beta1.KubeVendorOpenShift {
-					version = distributionInfo(mci, mciv1beta1.DistributionTypeOCP)
-				}
+				version := getVersion(mci)
 				if clusterID == "" ||
 					mci.Status.KubeVendor == "" ||
 					mci.Status.CloudVendor == "" ||
@@ -112,16 +109,17 @@ func getManagedClusterInfoMetricFamilies(hubClusterID string, client dynamic.Int
 	}
 }
 
-func distributionInfo(mci *mciv1beta1.ManagedClusterInfo, distributionType mciv1beta1.DistributionType) string {
-	if mci.Status.DistributionInfo.Type != distributionType {
+func getVersion(mci *mciv1beta1.ManagedClusterInfo) string {
+	if mci.Status.KubeVendor == "" {
 		return ""
 	}
-	switch mci.Status.DistributionInfo.Type {
-	case mciv1beta1.DistributionTypeOCP:
+	switch mci.Status.KubeVendor {
+	case mciv1beta1.KubeVendorOpenShift:
 		return mci.Status.DistributionInfo.OCP.Version
 	default:
-		return ""
+		return mci.Status.Version
 	}
+
 }
 
 func wrapManagedClusterInfoFunc(f func(*unstructured.Unstructured) metric.Family) func(interface{}) metric.Family {
