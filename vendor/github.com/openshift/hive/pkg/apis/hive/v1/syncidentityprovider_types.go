@@ -47,7 +47,6 @@ type IdentityProviderStatus struct {
 
 // SelectorSyncIdentityProvider is the Schema for the SelectorSyncSet API
 // +k8s:openapi-gen=true
-// +kubebuilder:resource:scope=Cluster
 type SelectorSyncIdentityProvider struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -61,7 +60,6 @@ type SelectorSyncIdentityProvider struct {
 
 // SyncIdentityProvider is the Schema for the SyncIdentityProvider API
 // +k8s:openapi-gen=true
-// +kubebuilder:resource:scope=Namespaced
 type SyncIdentityProvider struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

@@ -1,6 +1,0 @@
-bases:
-- ../../../deploy
-
-patchesStrategicMerge:
-- deployment.yaml
-- service.yaml

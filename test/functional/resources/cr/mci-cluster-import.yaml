@@ -1,5 +1,0 @@
-apiVersion: internal.open-cluster-management.io/v1beta1
-kind: ManagedClusterInfo
-metadata:
-  name: cluster-import
-  namespace: cluster-import

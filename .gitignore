@@ -4,17 +4,7 @@
 *.dll
 *.so
 *.dylib
-clusterlifecycle-state-metrics
-!cmd/clusterlifecycle-state-metrics
-clusterlifecycle-state-metrics-coverage
-.build-harness-bootstrap
-test/unit/coverage
-test/out
-test/functional/tmp
-test/functional/coverage
-test/e2e/resources/clusters
-test/e2e/resources/hub/kube
-kind_kubeconfig.yaml
+ocm-state-metrics
 
 # Test binary, built with `go test -c`
 *.test
@@ -24,5 +14,3 @@ kind_kubeconfig.yaml
 
 # Dependency directories (remove the comment below to include it)
 # vendor/
-build-harness
-build-harness-extensions
