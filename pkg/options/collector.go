@@ -8,13 +8,12 @@ import (
 func init() {
 	//TODO this is because the CollectorSet struct is validate the collectors from the commandline using
 	//"DefaultCollectors". https://github.com/kubernetes/kube-state-metrics/blob/master/pkg/options/types.go#L80
-	koptions.DefaultCollectors["managedclusters"] = struct{}{}
+	koptions.DefaultCollectors["managedclusterinfos"] = struct{}{}
 }
 
 var (
 	DefaultNamespaces = koptions.NamespaceList{metav1.NamespaceAll}
 	DefaultCollectors = koptions.CollectorSet{
-		"managedclusters":    struct{}{},
-		"clusterdeployments": struct{}{},
+		"managedclusterinfos": struct{}{},
 	}
 )

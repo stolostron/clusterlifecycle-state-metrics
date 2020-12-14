@@ -1,0 +1,5 @@
+apiVersion: hive.openshift.io/v1
+kind: ClusterDeployment
+metadata:
+  name: cluster-hive
+  namespace: cluster-hive

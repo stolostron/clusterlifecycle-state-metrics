@@ -1,0 +1,27 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: open-cluster-management:clusterlifecycle-state-metrics
+rules:
+# Allow hub to monitor and update status of csr
+- apiGroups: ["hive.openshift.io"]
+  resources: ["clusterdeployments"]
+  verbs: ["get"]
+- apiGroups: ["internal.open-cluster-management.io"]
+  resources: ["managedclusterinfos"]
+  verbs: ["list","watch"]
+# Allow to query the CVO on the Hub Cluster to get the ClusterId
+- apiGroups: ["config.openshift.io"]
+  resources: ["clusterversions"]
+  verbs: ["get"]  
+- apiGroups: ["authentication.k8s.io"]
+  resources: ["tokenreviews"]
+  verbs: ["create"]
+- apiGroups: [""]
+  resources: ["pods","services","endpoints"]
+  verbs: ["get","list","watch"]
+- apiGroups: ["authorization.k8s.io"]
+  resources: ["subjectaccessreviews"]
+  verbs: ["create"]
+- nonResourceURLs: ["/metrics"]
+  verbs: ["get"]

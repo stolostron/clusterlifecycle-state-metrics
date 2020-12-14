@@ -1,0 +1,17 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  labels:
+    app: clusterlifecycle-state-metrics
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+  name: clusterlifecycle-state-metrics
+  namespace: open-cluster-management
+spec:
+  rules:
+  - http:
+      paths:
+      - backend:
+          serviceName: clusterlifecycle-state-metrics
+          servicePort: 8080
+        path: /clusterlifecycle-state-metrics(/|$)(.*)

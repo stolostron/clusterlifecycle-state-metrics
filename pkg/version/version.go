@@ -26,7 +26,7 @@ type Version struct {
 }
 
 func (v Version) String() string {
-	return fmt.Sprintf("%s/%s (%s/%s) openshift-state-metrics/%s",
+	return fmt.Sprintf("%s/%s (%s/%s) clusterlifecycle-state-metrics/%s",
 		filepath.Base(os.Args[0]), v.Release,
 		runtime.GOOS, runtime.GOARCH, v.GitCommit)
 }
