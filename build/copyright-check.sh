@@ -1,20 +1,21 @@
 #!/bin/bash
 ###############################################################################
-# Copyright (c) 2020 Red Hat, Inc.
+# Copyright (c) 2021 Red Hat, Inc.
 ###############################################################################
 
 #Project start year
-origin_year=2016
+origin_year=2020
 #Back up year if system time is null or incorrect
-back_up_year=2019
+back_up_year=2021
 #Currrent year
 current_year=$(date +"%Y")
 
 TRAVIS_BRANCH=$1
 
-ADDED_SINCE_1_MAR_2020=$(git log --name-status --pretty=oneline --since "1 Mar 2020" | egrep "^A\t" | awk '{print $2}' | sort | uniq |  grep -v -f <(sed 's/\([.|]\)/\\\1/g; s/\?/./g ; s/\*/.*/g' .copyrightignore))
-MODIFIED_SINCE_1_MAR_2020=$(diff --new-line-format="" --unchanged-line-format="" <(git log --name-status --pretty=oneline --since "1 Mar 2020" | egrep "^A\t|^M\t" | awk '{print $2}' | sort | uniq | grep -v -f <(sed 's/\([.|]\)/\\\1/g; s/\?/./g ; s/\*/.*/g' .copyrightignore)) <(git log --name-status --pretty=oneline --since "1 Mar 2020" | egrep "^A\t" | awk '{print $2}' | sort | uniq | grep -v -f <(sed 's/\([.|]\)/\\\1/g; s/\?/./g ; s/\*/.*/g' .copyrightignore)))
-OLDER_GIT_FILES=$(git log --name-status --pretty=oneline | egrep "^A\t|^M\t" | awk '{print $2}' | sort | uniq |  grep -v -f <(sed 's/\([.|]\)/\\\1/g; s/\?/./g ; s/\*/.*/g' .copyrightignore))
+# removed these lines as this project was created after 1-MAR-2020
+# ADDED_SINCE_1_MAR_2020=$(git log --name-status --pretty=oneline --since "1 Mar 2020" | egrep "^A\t" | awk '{print $2}' | sort | uniq |  grep -v -f <(sed 's/\([.|]\)/\\\1/g; s/\?/./g ; s/\*/.*/g' .copyrightignore))
+# MODIFIED_SINCE_1_MAR_2020=$(diff --new-line-format="" --unchanged-line-format="" <(git log --name-status --pretty=oneline --since "1 Mar 2020" | egrep "^A\t|^M\t" | awk '{print $2}' | sort | uniq | grep -v -f <(sed 's/\([.|]\)/\\\1/g; s/\?/./g ; s/\*/.*/g' .copyrightignore)) <(git log --name-status --pretty=oneline --since "1 Mar 2020" | egrep "^A\t" | awk '{print $2}' | sort | uniq | grep -v -f <(sed 's/\([.|]\)/\\\1/g; s/\?/./g ; s/\*/.*/g' .copyrightignore)))
+# OLDER_GIT_FILES=$(git log --name-status --pretty=oneline | egrep "^A\t|^M\t" | awk '{print $2}' | sort | uniq |  grep -v -f <(sed 's/\([.|]\)/\\\1/g; s/\?/./g ; s/\*/.*/g' .copyrightignore))
 
 if [[ "x${TRAVIS_BRANCH}" != "x" ]]; then
   FILES_TO_SCAN=$(git diff --name-only --diff-filter=AM ${TRAVIS_BRANCH}...HEAD | grep -v -f <(sed 's/\([.|]\)/\\\1/g; s/\?/./g ; s/\*/.*/g' .copyrightignore))
@@ -91,7 +92,7 @@ for f in $FILES_TO_SCAN; do
   if [[ "${ADDED_SINCE_1_MAR_2020}" == *"$f"* ]]; then
     printf " ---> Added since 01/03/2020\n"
     must_have_redhat_license=true
-    flag_ibm_license=true
+    flag_ibm_license=false
   elif [[ "${MODIFIED_SINCE_1_MAR_2020}" == *"$f"* ]]; then
     printf " ---> Modified since 01/03/2020\n"
     must_have_redhat_license=true

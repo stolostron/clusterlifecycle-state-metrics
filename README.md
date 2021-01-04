@@ -74,3 +74,12 @@ sum by (hub_cluster_id, version) (
 3. Clone the [pkg/collectors/managedclusterinfo.go](pkg/collectors/managedclusterinfo.go) to implement your metric and adapt it for your new metric.
 4. Create unit tests.
 5. Create functianal tests.
+
+## Create a new project metrics
+
+1. Clone this project
+2. Update the [pkg/options/collector.go](pkg/options/collector.go) `DefaultCollectors` varaible with your new metric name.
+3. Update the [pkg/collectors/builder.go](pkg/collectors/builder.go) `availableCollectors` variable with your new metric name and rename methods `buildManagedClusterInfoCollector*`. If you have multiple metrics then creates similar methods and update the `availableCollectors`.
+4. Modify/rename the [pkg/collectors/managedclusterinfo.go](pkg/collectors/managedclusterinfo.go) to implement your metric and adapt it for your new metric. The method `getManagedClusterInfoMetricFamilies` and implement your own business logic.
+5. Create unit tests.
+6. Create functianal tests.
