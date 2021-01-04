@@ -6,4 +6,4 @@
 # directories to ingore
 build-harness/*
 build-harness-extensions/*
-
+vendor/*

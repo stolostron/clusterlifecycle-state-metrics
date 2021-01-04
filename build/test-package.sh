@@ -1,6 +1,6 @@
 #!/bin/bash -e
 ###############################################################################
-# Copyright (c) 2020 Red Hat, Inc.
+# Copyright (c) 2021 Red Hat, Inc.
 ###############################################################################
 
 # NOTE: This script should not be called directly. Please run `make test`.

@@ -1,3 +1,5 @@
+// Copyright (c) 2021 Red Hat, Inc.
+
 package collectors
 
 import (
@@ -15,4 +17,3 @@ func createManagedClusterInfoListWatch(apiserver string, kubeconfig string, ns s
 	client := dynamic.NewForConfigOrDie(config)
 	return createManagedClusterInfoListWatchWithClient(client, ns)
 }
-
