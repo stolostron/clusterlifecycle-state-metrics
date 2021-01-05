@@ -29,13 +29,14 @@ ARG BUILD_HARNESS_EXTENSIONS_PROJECT
 
 ENV OPERATOR=/usr/local/bin/clusterlifecycle-state-metrics \
     USER_UID=1001 \
-    USER_NAME=clusterlifecycle-state-metrics
+    USER_NAME=clusterlifecycle-state-metrics \
+    BUILD_HARNESS_EXTENSIONS_PROJECT=${BUILD_HARNESS_EXTENSIONS_PROJECT}
 
 # install operator binary
 COPY --from=builder $REMOTE_SOURCE_DIR/app/clusterlifecycle-state-metrics ${OPERATOR}
 COPY --from=builder $REMOTE_SOURCE_DIR/app/clusterlifecycle-state-metrics-coverage ${OPERATOR}-coverage
 COPY --from=builder \
-    $REMOTE_SOURCE_DIR/app/$BUILD_HARNESS_EXTENSIONS_PROJECT/modules/component/bin/component/coverage-entrypoint-func.sh \
+    $REMOTE_SOURCE_DIR/app/${BUILD_HARNESS_EXTENSIONS_PROJECT}/modules/component/bin/component/coverage-entrypoint-func.sh \
     /usr/local/bin/coverage-entrypoint-func.sh
 COPY --from=builder $REMOTE_SOURCE_DIR/app/build/bin /usr/local/bin
 # COPY --from=builder $REMOTE_SOURCE_DIR/app/build/resources /usr/local/resources
