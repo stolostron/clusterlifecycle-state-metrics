@@ -24,7 +24,7 @@ const (
 )
 
 var (
-	descClusterInfoName          = "clc_managedcluster_info"
+	descClusterInfoName          = "acm_managedcluster_info"
 	descClusterInfoHelp          = "Managed cluster information"
 	descClusterInfoDefaultLabels = []string{"hub_cluster_id",
 		"cluster_id",
