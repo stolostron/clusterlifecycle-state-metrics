@@ -1,21 +1,35 @@
 #!/bin/bash
 ###############################################################################
-# Copyright (c) 2021 Red Hat, Inc.
+# Copyright (c) 2020 Red Hat, Inc.
 ###############################################################################
+
+# Modifications to managed a new year
+# 1. Create a similar variable than ADDED_SINCE_1_JAN_2021 for the new year
+# 2. Create a similar variable than lic_redhat_identifier_2021 for the new year
+# 3. Add a `if` like 
+  # if [[ "${ADDED_SINCE_1_JAN_2021}" == *"$f"* ]]; then
+  #   printf " ---> Added since 01/01/2021\n"
+  #   must_have_redhat_license_2021=true
+  #   flag_ibm_license=true
+  # elif
+# at the line containing the comment # Checking needed licenses
+# 4. Add a `if` like
+  # if [[ "${must_have_redhat_license_2021}" == "true" ]] && [[ "$header" != *"${lic_redhat_identifier_2021}"* ]]; then
+  #   printf " Missing copyright\n >> Could not find [${lic_redhat_identifier_2021}] in the file.\n"
+  #   ERROR=1
+  # fi
+# at the line containing the comment # Checking redhat licenses
+# 5. update line with comment # Checking if redhat needed
+#    with a extra `or` for the year.
 
 #Project start year
 origin_year=2020
 #Back up year if system time is null or incorrect
 back_up_year=2021
-#Currrent year
+#Current year
 current_year=$(date +"%Y")
 
 TRAVIS_BRANCH=$1
-
-# removed these lines as this project was created after 1-MAR-2020
-# ADDED_SINCE_1_MAR_2020=$(git log --name-status --pretty=oneline --since "1 Mar 2020" | egrep "^A\t" | awk '{print $2}' | sort | uniq |  grep -v -f <(sed 's/\([.|]\)/\\\1/g; s/\?/./g ; s/\*/.*/g' .copyrightignore))
-# MODIFIED_SINCE_1_MAR_2020=$(diff --new-line-format="" --unchanged-line-format="" <(git log --name-status --pretty=oneline --since "1 Mar 2020" | egrep "^A\t|^M\t" | awk '{print $2}' | sort | uniq | grep -v -f <(sed 's/\([.|]\)/\\\1/g; s/\?/./g ; s/\*/.*/g' .copyrightignore)) <(git log --name-status --pretty=oneline --since "1 Mar 2020" | egrep "^A\t" | awk '{print $2}' | sort | uniq | grep -v -f <(sed 's/\([.|]\)/\\\1/g; s/\?/./g ; s/\*/.*/g' .copyrightignore)))
-# OLDER_GIT_FILES=$(git log --name-status --pretty=oneline | egrep "^A\t|^M\t" | awk '{print $2}' | sort | uniq |  grep -v -f <(sed 's/\([.|]\)/\\\1/g; s/\?/./g ; s/\*/.*/g' .copyrightignore))
 
 if [[ "x${TRAVIS_BRANCH}" != "x" ]]; then
   FILES_TO_SCAN=$(git diff --name-only --diff-filter=AM ${TRAVIS_BRANCH}...HEAD | grep -v -f <(sed 's/\([.|]\)/\\\1/g; s/\?/./g ; s/\*/.*/g' .copyrightignore))
@@ -28,8 +42,15 @@ if [ -z "$current_year" ] || [ $current_year -lt $origin_year ]; then
   current_year=$back_up_year
 fi
 
+
+ADDED_SINCE_1_MAR_2020=$(git log --name-status --pretty=oneline --since "1 Mar 2020" | egrep "^A\t" | awk '{print $2}' | sort | uniq |  grep -v -f <(sed 's/\([.|]\)/\\\1/g; s/\?/./g ; s/\*/.*/g' .copyrightignore))
+MODIFIED_SINCE_1_MAR_2020=$(diff --new-line-format="" --unchanged-line-format="" <(git log --name-status --pretty=oneline --since "1 Mar 2020" | egrep "^A\t|^M\t" | awk '{print $2}' | sort | uniq | grep -v -f <(sed 's/\([.|]\)/\\\1/g; s/\?/./g ; s/\*/.*/g' .copyrightignore)) <(git log --name-status --pretty=oneline --since "1 Mar 2020" | egrep "^A\t" | awk '{print $2}' | sort | uniq | grep -v -f <(sed 's/\([.|]\)/\\\1/g; s/\?/./g ; s/\*/.*/g' .copyrightignore)))
+ADDED_SINCE_1_JAN_2021=$(git log --name-status --pretty=oneline --since "1 JAN 2021" | egrep "^A\t" | awk '{print $2}' | sort | uniq |  grep -v -f <(sed 's/\([.|]\)/\\\1/g; s/\?/./g ; s/\*/.*/g' .copyrightignore))
+OLDER_GIT_FILES=$(git log --name-status --pretty=oneline | egrep "^A\t|^M\t" | awk '{print $2}' | sort | uniq |  grep -v -f <(sed 's/\([.|]\)/\\\1/g; s/\?/./g ; s/\*/.*/g' .copyrightignore))
+
 lic_ibm_identifier=" (c) Copyright IBM Corporation"
-lic_redhat_identifier=" Copyright (c) ${current_year} Red Hat, Inc."
+lic_redhat_identifier_2020=" Copyright (c) 2020 Red Hat, Inc."
+lic_redhat_identifier_2021=" Copyright (c) 2021 Red Hat, Inc."
 
 lic_year=()
 #All possible combination within [origin_year, current_year] range is valid format
@@ -65,7 +86,7 @@ for f in $FILES_TO_SCAN; do
   fi
 
   # Flags that indicate the licenses to check for
-  must_have_redhat_license=false
+  must_have_redhat_license_2020=false
   must_have_ibm_license=false
   flag_redhat_license=false
   flag_ibm_license=false
@@ -89,29 +110,44 @@ for f in $FILES_TO_SCAN; do
   fi
 
   printf " ========>>>>>>   Scanning $f . . .\n"
-  if [[ "${ADDED_SINCE_1_MAR_2020}" == *"$f"* ]]; then
+  # Checking needed licenses
+  if [[ "${ADDED_SINCE_1_JAN_2021}" == *"$f"* ]]; then
+    printf " ---> Added since 01/01/2021\n"
+    must_have_redhat_license_2021=true
+    flag_ibm_license=true
+  elif [[ "${ADDED_SINCE_1_MAR_2020}" == *"$f"* ]]; then
     printf " ---> Added since 01/03/2020\n"
-    must_have_redhat_license=true
-    flag_ibm_license=false
+    must_have_redhat_license_2020=true
+    flag_ibm_license=true
   elif [[ "${MODIFIED_SINCE_1_MAR_2020}" == *"$f"* ]]; then
     printf " ---> Modified since 01/03/2020\n"
-    must_have_redhat_license=true
-    must_have_ibm_license=true
+    must_have_redhat_license_2020=true
+    must_have_ibm_license=false
   elif [[ "${OLDER_GIT_FILES}" == *"$f"* ]]; then
     printf " ---> File older than 01/03/2020\n"
     must_have_ibm_license=true
     flag_redhat_license=true
   else
     # Default case, could be new file not yet in git(?) - only expect Red Hat license
-    must_have_redhat_license=true
+    must_have_redhat_license_2020=true
   fi
 
-  if [[ "${must_have_redhat_license}" == "true" ]] && [[ "$header" != *"${lic_redhat_identifier}"* ]]; then
-    printf " Missing copyright\n >> Could not find [${lic_redhat_identifier}] in the file.\n"
+# Checking redhat licenses
+
+  if [[ "${must_have_redhat_license_2021}" == "true" ]] && [[ "$header" != *"${lic_redhat_identifier_2021}"* ]]; then
+    printf " Missing copyright\n >> Could not find [${lic_redhat_identifier_2021}] in the file.\n"
     ERROR=1
   fi
 
-  if [[ "${flag_redhat_license}" == "true" ]] && [[ "$header" == *"${lic_redhat_identifier}"* ]]; then 
+  if [[ "${must_have_redhat_license_2020}" == "true" ]] && [[ "$header" != *"${lic_redhat_identifier_2020}"* ]]; then
+    printf " Missing copyright\n >> Could not find [${lic_redhat_identifier_2020}] in the file.\n"
+    ERROR=1
+  fi
+
+# Checking if redhat needed
+  if [[ "${flag_redhat_license}" == "true" ]] && 
+     [[ "$header" == *"${lic_redhat_identifier_2020}"* ||
+        "$header" == *"${lic_redhat_identifier_2021}"* ]]; then 
     printf " Warning: Older file, may not include Red Hat license.\n"
   fi
 
@@ -125,7 +161,7 @@ for f in $FILES_TO_SCAN; do
     year_line_count=0
     for ((i=0;i<${lic_year_size};i++));
     do
-      #Validate year formart within [origin_year, current_year] range
+      #Validate year format within [origin_year, current_year] range
       if [[ "$header" == *"${lic_year[$i]}"* ]]; then
         year_line_count=$((year_line_count + 1))
       fi

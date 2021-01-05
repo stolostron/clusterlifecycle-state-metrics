@@ -4,7 +4,7 @@ This project generates a number of metrics used for business analysis.
 
 ## Available Metrics
 
-- acm_managedcluster_info
+- acm_managed_cluster_info
 
 ## testing
 
@@ -15,9 +15,9 @@ This project generates a number of metrics used for business analysis.
 
 ```
 curl http://localhost:8080/metrics
-# HELP acm_managedcluster_info Managed cluster information
-# TYPE acm_managedcluster_info gauge
-acm_managedcluster_info{hub_cluster_id="faddba46-201e-4d5d-bf52-9918517a9e6a",cluster_id="faddba46-201e-4d5d-bf52-9918517a9e6a",vendor="OpenShift",cloud="Amazon",version="v1.16.2",created_via="Other"} 1
+# HELP acm_managed_cluster_info Managed cluster information
+# TYPE acm_managed_cluster_info gauge
+acm_managed_cluster_info{hub_cluster_id="faddba46-201e-4d5d-bf52-9918517a9e6a",cluster_id="faddba46-201e-4d5d-bf52-9918517a9e6a",vendor="OpenShift",cloud="Amazon",version="v1.16.2",created_via="Other"} 1
 ```
 
 ## Deploy on RHACM
@@ -29,7 +29,7 @@ It also creates an ingress which allows to retrieve the infomration from outside
 1. `oc login` your hub RHACM cluster.
 2. Set the image you want to deploy in [deployment.yaml](overlays/deploy/deployment.yaml)
 3. run `make deploy`
-4. Open Prometheus console and check for metrics "acm_managedcluster_info"
+4. Open Prometheus console and check for metrics "acm_managed_cluster_info"
 
 The metrics then will appear on prometheus.
 
@@ -39,7 +39,7 @@ The metrics then will appear on prometheus.
 
 ```
 sum by (hub_cluster_id) (
-   acm_managedcluster_info 
+   acm_managed_cluster_info 
 ) 
 ```
 
@@ -47,7 +47,7 @@ and per vendor:
 
 ```
 sum by (hub_cluster_id, vendor) (
-   acm_managedcluster_info 
+   acm_managed_cluster_info 
 ) 
 ```
 
@@ -55,7 +55,7 @@ and per cloud:
 
 ```
 sum by (hub_cluster_id, cloud) (
-   acm_managedcluster_info 
+   acm_managed_cluster_info 
 ) 
 ```
 
@@ -63,7 +63,7 @@ and per version:
 
 ```
 sum by (hub_cluster_id, version) (
-   acm_managedcluster_info 
+   acm_managed_cluster_info 
 ) 
 ```
 

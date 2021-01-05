@@ -1,6 +1,6 @@
 #!/bin/bash -e
 ###############################################################################
-# Copyright (c) 2021 Red Hat, Inc.
+# Copyright (c) 2020 Red Hat, Inc.
 ###############################################################################
 # PARAMETERS
 # $1 - Final image name and tag to be produced
