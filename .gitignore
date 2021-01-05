@@ -15,6 +15,7 @@ test/functional/coverage
 test/e2e/resources/clusters
 test/e2e/resources/hub/kube
 kind_kubeconfig.yaml
+.DS_Store
 
 # Test binary, built with `go test -c`
 *.test
