@@ -1,4 +1,4 @@
-// Copyright (c) 2021 Red Hat, Inc.
+// Copyright (c) 2020 Red Hat, Inc.
 
 package collectors
 
@@ -24,7 +24,7 @@ const (
 )
 
 var (
-	descClusterInfoName          = "acm_managedcluster_info"
+	descClusterInfoName          = "acm_managed_cluster_info"
 	descClusterInfoHelp          = "Managed cluster information"
 	descClusterInfoDefaultLabels = []string{"hub_cluster_id",
 		"cluster_id",
