@@ -128,6 +128,7 @@ for dir in overlays/test/* ; do
   # fi
   set -e
 
+  kubectl delete pod $POD_NAME -n open-cluster-management
   echo "remove deployment"
   kubectl delete --wait=true -k "$dir"
 done;
