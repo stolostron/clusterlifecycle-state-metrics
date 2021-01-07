@@ -16,6 +16,7 @@ import (
 	"os/signal"
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -167,12 +168,13 @@ func telemetryServer(
 	go func() { klog.Fatal(server.ListenAndServe()) }()
 
 	// Setting up signal capturing
-	stop := make(chan os.Signal, 1)
-	signal.Notify(stop, os.Interrupt)
+	stop := make(chan os.Signal, 2)
+	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
 
 	// Waiting for SIGINT (pkill -2)
 	<-stop
 
+	klog.Info("Shutdown telemetryServer")
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 	klog.Error(server.Shutdown(ctx))
@@ -246,11 +248,13 @@ func serveMetrics(collectors []*kcollectors.Collector,
 	go func() { klog.Fatal(server.ListenAndServe()) }()
 
 	// Setting up signal capturing
-	stop := make(chan os.Signal, 1)
-	signal.Notify(stop, os.Interrupt)
+	stop := make(chan os.Signal, 2)
+	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
 
 	// Waiting for SIGINT (pkill -2)
 	<-stop
+
+	klog.Info("Shutdown serveMetrics")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
