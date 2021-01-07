@@ -120,15 +120,17 @@ for dir in overlays/test/* ; do
   echo "run functional test..."
   set +e
   make functional-test
-  # if [ $? != 0 ]; then
-  #   ERR=$?
+  if [ $? != 0 ]; then
+    ERR=$?
     POD_NAME=`kubectl get pods -n open-cluster-management | grep clusterlifecycle-state-metrics | cut -d ' ' -f1`
     kubectl logs $POD_NAME -n open-cluster-management
-  #   exit $ERR
-  # fi
+    exit $ERR
+  fi
   set -e
 
   kubectl delete pod $POD_NAME -n open-cluster-management
+  echo "Previous logs"
+  kubectl logs $POD_NAME --previous -n open-cluster-management
   echo "remove deployment"
   kubectl delete --wait=true -k "$dir"
 done;
@@ -144,9 +146,9 @@ sleep 20
 
 ls $FUNCT_TEST_COVERAGE
 
-# if [ `find $FUNCT_TEST_COVERAGE -prune -empty 2>/dev/null` ]; then
-#   echo "no coverage files found. skipping"
-# else
+if [ `find $FUNCT_TEST_COVERAGE -prune -empty 2>/dev/null` ]; then
+  echo "no coverage files found. skipping"
+else
   echo "merging coverage files"
 
   gocovmerge "${FUNCT_TEST_COVERAGE}/"* >> "${FUNCT_TEST_COVERAGE}/cover-functional.out"
@@ -156,4 +158,4 @@ ls $FUNCT_TEST_COVERAGE
   echo "-------------------------------------------------------------------------"
 
   go tool cover -html "${FUNCT_TEST_COVERAGE}/cover-functional.out" -o ${PROJECT_DIR}/test/functional/coverage/cover-functional.html
-# fi
+fi
