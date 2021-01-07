@@ -144,9 +144,9 @@ sleep 20
 
 ls $FUNCT_TEST_COVERAGE
 
-if [ `find $FUNCT_TEST_COVERAGE -prune -empty 2>/dev/null` ]; then
-  echo "no coverage files found. skipping"
-else
+# if [ `find $FUNCT_TEST_COVERAGE -prune -empty 2>/dev/null` ]; then
+#   echo "no coverage files found. skipping"
+# else
   echo "merging coverage files"
 
   gocovmerge "${FUNCT_TEST_COVERAGE}/"* >> "${FUNCT_TEST_COVERAGE}/cover-functional.out"
@@ -156,4 +156,4 @@ else
   echo "-------------------------------------------------------------------------"
 
   go tool cover -html "${FUNCT_TEST_COVERAGE}/cover-functional.out" -o ${PROJECT_DIR}/test/functional/coverage/cover-functional.html
-fi
+# fi
