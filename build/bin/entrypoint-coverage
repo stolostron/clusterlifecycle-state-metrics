@@ -20,5 +20,3 @@ ${OPERATOR} -test.run "^TestRunMain$" -test.coverprofile=$FILEPATH $@ & PID=$!
 trap_with_arg func_trap 15 $PID $FILENAME $FILEPATH
 
 wait $PID
-
-sleep 30

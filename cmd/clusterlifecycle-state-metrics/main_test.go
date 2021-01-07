@@ -14,6 +14,7 @@ import (
 
 func TestRunMain(t *testing.T) {
 	go main()
+	fmt.Print("Waiting Signal")
 	// hacks for handling signals
 	signalChannel := make(chan os.Signal, 2)
 	signal.Notify(signalChannel, os.Interrupt, syscall.SIGTERM)

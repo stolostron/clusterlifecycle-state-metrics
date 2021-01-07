@@ -5,6 +5,7 @@ package main
 import (
 	"compress/gzip"
 	"context"
+	"crypto/tls"
 	"fmt"
 	"io"
 	"log"
@@ -12,8 +13,10 @@ import (
 	"net/http"
 	"net/http/pprof"
 	"os"
+	"os/signal"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -138,13 +141,21 @@ func telemetryServer(
 			panic(err)
 		}
 	})
+	var server *http.Server
 	if tlsCrtFile != "" && tlsKeyFile != "" {
 		// Address to listen on for web interface and telemetry
 		listenAddress := net.JoinHostPort(host, strconv.Itoa(httpsPort))
 
 		klog.Infof("Starting clusterlifecycle-state-metrics self metrics server: %s", listenAddress)
 		klog.Infof("Listening https: %s", listenAddress)
-		go func() { log.Fatal(http.ListenAndServeTLS(listenAddress, tlsCrtFile, tlsKeyFile, mux)) }()
+		cer, err := tls.LoadX509KeyPair(tlsCrtFile, tlsKeyFile)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		tlsConfig := &tls.Config{Certificates: []tls.Certificate{cer}}
+		server = &http.Server{Addr: listenAddress, Handler: mux, TLSConfig: tlsConfig}
+		// go func() { log.Fatal(http.ListenAndServeTLS(listenAddress, tlsCrtFile, tlsKeyFile, mux)) }()
 	}
 	// Address to listen on for web interface and telemetry
 	listenAddress := net.JoinHostPort(host, strconv.Itoa(httpPort))
@@ -152,7 +163,21 @@ func telemetryServer(
 	klog.Infof("Starting clusterlifecycle-state-metrics self metrics server: %s", listenAddress)
 
 	klog.Infof("Listening http: %s", listenAddress)
-	log.Fatal(http.ListenAndServe(listenAddress, mux))
+	server = &http.Server{Addr: listenAddress, Handler: mux}
+	go func() { klog.Fatal(server.ListenAndServe()) }()
+
+	// Setting up signal capturing
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, os.Interrupt)
+
+	// Waiting for SIGINT (pkill -2)
+	<-stop
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	klog.Error(server.Shutdown(ctx))
+
+	// log.Fatal(http.ListenAndServe(listenAddress, mux))
 }
 
 func serveMetrics(collectors []*kcollectors.Collector,
@@ -195,13 +220,21 @@ func serveMetrics(collectors []*kcollectors.Collector,
 			panic(err)
 		}
 	})
+	var server *http.Server
 	if tlsCrtFile != "" && tlsKeyFile != "" {
 		// Address to listen on for web interface and telemetry
 		listenAddress := net.JoinHostPort(host, strconv.Itoa(httpsPort))
 
 		klog.Infof("Starting metrics server: %s", listenAddress)
 		klog.Infof("Listening https: %s", listenAddress)
-		go func() { log.Fatal(http.ListenAndServeTLS(listenAddress, tlsCrtFile, tlsKeyFile, mux)) }()
+		cer, err := tls.LoadX509KeyPair(tlsCrtFile, tlsKeyFile)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		tlsConfig := &tls.Config{Certificates: []tls.Certificate{cer}}
+		server = &http.Server{Addr: listenAddress, Handler: mux, TLSConfig: tlsConfig}
+		// go func() { log.Fatal(http.ListenAndServeTLS(listenAddress, tlsCrtFile, tlsKeyFile, mux)) }()
 	}
 	// Address to listen on for web interface and telemetry
 	listenAddress := net.JoinHostPort(host, strconv.Itoa(httpPort))
@@ -209,7 +242,20 @@ func serveMetrics(collectors []*kcollectors.Collector,
 	klog.Infof("Starting metrics server: %s", listenAddress)
 
 	klog.Infof("Listening http: %s", listenAddress)
-	log.Fatal(http.ListenAndServe(listenAddress, mux))
+	server = &http.Server{Addr: listenAddress, Handler: mux}
+	go func() { klog.Fatal(server.ListenAndServe()) }()
+
+	// Setting up signal capturing
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, os.Interrupt)
+
+	// Waiting for SIGINT (pkill -2)
+	<-stop
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	klog.Error(server.Shutdown(ctx))
+	// log.Fatal(http.ListenAndServe(listenAddress, mux))
 }
 
 type metricHandler struct {
