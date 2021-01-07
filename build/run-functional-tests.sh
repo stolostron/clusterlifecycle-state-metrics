@@ -114,8 +114,6 @@ for dir in overlays/test/* ; do
   # patch image
   echo "Wait rollout"
   kubectl rollout status -n open-cluster-management deployment clusterlifecycle-state-metrics --timeout=90s
-
-  POD_NAME=`kubectl get pods -n open-cluster-management | grep clusterlifecycle-state-metrics | cut -d ' ' -f1`
   
   # exit 1
 
@@ -124,13 +122,16 @@ for dir in overlays/test/* ; do
   make functional-test
   if [ $? != 0 ]; then
     ERR=$?
+    POD_NAME=`kubectl get pods -n open-cluster-management | grep clusterlifecycle-state-metrics | cut -d ' ' -f1`
     kubectl logs $POD_NAME -n open-cluster-management
     exit $ERR
   fi
   set -e
 
   kubectl delete pod $POD_NAME -n open-cluster-management
+  sleep 10
   echo "Previous logs"
+  POD_NAME=`kubectl get pods -n open-cluster-management | grep clusterlifecycle-state-metrics | cut -d ' ' -f1`
   kubectl logs $POD_NAME --previous -n open-cluster-management
   echo "remove deployment"
   kubectl delete --wait=true -k "$dir"
