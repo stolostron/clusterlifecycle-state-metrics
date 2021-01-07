@@ -4,7 +4,7 @@
 ###############################################################################
 
 set -e
-# set -x
+set -x
 
 CURR_FOLDER_PATH="$( cd "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
 KIND_KUBECONFIG="${CURR_FOLDER_PATH}/../kind_kubeconfig.yaml"
