@@ -131,8 +131,8 @@ for dir in overlays/test/* ; do
   kubectl delete pod $POD_NAME -n open-cluster-management
   sleep 10
   echo "Previous logs"
-  POD_NAME=`kubectl get pods -n open-cluster-management | grep clusterlifecycle-state-metrics | cut -d ' ' -f1`
-  kubectl logs $POD_NAME --previous -n open-cluster-management
+  # POD_NAME=`kubectl get pods -n open-cluster-management | grep clusterlifecycle-state-metrics | cut -d ' ' -f1`
+  # kubectl logs $POD_NAME --previous -n open-cluster-management
   echo "remove deployment"
   kubectl delete --wait=true -k "$dir"
 done;

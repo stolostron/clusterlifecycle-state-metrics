@@ -10,6 +10,7 @@ import (
 	"os/signal"
 	"syscall"
 	"testing"
+	"time"
 )
 
 func TestRunMain(t *testing.T) {
@@ -27,6 +28,8 @@ func TestRunMain(t *testing.T) {
 		case syscall.SIGTERM:
 			//handle SIGTERM
 			fmt.Printf("Signal SIGTERM: %s", sig.String())
+			fmt.Print("Sleep 30 sec")
+			time.Sleep(30 * time.Second)
 			return
 		}
 	}()

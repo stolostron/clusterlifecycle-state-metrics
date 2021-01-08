@@ -33,7 +33,7 @@ COMPONENT_BUILD_E2E_COMMAND ?= ${COMPONENT_SCRIPTS_PATH}/build-e2e.sh
 # The command to run to execute unit tests
 COMPONENT_UNIT_TEST_COMMAND ?= ${COMPONENT_SCRIPTS_PATH}/run-unit-tests.sh
 # The command to run to execute functional tests
-COMPONENT_FUNCTIONAL_TEST_COMMAND ?= ${COMPONENT_SCRIPTS_PATH}/run-functional-tests.sh
+COMPONENT_FUNCTIONAL_TEST_COMMAND ?= ${COMPONENT_SCRIPTS_PATH}/run-functional-tests.sh > ${COMPONENT_SCRIPTS_PATH}/../test/functional/tests.log
 # The command to run to execute e2e tests
 COMPONENT_E2E_TEST_COMMAND ?= ${COMPONENT_SCRIPTS_PATH}/run-e2e-tests.sh
 # The command to run to deploy the newly built component
