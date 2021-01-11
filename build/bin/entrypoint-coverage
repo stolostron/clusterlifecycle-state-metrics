@@ -15,7 +15,7 @@ FILENAME=$HOSTNAME-$(basename $OPERATOR)-`date +%s%N`.out
 FILEPATH=/tmp/coverage/$FILENAME
 mkdir -p /tmp/coverage
 
-${OPERATOR} -test.run "^TestRunMain$" -test.coverprofile=$FILEPATH $@ & PID=$!
+${OPERATOR} -test.run "^TestStart$" -test.coverprofile=$FILEPATH -- $@ & PID=$!
 
 trap_with_arg func_trap 15 $PID $FILENAME $FILEPATH
 

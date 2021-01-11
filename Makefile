@@ -112,8 +112,8 @@ run:
 .PHONY: run-coverage
 ## Run the operator against the kubeconfig targeted cluster
 run-coverage:
-	go test -v -covermode=atomic -coverpkg=github.com/open-cluster-management/clusterlifecycle-state-metrics/pkg/... -c -tags testrunmain ./cmd/clusterlifecycle-state-metrics -o clusterlifecycle-state-metrics-coverage
-	# go test -v -covermode=atomic -coverpkg=github.com/open-cluster-management/clusterlifecycle-state-metrics/pkg/... -tags testrunmain ./cmd/clusterlifecycle-state-metrics -args -port 8080 -telemetry-port 8081 -kubeconfig ${KUBECONFIG}
+	#go test -v -covermode=atomic -coverpkg=github.com/open-cluster-management/clusterlifecycle-state-metrics/pkg/... -c -tags testrunmain ./cmd/clusterlifecycle-state-metrics -o clusterlifecycle-state-metrics-coverage
+	go test -v -covermode=atomic -coverpkg=github.com/open-cluster-management/clusterlifecycle-state-metrics/pkg/... -tags testrunmain ./cmd/clusterlifecycle-state-metrics -- --http-port=8080 --http-telemetry-port=8081 --kubeconfig=${KUBECONFIG}
 	# -args -port 8080 -telemetry-port 8081 -kubeconfig ${KUBECONFIG}
 
 .PHONY: lint
@@ -166,7 +166,7 @@ kind-cluster-setup: install-fake-crds
 	@echo "Install ingress NGNIX"
 	kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/master/deploy/static/provider/kind/deploy.yaml
 	@echo "Wait ingress NGNIX ready"
-	kubectl wait --namespace ingress-nginx --for=condition=ready pod --selector=app.kubernetes.io/component=controller --timeout=90s
+	kubectl wait --namespace ingress-nginx --for=condition=ready pod --selector=app.kubernetes.io/component=controller --timeout=180s
 
 .PHONY: functional-test
 functional-test:

@@ -21,19 +21,25 @@ import (
 
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
-	"github.com/open-cluster-management/clusterlifecycle-state-metrics/pkg/version"
 	kcollectors "k8s.io/kube-state-metrics/pkg/collector"
 	koptions "k8s.io/kube-state-metrics/pkg/options"
 	"k8s.io/kube-state-metrics/pkg/whiteblacklist"
 
 	ocollectors "github.com/open-cluster-management/clusterlifecycle-state-metrics/pkg/collectors"
 	"github.com/open-cluster-management/clusterlifecycle-state-metrics/pkg/options"
+	"github.com/open-cluster-management/clusterlifecycle-state-metrics/pkg/version"
 )
 
 const (
 	metricsPath = "/metrics"
 	healthzPath = "/healthz"
 )
+
+var opts *options.Options
+
+func init() {
+
+}
 
 // promLogger implements promhttp.Logger
 type promLogger struct{}
@@ -43,13 +49,15 @@ func (pl promLogger) Println(v ...interface{}) {
 }
 
 func main() {
-	opts := options.NewOptions()
+	opts = options.NewOptions()
 	opts.AddFlags()
 
 	err := opts.Parse()
 	if err != nil {
 		klog.Fatalf("Error: %s", err)
 	}
+
+	klog.Infof("%v", opts)
 
 	if opts.Version {
 		fmt.Printf("%#v\n", version.GetVersion())
@@ -60,7 +68,10 @@ func main() {
 		opts.Usage()
 		os.Exit(0)
 	}
+	start(opts)
+}
 
+func start(opts *options.Options) {
 	collectorBuilder := ocollectors.NewBuilder(context.TODO())
 	collectorBuilder.WithApiserver(opts.Apiserver).WithKubeConfig(opts.Kubeconfig)
 	if len(opts.Collectors) == 0 {
@@ -138,20 +149,12 @@ func telemetryServer(
 			panic(err)
 		}
 	})
-	// var server *http.Server
 	if tlsCrtFile != "" && tlsKeyFile != "" {
 		// Address to listen on for web interface and telemetry
 		listenAddress := net.JoinHostPort(host, strconv.Itoa(httpsPort))
 
 		klog.Infof("Starting clusterlifecycle-state-metrics self metrics server: %s", listenAddress)
 		klog.Infof("Listening https: %s", listenAddress)
-		// cer, err := tls.LoadX509KeyPair(tlsCrtFile, tlsKeyFile)
-		// if err != nil {
-		// 	log.Fatal(err)
-		// }
-
-		// tlsConfig := &tls.Config{Certificates: []tls.Certificate{cer}}
-		// server = &http.Server{Addr: listenAddress, Handler: mux, TLSConfig: tlsConfig}
 		go func() { log.Fatal(http.ListenAndServeTLS(listenAddress, tlsCrtFile, tlsKeyFile, mux)) }()
 	}
 	// Address to listen on for web interface and telemetry
@@ -160,20 +163,6 @@ func telemetryServer(
 	klog.Infof("Starting clusterlifecycle-state-metrics self metrics server: %s", listenAddress)
 
 	klog.Infof("Listening http: %s", listenAddress)
-	// server = &http.Server{Addr: listenAddress, Handler: mux}
-	// go func() { klog.Fatal(server.ListenAndServe()) }()
-
-	// // Setting up signal capturing
-	// stop := make(chan os.Signal, 2)
-	// signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
-
-	// // Waiting for SIGINT (pkill -2)
-	// <-stop
-
-	// klog.Info("Shutdown telemetryServer")
-	// ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	// defer cancel()
-	// klog.Error(server.Shutdown(ctx))
 
 	log.Fatal(http.ListenAndServe(listenAddress, mux))
 }
@@ -218,20 +207,13 @@ func serveMetrics(collectors []*kcollectors.Collector,
 			panic(err)
 		}
 	})
-	// var server *http.Server
+
 	if tlsCrtFile != "" && tlsKeyFile != "" {
 		// Address to listen on for web interface and telemetry
 		listenAddress := net.JoinHostPort(host, strconv.Itoa(httpsPort))
 
 		klog.Infof("Starting metrics server: %s", listenAddress)
 		klog.Infof("Listening https: %s", listenAddress)
-		// cer, err := tls.LoadX509KeyPair(tlsCrtFile, tlsKeyFile)
-		// if err != nil {
-		// 	log.Fatal(err)
-		// }
-
-		// tlsConfig := &tls.Config{Certificates: []tls.Certificate{cer}}
-		// server = &http.Server{Addr: listenAddress, Handler: mux, TLSConfig: tlsConfig}
 		go func() { log.Fatal(http.ListenAndServeTLS(listenAddress, tlsCrtFile, tlsKeyFile, mux)) }()
 	}
 	// Address to listen on for web interface and telemetry
@@ -240,21 +222,6 @@ func serveMetrics(collectors []*kcollectors.Collector,
 	klog.Infof("Starting metrics server: %s", listenAddress)
 
 	klog.Infof("Listening http: %s", listenAddress)
-	// server = &http.Server{Addr: listenAddress, Handler: mux}
-	// go func() { klog.Fatal(server.ListenAndServe()) }()
-
-	// // Setting up signal capturing
-	// stop := make(chan os.Signal, 2)
-	// signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
-
-	// // Waiting for SIGINT (pkill -2)
-	// <-stop
-
-	// klog.Info("Shutdown serveMetrics")
-
-	// ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	// defer cancel()
-	// klog.Error(server.Shutdown(ctx))
 	log.Fatal(http.ListenAndServe(listenAddress, mux))
 }
 
