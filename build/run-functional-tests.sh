@@ -4,7 +4,7 @@
 ###############################################################################
 
 set -e
-set -x
+# set -x
 
 CURR_FOLDER_PATH="$( cd "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
 KIND_KUBECONFIG="${CURR_FOLDER_PATH}/../kind_kubeconfig.yaml"
@@ -121,18 +121,13 @@ for dir in overlays/test/* ; do
   echo "run functional test..."
   set +e
   make functional-test
-  # if [ $? != 0 ]; then
+  if [ $? != 0 ]; then
     ERR=$?
     kubectl logs $POD_NAME -n open-cluster-management
-    # exit $ERR
-  # fi
+    exit $ERR
+  fi
   set -e
 
-  # kubectl delete pod $POD_NAME -n open-cluster-management
-  # sleep 10
-  # echo "Previous logs"
-  # POD_NAME=`kubectl get pods -n open-cluster-management | grep clusterlifecycle-state-metrics | cut -d ' ' -f1`
-  # kubectl logs $POD_NAME --previous -n open-cluster-management
   echo "remove deployment"
   kubectl delete --wait=true -k "$dir"
 done;

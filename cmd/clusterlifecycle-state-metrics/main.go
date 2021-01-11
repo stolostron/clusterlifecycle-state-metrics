@@ -37,10 +37,6 @@ const (
 
 var opts *options.Options
 
-func init() {
-
-}
-
 // promLogger implements promhttp.Logger
 type promLogger struct{}
 

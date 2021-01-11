@@ -20,11 +20,6 @@ func TestMain(m *testing.M) {
 	klog.Info("Create options")
 	opts = options.NewOptions()
 	opts.AddFlags()
-	// flag.IntVar(&opts.HTTPPort, "http-port", 8080, "")
-	// flag.IntVar(&opts.HTTPTelemetryPort, "http-telemetry-port", 8081, "")
-	// flag.StringVar(&opts.Kubeconfig, "kubeconfig", "", "")
-	// flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ContinueOnError)
-	// opts.Flags.AddGoFlagSet(flag.CommandLine)
 	argsTest := make([]string, 0)
 	argsMain := make([]string, 0)
 	argsMain = append(argsMain, os.Args[0])
@@ -42,15 +37,12 @@ func TestMain(m *testing.M) {
 	}
 	os.Args = argsMain
 	klog.Infof("argsMain=%v\n", argsMain)
-	klog.Infof("Opts=%v\n", opts)
-	klog.Info("Parse options")
-	klog.Infof("%v", opts)
 	err := opts.Parse()
 	if err != nil {
 		klog.Fatalf("Error: %s", err)
 	}
 
-	klog.Infof("%v", opts)
+	klog.Infof("Opts=%v\n", opts)
 
 	if opts.Version {
 		fmt.Printf("%#v\n", version.GetVersion())
