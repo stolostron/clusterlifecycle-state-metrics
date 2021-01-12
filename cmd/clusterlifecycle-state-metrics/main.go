@@ -40,20 +40,21 @@ var opts *options.Options
 // promLogger implements promhttp.Logger
 type promLogger struct{}
 
+func init() {
+	opts = options.NewOptions()
+	opts.AddFlags()
+}
+
 func (pl promLogger) Println(v ...interface{}) {
 	klog.Error(v...)
 }
 
 func main() {
-	opts = options.NewOptions()
-	opts.AddFlags()
-
 	err := opts.Parse()
 	if err != nil {
 		klog.Fatalf("Error: %s", err)
 	}
-
-	klog.Infof("%v", opts)
+	klog.Infof("Opts=%v", opts)
 
 	if opts.Version {
 		fmt.Printf("%#v\n", version.GetVersion())

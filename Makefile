@@ -113,7 +113,7 @@ run:
 ## Run the operator against the kubeconfig targeted cluster
 run-coverage:
 	#go test -v -covermode=atomic -coverpkg=github.com/open-cluster-management/clusterlifecycle-state-metrics/pkg/... -c -tags testrunmain ./cmd/clusterlifecycle-state-metrics -o clusterlifecycle-state-metrics-coverage
-	go test -v -covermode=atomic -coverpkg=github.com/open-cluster-management/clusterlifecycle-state-metrics/pkg/... -tags testrunmain ./cmd/clusterlifecycle-state-metrics -- --http-port=8080 --http-telemetry-port=8081 --kubeconfig=${KUBECONFIG}
+	go test -v -covermode=atomic -coverpkg=github.com/open-cluster-management/clusterlifecycle-state-metrics/pkg/... -tags testrunmain ./cmd/clusterlifecycle-state-metrics -args -http-port=8082 -http-telemetry-port=8081 -kubeconfig=${KUBECONFIG}
 	# -args -port 8080 -telemetry-port 8081 -kubeconfig ${KUBECONFIG}
 
 .PHONY: lint
