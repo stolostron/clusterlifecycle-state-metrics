@@ -12,48 +12,6 @@ import (
 	"testing"
 )
 
-// func TestMain(m *testing.M) {
-// 	klog.Info("Create options")
-// 	opts = options.NewOptions()
-// 	opts.AddFlags()
-// 	argsTest := make([]string, 0)
-// 	argsMain := make([]string, 0)
-// 	argsMain = append(argsMain, os.Args[0])
-// 	before := true
-// 	for _, a := range os.Args {
-// 		if a == "--" {
-// 			before = false
-// 			continue
-// 		}
-// 		if before {
-// 			argsTest = append(argsTest, a)
-// 		} else {
-// 			argsMain = append(argsMain, a)
-// 		}
-// 	}
-// 	os.Args = argsMain
-// 	klog.Infof("argsMain=%v\n", argsMain)
-// 	err := opts.Parse()
-// 	if err != nil {
-// 		klog.Fatalf("Error: %s", err)
-// 	}
-
-// 	klog.Infof("Opts=%v\n", opts)
-
-// 	if opts.Version {
-// 		fmt.Printf("%#v\n", version.GetVersion())
-// 		os.Exit(0)
-// 	}
-
-// 	if opts.Help {
-// 		opts.Usage()
-// 		os.Exit(0)
-// 	}
-// 	os.Args = argsTest
-// 	klog.Infof("argsTest=%v\n", argsTest)
-// 	os.Exit(m.Run())
-// }
-
 func TestRunMain(t *testing.T) {
 	fmt.Println("Start tests")
 	go main()
