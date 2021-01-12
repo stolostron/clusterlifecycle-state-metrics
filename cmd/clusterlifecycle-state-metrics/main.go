@@ -21,13 +21,13 @@ import (
 
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
-	"github.com/open-cluster-management/clusterlifecycle-state-metrics/pkg/version"
 	kcollectors "k8s.io/kube-state-metrics/pkg/collector"
 	koptions "k8s.io/kube-state-metrics/pkg/options"
 	"k8s.io/kube-state-metrics/pkg/whiteblacklist"
 
 	ocollectors "github.com/open-cluster-management/clusterlifecycle-state-metrics/pkg/collectors"
 	"github.com/open-cluster-management/clusterlifecycle-state-metrics/pkg/options"
+	"github.com/open-cluster-management/clusterlifecycle-state-metrics/pkg/version"
 )
 
 const (
@@ -35,21 +35,22 @@ const (
 	healthzPath = "/healthz"
 )
 
+var opts *options.Options
+
 // promLogger implements promhttp.Logger
 type promLogger struct{}
+
+func init() {
+	opts = options.NewOptions()
+	opts.AddFlags()
+}
 
 func (pl promLogger) Println(v ...interface{}) {
 	klog.Error(v...)
 }
 
 func main() {
-	opts := options.NewOptions()
-	opts.AddFlags()
-
-	err := opts.Parse()
-	if err != nil {
-		klog.Fatalf("Error: %s", err)
-	}
+	opts.Parse()
 
 	if opts.Version {
 		fmt.Printf("%#v\n", version.GetVersion())
@@ -60,7 +61,10 @@ func main() {
 		opts.Usage()
 		os.Exit(0)
 	}
+	start(opts)
+}
 
+func start(opts *options.Options) {
 	collectorBuilder := ocollectors.NewBuilder(context.TODO())
 	collectorBuilder.WithApiserver(opts.Apiserver).WithKubeConfig(opts.Kubeconfig)
 	if len(opts.Collectors) == 0 {
@@ -152,6 +156,7 @@ func telemetryServer(
 	klog.Infof("Starting clusterlifecycle-state-metrics self metrics server: %s", listenAddress)
 
 	klog.Infof("Listening http: %s", listenAddress)
+
 	log.Fatal(http.ListenAndServe(listenAddress, mux))
 }
 
@@ -195,6 +200,7 @@ func serveMetrics(collectors []*kcollectors.Collector,
 			panic(err)
 		}
 	})
+
 	if tlsCrtFile != "" && tlsKeyFile != "" {
 		// Address to listen on for web interface and telemetry
 		listenAddress := net.JoinHostPort(host, strconv.Itoa(httpsPort))

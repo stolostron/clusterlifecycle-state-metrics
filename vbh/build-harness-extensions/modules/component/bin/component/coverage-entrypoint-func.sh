@@ -6,6 +6,7 @@
 # This function etrieves the parameters to access the AWS S3 bucket.
 # The parameters are stored in a secret aws-s3-coverage in the open-cluster-management namespace.
 # It uses the POD internal hostname to connect with kube and so must run in a POD.
+
 function getAWSParams() {
     APISERVER=https://kubernetes.default.svc
     SERVICEACCOUNT=/var/run/secrets/kubernetes.io/serviceaccount

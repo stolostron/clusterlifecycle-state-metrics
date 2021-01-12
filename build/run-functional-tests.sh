@@ -113,7 +113,7 @@ for dir in overlays/test/* ; do
 
   # patch image
   echo "Wait rollout"
-  kubectl rollout status -n open-cluster-management deployment clusterlifecycle-state-metrics --timeout=90s
+  kubectl rollout status -n open-cluster-management deployment clusterlifecycle-state-metrics --timeout=180s
   
   # exit 1
 
