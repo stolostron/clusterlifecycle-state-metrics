@@ -10,8 +10,8 @@ spec:
         image: REPLACE_IMAGE
         imagePullPolicy: IfNotPresent
         args:
-          - "-http-port=8080"
-          - "-http-telemetry-port=8081"
+          - "--http-port=8080"
+          - "--http-telemetry-port=8081"
         volumeMounts:
         - mountPath: /tmp/coverage
           name: coverage-dir  

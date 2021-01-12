@@ -51,7 +51,6 @@ func (pl promLogger) Println(v ...interface{}) {
 
 func main() {
 	opts.Parse()
-	klog.Infof("Opts=%v", opts)
 
 	if opts.Version {
 		fmt.Printf("%#v\n", version.GetVersion())

@@ -79,9 +79,6 @@ func (o *Options) Parse() {
 		return
 	}
 	flag.Parse()
-	klog.Infof("FlagSet: %v", flag.CommandLine)
-	klog.Infof("OS.args: %v", os.Args)
-	klog.Infof("Opts: %v", o)
 }
 
 func (o *Options) Usage() {
