@@ -30,8 +30,6 @@ type Options struct {
 	Version            bool
 
 	EnableGZIPEncoding bool
-
-	flags *flag.FlagSet
 }
 
 func NewOptions() *Options {
@@ -39,51 +37,53 @@ func NewOptions() *Options {
 		Collectors:      koptions.CollectorSet{},
 		MetricWhitelist: koptions.MetricSet{},
 		MetricBlacklist: koptions.MetricSet{},
-		flags:           flag.CommandLine,
 	}
 }
 
 func (o *Options) AddFlags() {
-	klog.InitFlags(o.flags)
-	if err := o.flags.Lookup("logtostderr").Value.Set("true"); err != nil {
+	klog.Info("Start add args")
+	klog.InitFlags(flag.CommandLine)
+	if err := flag.Lookup("logtostderr").Value.Set("true"); err != nil {
 		panic(err)
 	}
-	o.flags.Lookup("logtostderr").DefValue = "true"
+	flag.Lookup("logtostderr").DefValue = "true"
 
-	o.flags.Usage = func() {
+	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Usage of %s:\n", os.Args[0])
-		o.flags.PrintDefaults()
+		flag.PrintDefaults()
 	}
 
-	o.flags.StringVar(&o.Apiserver, "apiserver", "", `The URL of the apiserver to use as a master`)
-	o.flags.StringVar(&o.Kubeconfig, "kubeconfig", "", "Absolute path to the kubeconfig file")
-	o.flags.BoolVar(&o.Help, "help", false, "Print Help text")
-	o.flags.IntVar(&o.HTTPPort, "http-port", 8080, `http Port to expose metrics on.`)
-	o.flags.IntVar(&o.HTTPSPort, "https-port", 8443, `https Port to expose metrics on.`)
-	o.flags.StringVar(&o.Host, "host", "0.0.0.0", `Host to expose metrics on.`)
-	o.flags.IntVar(&o.HTTPTelemetryPort, "http-telemetry-port", 8081, `http Port to expose openshift-state-metrics self metrics on.`)
-	o.flags.IntVar(&o.HTTPSTelemetryPort, "https-telemetry-port", 8444, `https Port to expose openshift-state-metrics self metrics on.`)
-	o.flags.StringVar(&o.TelemetryHost, "telemetry-host", "0.0.0.0", `Host to expose openshift-state-metrics self metrics on.`)
-	o.flags.StringVar(&o.TLSCrtFile, "tls-crt-file", "", `TLS certificate file path.`)
-	o.flags.StringVar(&o.TLSKeyFile, "tls-key-file", "", `TLS key file path.`)
-	o.flags.Var(&o.Collectors, "collectors", fmt.Sprintf("Comma-separated list of collectors to be enabled. Defaults to %q", &DefaultCollectors))
-	o.flags.Var(&o.Namespaces, "namespace", fmt.Sprintf("Comma-separated list of namespaces to be enabled. Defaults to %q", &DefaultNamespaces))
-	o.flags.Var(&o.MetricWhitelist, "metric-whitelist", "Comma-separated list of metrics to be exposed. The whitelist and blacklist are mutually exclusive.")
-	o.flags.Var(&o.MetricBlacklist, "metric-blacklist", "Comma-separated list of metrics not to be enabled. The whitelist and blacklist are mutually exclusive.")
-	o.flags.BoolVar(&o.Version, "version", false, "openshift-state-metrics build version information")
+	flag.StringVar(&o.Apiserver, "apiserver", "", `The URL of the apiserver to use as a master`)
+	flag.StringVar(&o.Kubeconfig, "kubeconfig", "", "Absolute path to the kubeconfig file")
+	flag.BoolVar(&o.Help, "help", false, "Print Help text")
+	flag.IntVar(&o.HTTPPort, "http-port", 8080, `http Port to expose metrics on.`)
+	flag.IntVar(&o.HTTPSPort, "https-port", 8443, `https Port to expose metrics on.`)
+	flag.StringVar(&o.Host, "host", "0.0.0.0", `Host to expose metrics on.`)
+	flag.IntVar(&o.HTTPTelemetryPort, "http-telemetry-port", 8081, `http Port to expose openshift-state-metrics self metrics on.`)
+	flag.IntVar(&o.HTTPSTelemetryPort, "https-telemetry-port", 8444, `https Port to expose openshift-state-metrics self metrics on.`)
+	flag.StringVar(&o.TelemetryHost, "telemetry-host", "0.0.0.0", `Host to expose openshift-state-metrics self metrics on.`)
+	flag.StringVar(&o.TLSCrtFile, "tls-crt-file", "", `TLS certificate file path.`)
+	flag.StringVar(&o.TLSKeyFile, "tls-key-file", "", `TLS key file path.`)
+	flag.Var(&o.Collectors, "collectors", fmt.Sprintf("Comma-separated list of collectors to be enabled. Defaults to %q", &DefaultCollectors))
+	flag.Var(&o.Namespaces, "namespace", fmt.Sprintf("Comma-separated list of namespaces to be enabled. Defaults to %q", &DefaultNamespaces))
+	flag.Var(&o.MetricWhitelist, "metric-whitelist", "Comma-separated list of metrics to be exposed. The whitelist and blacklist are mutually exclusive.")
+	flag.Var(&o.MetricBlacklist, "metric-blacklist", "Comma-separated list of metrics not to be enabled. The whitelist and blacklist are mutually exclusive.")
+	flag.BoolVar(&o.Version, "version", false, "openshift-state-metrics build version information")
 
-	o.flags.BoolVar(&o.EnableGZIPEncoding, "enable-gzip-encoding", false, "Gzip responses when requested by clients via 'Accept-Encoding: gzip' header.")
+	flag.BoolVar(&o.EnableGZIPEncoding, "enable-gzip-encoding", false, "Gzip responses when requested by clients via 'Accept-Encoding: gzip' header.")
+	klog.Info("End add args")
 }
 
-func (o *Options) Parse() error {
-	if o.flags.Parsed() {
-		return nil
+func (o *Options) Parse() {
+	if flag.Parsed() {
+		return
 	}
+	flag.Parse()
+	klog.Infof("FlagSet: %v", flag.CommandLine)
 	klog.Infof("OS.args: %v", os.Args)
-	err := o.flags.Parse(os.Args)
-	return err
+	klog.Infof("Opts: %v", o)
 }
 
 func (o *Options) Usage() {
-	o.flags.Usage()
+	flag.Usage()
 }

@@ -50,10 +50,7 @@ func (pl promLogger) Println(v ...interface{}) {
 }
 
 func main() {
-	err := opts.Parse()
-	if err != nil {
-		klog.Fatalf("Error: %s", err)
-	}
+	opts.Parse()
 	klog.Infof("Opts=%v", opts)
 
 	if opts.Version {
