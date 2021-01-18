@@ -96,7 +96,7 @@ func Test_getManagedClusterMetricFamilies(t *testing.T) {
 			Obj:         mcU,
 			MetricNames: []string{"acm_managed_cluster_info"},
 			Want: `
-			acm_managed_cluster_info{cloud="Amazon",cluster_id="managed_cluster_id",created_via="Other",hub_cluster_id="mycluster_id",vendor="OpenShift",version="4.3.1"} 1
+			acm_managed_cluster_info{cloud="Amazon",managed_cluster_id="managed_cluster_id",created_via="Other",hub_cluster_id="mycluster_id",vendor="OpenShift",version="4.3.1"} 1
 				`,
 		},
 		{
@@ -108,7 +108,7 @@ func Test_getManagedClusterMetricFamilies(t *testing.T) {
 			Obj:         mcUOther,
 			MetricNames: []string{"acm_managed_cluster_info"},
 			Want: `
-			acm_managed_cluster_info{cloud="Amazon",cluster_id="cluster-other",created_via="Other",hub_cluster_id="mycluster_id",vendor="Other",version="v1.16.2"} 1
+			acm_managed_cluster_info{cloud="Amazon",managed_cluster_id="cluster-other",created_via="Other",hub_cluster_id="mycluster_id",vendor="Other",version="v1.16.2"} 1
 				`,
 		},
 	}
@@ -123,7 +123,7 @@ func Test_getManagedClusterMetricFamilies(t *testing.T) {
 			Obj:         mcU,
 			MetricNames: []string{"acm_managed_cluster_info"},
 			Want: `
-			acm_managed_cluster_info{cloud="Amazon",cluster_id="managed_cluster_id",created_via="Hive",hub_cluster_id="mycluster_id",vendor="OpenShift",version="4.3.1"} 1
+			acm_managed_cluster_info{cloud="Amazon",managed_cluster_id="managed_cluster_id",created_via="Hive",hub_cluster_id="mycluster_id",vendor="OpenShift",version="4.3.1"} 1
 				`,
 		},
 	}
