@@ -27,7 +27,7 @@ var (
 	descClusterInfoName          = "acm_managed_cluster_info"
 	descClusterInfoHelp          = "Managed cluster information"
 	descClusterInfoDefaultLabels = []string{"hub_cluster_id",
-		"cluster_id",
+		"managed_cluster_id",
 		"vendor",
 		"cloud",
 		"version",

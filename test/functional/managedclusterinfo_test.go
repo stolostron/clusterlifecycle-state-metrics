@@ -23,12 +23,12 @@ const (
 `
 	managedClusterResponse = `# HELP acm_managed_cluster_info Managed cluster information
 # TYPE acm_managed_cluster_info gauge
-acm_managed_cluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",cluster_id="import_cluster_id",vendor="OpenShift",cloud="Amazon",version="4.3.1",created_via="Other"} 1
-acm_managed_cluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",cluster_id="local_cluster_id",vendor="OpenShift",cloud="Amazon",version="4.3.1",created_via="Other"} 1
+acm_managed_cluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="import_cluster_id",vendor="OpenShift",cloud="Amazon",version="4.3.1",created_via="Other"} 1
+acm_managed_cluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="local_cluster_id",vendor="OpenShift",cloud="Amazon",version="4.3.1",created_via="Other"} 1
 `
 	managedClusterHiveResponse = `# HELP acm_managed_cluster_info Managed cluster information
 # TYPE acm_managed_cluster_info gauge
-acm_managed_cluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",cluster_id="hive_cluster_id",vendor="OpenShift",cloud="Amazon",version="4.3.1",created_via="Hive"} 1
+acm_managed_cluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="hive_cluster_id",vendor="OpenShift",cloud="Amazon",version="4.3.1",created_via="Hive"} 1
 `
 )
 
