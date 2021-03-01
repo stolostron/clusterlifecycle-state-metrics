@@ -27,3 +27,6 @@ kind_kubeconfig.yaml
 # vendor/
 ./build-harness
 ./build-harness-extensions
+
+copyright-header.txt
+set-copyright.sh
