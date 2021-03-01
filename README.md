@@ -1,3 +1,5 @@
+[comment]: # ( Copyright Contributors to the Open Cluster Management project )
+
 # clusterlifecycle-state-metrics
 
 This project generates a number of metrics used for business analysis.

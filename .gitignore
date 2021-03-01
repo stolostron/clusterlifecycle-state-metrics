@@ -1,3 +1,5 @@
+# Copyright Contributors to the Open Cluster Management project
+
 # Binaries for programs and plugins
 *.exe
 *.exe~
@@ -27,3 +29,6 @@ kind_kubeconfig.yaml
 # vendor/
 ./build-harness
 ./build-harness-extensions
+
+copyright-header.txt
+set-copyright.sh
