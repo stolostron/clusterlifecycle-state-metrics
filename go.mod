@@ -40,5 +40,5 @@ require (
 	k8s.io/klog v1.0.0
 	k8s.io/klog/v2 v2.3.0
 	k8s.io/kube-state-metrics v1.7.2
-	sigs.k8s.io/controller-runtime v0.6.3 // indirect
+	sigs.k8s.io/controller-runtime v0.6.3
 )
