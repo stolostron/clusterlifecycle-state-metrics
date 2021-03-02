@@ -1,7 +1,7 @@
+#!/bin/bash
+
 # Copyright (c) 2020 Red Hat, Inc.
 # Copyright Contributors to the Open Cluster Management project
-
-#!/bin/bash
 
 # Modifications to managed a new year
 # 1. Create a similar variable than ADDED_SINCE_1_JAN_2021 for the new year
