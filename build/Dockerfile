@@ -38,7 +38,7 @@ ENV OPERATOR=/usr/local/bin/clusterlifecycle-state-metrics \
 COPY --from=builder $REMOTE_SOURCE_DIR/app/clusterlifecycle-state-metrics ${OPERATOR}
 COPY --from=builder $REMOTE_SOURCE_DIR/app/clusterlifecycle-state-metrics-coverage ${OPERATOR}-coverage
 COPY --from=builder \
-    $REMOTE_SOURCE_DIR/app/${BUILD_HARNESS_EXTENSIONS_PROJECT}/modules/component/bin/component/coverage-entrypoint-func.sh \
+    $REMOTE_SOURCE_DIR/app/build/coverage-entrypoint-func.sh \
     /usr/local/bin/coverage-entrypoint-func.sh
 COPY --from=builder $REMOTE_SOURCE_DIR/app/build/bin /usr/local/bin
 # COPY --from=builder $REMOTE_SOURCE_DIR/app/build/resources /usr/local/resources
