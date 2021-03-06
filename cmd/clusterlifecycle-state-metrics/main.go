@@ -1,7 +1,6 @@
 // Copyright (c) 2020 Red Hat, Inc.
 // Copyright Contributors to the Open Cluster Management project
 
-
 package main
 
 import (
@@ -30,6 +29,7 @@ import (
 	ocollectors "github.com/open-cluster-management/clusterlifecycle-state-metrics/pkg/collectors"
 	"github.com/open-cluster-management/clusterlifecycle-state-metrics/pkg/options"
 	"github.com/open-cluster-management/clusterlifecycle-state-metrics/pkg/version"
+	"github.com/operator-framework/operator-sdk/pkg/leader"
 )
 
 const (
@@ -67,6 +67,14 @@ func main() {
 }
 
 func start(opts *options.Options) {
+	ctx := context.TODO()
+	// Become the leader before proceeding
+	err := leader.Become(ctx, "clusterlifecycle-state-metrics-lock")
+	if err != nil {
+		klog.Error(err, "")
+		os.Exit(1)
+	}
+
 	collectorBuilder := ocollectors.NewBuilder(context.TODO())
 	collectorBuilder.WithApiserver(opts.Apiserver).WithKubeConfig(opts.Kubeconfig)
 	if len(opts.Collectors) == 0 {

@@ -1,7 +1,6 @@
 // Copyright (c) 2020 Red Hat, Inc.
 // Copyright Contributors to the Open Cluster Management project
 
-
 package options
 
 import (
@@ -56,7 +55,7 @@ func (o *Options) AddFlags() {
 	}
 
 	flag.StringVar(&o.Apiserver, "apiserver", "", `The URL of the apiserver to use as a master`)
-	flag.StringVar(&o.Kubeconfig, "kubeconfig", "", "Absolute path to the kubeconfig file")
+	flag.StringVar(&o.Kubeconfig, "csm-kubeconfig", "", "Absolute path to the kubeconfig file")
 	flag.BoolVar(&o.Help, "help", false, "Print Help text")
 	flag.IntVar(&o.HTTPPort, "http-port", 8080, `http Port to expose metrics on.`)
 	flag.IntVar(&o.HTTPSPort, "https-port", 8443, `https Port to expose metrics on.`)

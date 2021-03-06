@@ -5,6 +5,15 @@ kind: ClusterRole
 metadata:
   name: open-cluster-management:clusterlifecycle-state-metrics
 rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  verbs:
+  - create
+  - update
+  - get
+  - delete
 # Allow hub to monitor and update status of csr
 - apiGroups: ["hive.openshift.io"]
   resources: ["clusterdeployments"]

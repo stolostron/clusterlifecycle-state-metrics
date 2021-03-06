@@ -50,7 +50,7 @@ ADDED_UNTIL_1_MAR_2020=$(git log --name-status --pretty=oneline --until "1 MAR 2
 
 lic_ibm_identifier=" (c) Copyright IBM Corporation"
 lic_redhat_identifier_2020=" Copyright (c) 2020 Red Hat, Inc."
-lic_redhat_identifier_2021=" Copyright (c) 2021 Red Hat, Inc."
+lic_redhat_identifier_2021=" Copyright Contributors to the Open Cluster Management project"
 
 lic_year=()
 #All possible combination within [origin_year, current_year] range is valid format
