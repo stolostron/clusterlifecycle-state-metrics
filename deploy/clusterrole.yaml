@@ -5,6 +5,7 @@ kind: ClusterRole
 metadata:
   name: open-cluster-management:clusterlifecycle-state-metrics
 rules:
+# Allow hub to manage configmap for leader selection
 - apiGroups:
   - ""
   resources:

@@ -31,6 +31,18 @@ spec:
             valueFrom:
               fieldRef:
                 fieldPath: metadata.name
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 8081
+          initialDelaySeconds: 15
+          periodSeconds: 5
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8081
+          initialDelaySeconds: 15
+          periodSeconds: 5
         volumeMounts:
           - mountPath: "/var/run/clusterlifecycle-state-metrics"
             name: certs
