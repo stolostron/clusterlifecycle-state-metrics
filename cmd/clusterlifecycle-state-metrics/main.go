@@ -34,8 +34,9 @@ import (
 )
 
 const (
-	metricsPath = "/metrics"
-	healthzPath = "/healthz"
+	leaderConfigMapName = "clusterlifecycle-state-metrics-lock"
+	metricsPath         = "/metrics"
+	healthzPath         = "/healthz"
 )
 
 var opts *options.Options
@@ -117,7 +118,7 @@ func start(opts *options.Options) {
 
 	ctx := context.TODO()
 	// Become the leader before proceeding
-	err = leader.Become(ctx, "clusterlifecycle-state-metrics-lock")
+	err = leader.Become(ctx, leaderConfigMapName)
 	if err != nil {
 		klog.Error(err, "")
 		os.Exit(1)
