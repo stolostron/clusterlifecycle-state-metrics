@@ -16,11 +16,12 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/operator-framework/operator-sdk/pkg/log/zap"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"k8s.io/klog/v2"
-
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
+	"k8s.io/klog/v2"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	kcollectors "k8s.io/kube-state-metrics/pkg/collector"
 	koptions "k8s.io/kube-state-metrics/pkg/options"
@@ -43,6 +44,8 @@ var opts *options.Options
 type promLogger struct{}
 
 func init() {
+	//Used by the operator-framework as this code use the leader.Become function.
+	logf.SetLogger(zap.Logger())
 	opts = options.NewOptions()
 	opts.AddFlags()
 }
