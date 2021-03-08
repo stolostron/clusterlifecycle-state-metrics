@@ -30,15 +30,13 @@ require (
 	github.com/open-cluster-management/multicloud-operators-foundation v0.0.0-20201112041030-60ef45157161
 	github.com/openshift/api v3.9.1-0.20191112184635-86def77f6f90+incompatible
 	github.com/openshift/build-machinery-go v0.0.0-20200819073603-48aa266c95f7
-	github.com/openshift/hive v1.0.9
+	github.com/operator-framework/operator-sdk v0.17.0
 	github.com/prometheus/client_golang v1.7.1
-	github.com/spf13/pflag v1.0.5
 	golang.org/x/net v0.0.0-20200707034311-ab3426394381
-	k8s.io/api v0.19.0
 	k8s.io/apimachinery v0.19.2
 	k8s.io/client-go v12.0.0+incompatible
 	k8s.io/klog v1.0.0
 	k8s.io/klog/v2 v2.3.0
 	k8s.io/kube-state-metrics v1.7.2
-	sigs.k8s.io/controller-runtime v0.6.3 // indirect
+	sigs.k8s.io/controller-runtime v0.6.3
 )
