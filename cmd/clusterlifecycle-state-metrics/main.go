@@ -1,7 +1,6 @@
 // Copyright (c) 2020 Red Hat, Inc.
 // Copyright Contributors to the Open Cluster Management project
 
-
 package main
 
 import (
@@ -17,11 +16,12 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/operator-framework/operator-sdk/pkg/log/zap"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"k8s.io/klog/v2"
-
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
+	"k8s.io/klog/v2"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	kcollectors "k8s.io/kube-state-metrics/pkg/collector"
 	koptions "k8s.io/kube-state-metrics/pkg/options"
@@ -30,11 +30,13 @@ import (
 	ocollectors "github.com/open-cluster-management/clusterlifecycle-state-metrics/pkg/collectors"
 	"github.com/open-cluster-management/clusterlifecycle-state-metrics/pkg/options"
 	"github.com/open-cluster-management/clusterlifecycle-state-metrics/pkg/version"
+	"github.com/operator-framework/operator-sdk/pkg/leader"
 )
 
 const (
-	metricsPath = "/metrics"
-	healthzPath = "/healthz"
+	leaderConfigMapName = "clusterlifecycle-state-metrics-lock"
+	metricsPath         = "/metrics"
+	healthzPath         = "/healthz"
 )
 
 var opts *options.Options
@@ -43,6 +45,8 @@ var opts *options.Options
 type promLogger struct{}
 
 func init() {
+	//Used by the operator-framework as this code use the leader.Become function.
+	logf.SetLogger(zap.Logger())
 	opts = options.NewOptions()
 	opts.AddFlags()
 }
@@ -112,6 +116,14 @@ func start(opts *options.Options) {
 	}
 	go telemetryServer(ocmMetricsRegistry, opts.TelemetryHost, opts.HTTPTelemetryPort, opts.HTTPSTelemetryPort, opts.TLSCrtFile, opts.TLSKeyFile)
 
+	ctx := context.TODO()
+	// Become the leader before proceeding
+	err = leader.Become(ctx, leaderConfigMapName)
+	if err != nil {
+		klog.Error(err, "")
+		os.Exit(1)
+	}
+
 	collectors := collectorBuilder.Build()
 
 	serveMetrics(collectors, opts.Host, opts.HTTPPort, opts.HTTPSPort, opts.TLSCrtFile, opts.TLSKeyFile, opts.EnableGZIPEncoding)
@@ -130,6 +142,13 @@ func telemetryServer(
 
 	// Add metricsPath
 	mux.Handle(metricsPath, promhttp.HandlerFor(registry, promhttp.HandlerOpts{ErrorLog: promLogger{}}))
+	// Add healthzPath
+	mux.HandleFunc(healthzPath, func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(200)
+		if _, err := w.Write([]byte("ok")); err != nil {
+			panic(err)
+		}
+	})
 	// Add index
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if _, err := w.Write([]byte(`<html>
@@ -192,7 +211,7 @@ func serveMetrics(collectors []*kcollectors.Collector,
 		if _, err := w.Write([]byte(`<html>
              <head><title>Open Cluster Managementt Metrics Server</title></head>
              <body>
-             <h1>OCM Metrics</h1>
+             <h1>ACM Metrics</h1>
 			 <ul>
              <li><a href='` + metricsPath + `'>metrics</a></li>
              <li><a href='` + healthzPath + `'>healthz</a></li>

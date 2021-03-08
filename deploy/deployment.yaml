@@ -6,7 +6,7 @@ metadata:
   name: clusterlifecycle-state-metrics
   namespace: open-cluster-management
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       app: clusterlifecycle-state-metrics
@@ -26,6 +26,23 @@ spec:
           - "--https-telemetry-port=8444"
           - "--tls-crt-file=/var/run/clusterlifecycle-state-metrics/tls.crt"
           - "--tls-key-file=/var/run/clusterlifecycle-state-metrics/tls.key"
+        env:
+          - name: POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 8081
+          initialDelaySeconds: 15
+          periodSeconds: 5
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8081
+          initialDelaySeconds: 15
+          periodSeconds: 5
         volumeMounts:
           - mountPath: "/var/run/clusterlifecycle-state-metrics"
             name: certs
