@@ -2,8 +2,8 @@
 
 FROM registry.ci.openshift.org/open-cluster-management/builder:go1.15-linux-amd64 AS builder
 
-ENV REMOTE_SOURCE='.'
-ENV REMOTE_SOURCE_DIR='/remote-source'
+ARG REMOTE_SOURCE
+ARG REMOTE_SOURCE_DIR
 
 COPY $REMOTE_SOURCE $REMOTE_SOURCE_DIR/app/
 WORKDIR $REMOTE_SOURCE_DIR/app

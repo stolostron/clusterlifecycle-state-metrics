@@ -72,7 +72,7 @@ deps: init component/init
 .PHONY: check
 ## Runs a set of required checks
 check:
-	@build/copyright-check.sh
+	@build/check-copyright.sh
 
 .PHONY: test
 ## Runs go unit tests
