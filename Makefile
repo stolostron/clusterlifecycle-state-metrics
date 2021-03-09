@@ -80,11 +80,13 @@ deps: init component/init
 
 .PHONY: check
 ## Runs a set of required checks
-check: copyright-check
+check:
+	@build/copyright-check.sh
 
 .PHONY: test
 ## Runs go unit tests
-test: component/test/unit
+test:
+	@build/run-unit-tests.sh
 
 .PHONY: build
 ## Builds controller binary inside of an image

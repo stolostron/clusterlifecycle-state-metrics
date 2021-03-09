@@ -7,7 +7,7 @@ ENV REMOTE_SOURCE_DIR='/remote-source'
 
 COPY $REMOTE_SOURCE $REMOTE_SOURCE_DIR/app/
 WORKDIR $REMOTE_SOURCE_DIR/app
-RUN GOFLAGS="" go build ./cmd/manager
+RUN GOFLAGS="" go build ./cmd/clusterlifecycle-state-metrics
 RUN GOFLAGS="" go test -covermode=atomic -coverpkg=github.com/open-cluster-management/clusterlifecycle-state-metrics/pkg/... -c -tags testrunmain ./cmd/clusterlifecycle-state-metrics -o clusterlifecycle-state-metrics-coverage
 
 FROM registry.access.redhat.com/ubi8/ubi-minimal:latest
