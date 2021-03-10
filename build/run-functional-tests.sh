@@ -8,6 +8,7 @@ set -e
 
 CURR_FOLDER_PATH="$( cd "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
 KIND_KUBECONFIG="${CURR_FOLDER_PATH}/../kind_kubeconfig.yaml"
+CLUSTER_NAME=${PROJECT_NAME}-functional-test
 export KUBECONFIG=${KIND_KUBECONFIG}
 export DOCKER_IMAGE_AND_TAG=${2}
 
@@ -87,13 +88,13 @@ echo "cluster configuration:"
 cat ${FUNCT_TEST_TMPDIR}/kind-config/kind-config.yaml
 
 echo "creating cluster"
-kind create cluster --name functional-test --config "${FUNCT_TEST_TMPDIR}/kind-config/kind-config.yaml"
+kind create cluster --name $CLUSTER_NAME --config "${FUNCT_TEST_TMPDIR}/kind-config/kind-config.yaml"
 
 # setup kubeconfig
-kind get kubeconfig --name functional-test > ${KIND_KUBECONFIG}
+kind get kubeconfig --name $CLUSTER_NAME > ${KIND_KUBECONFIG}
 
 # load image if possible
-kind load docker-image ${DOCKER_IMAGE_AND_TAG} --name=functional-test -v 99 || echo "failed to load image locally, will use imagePullSecret"
+kind load docker-image ${DOCKER_IMAGE_AND_TAG} --name=$CLUSTER_NAME -v 99 || echo "failed to load image locally, will use imagePullSecret"
 
 echo "install cluster"
 # setup cluster
@@ -136,7 +137,7 @@ echo "Wait 20 sec for copy to coverage files to external storage if setup"
 sleep 20
 
 echo "delete cluster"
-kind delete cluster --name functional-test
+kind delete cluster --name $CLUSTER_NAME
 
 echo "Wait 20 sec for copy to coverage files from kind cluster to host"
 sleep 20
