@@ -81,14 +81,18 @@ endif
 ## Download all project dependencies
 deps: init component/init
 
+.PHONE: dependencies
+dependencies:
+	@build/install-dependencies.sh
+
 .PHONY: check
 ## Runs a set of required checks
-check:
+check: dependencies
 	@build/check-copyright.sh
 
 .PHONY: test
 ## Runs go unit tests
-test:
+test: dependencies
 	@build/run-unit-tests.sh
 
 .PHONY: build
