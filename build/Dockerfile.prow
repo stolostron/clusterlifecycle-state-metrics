@@ -1,0 +1,34 @@
+# Copyright Contributors to the Open Cluster Management project
+
+FROM registry.ci.openshift.org/open-cluster-management/builder:go1.15-linux-amd64 AS builder
+
+ARG REMOTE_SOURCE
+ARG REMOTE_SOURCE_DIR
+
+COPY $REMOTE_SOURCE $REMOTE_SOURCE_DIR/app/
+WORKDIR $REMOTE_SOURCE_DIR/app
+RUN GOFLAGS="" go build ./cmd/clusterlifecycle-state-metrics; \
+GOFLAGS="" go test -covermode=atomic -coverpkg=github.com/open-cluster-management/clusterlifecycle-state-metrics/pkg/... -c -tags testrunmain ./cmd/clusterlifecycle-state-metrics -o clusterlifecycle-state-metrics-coverage
+
+FROM registry.access.redhat.com/ubi8/ubi-minimal:latest
+RUN microdnf update
+
+ARG REMOTE_SOURCE_DIR
+
+ENV OPERATOR=/usr/local/bin/clusterlifecycle-state-metrics \
+    USER_UID=1001 \
+    USER_NAME=clusterlifecycle-state-metrics
+
+# install operator binary
+COPY --from=builder $REMOTE_SOURCE_DIR/app/clusterlifecycle-state-metrics ${OPERATOR}
+COPY --from=builder $REMOTE_SOURCE_DIR/app/clusterlifecycle-state-metrics-coverage ${OPERATOR}-coverage
+COPY --from=builder \
+    $REMOTE_SOURCE_DIR/app/build/coverage-entrypoint-func.sh \
+    /usr/local/bin/coverage-entrypoint-func.sh
+COPY --from=builder $REMOTE_SOURCE_DIR/app/build/bin /usr/local/bin
+
+RUN  /usr/local/bin/user_setup
+
+ENTRYPOINT ["/usr/local/bin/entrypoint"]
+
+USER ${USER_UID}

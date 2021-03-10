@@ -1,0 +1,19 @@
+FROM registry.ci.openshift.org/open-cluster-management/clusterlifecycle-state-metrics:latest
+
+ENV OPERATOR=/usr/local/bin/clusterlifecycle-state-metrics \
+    USER_UID=1001 \
+    USER_NAME=clusterlifecycle-state-metrics
+    
+USER root
+# Install unzip
+RUN microdnf update
+RUN microdnf install -y --nodocs jq
+RUN microdnf install -y --nodocs openssl
+
+# install operator binary
+RUN cp ${OPERATOR}-coverage ${OPERATOR}
+
+USER ${USER_UID}
+
+ENTRYPOINT ["/usr/local/bin/entrypoint-coverage"]
+

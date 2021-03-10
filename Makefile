@@ -22,6 +22,8 @@ export GOARCH       = $(ARCH_TYPE)
 export GOPACKAGES   = $(shell go list ./... | grep -v /vendor | grep -v /internal | grep -v /build | grep -v /test)
 
 export PROJECT_DIR            = $(shell 'pwd')
+export PROJECT_NAME            = $(shell basename ${PROJECT_DIR})
+
 export BUILD_DIR              = $(PROJECT_DIR)/build
 export COMPONENT_SCRIPTS_PATH = $(BUILD_DIR)
 export KLUSTERLET_CRD_FILE      = $(PROJECT_DIR)/build/resources/agent.open-cluster-management.io_v1beta1_klusterlet_crd.yaml
@@ -51,7 +53,6 @@ BEFORE_SCRIPT := $(shell build/before-make.sh)
 USE_VENDORIZED_BUILD_HARNESS ?= 
 
 ifndef USE_VENDORIZED_BUILD_HARNESS
-# -include $(shell curl -s -H 'Authorization: token ${GITHUB_TOKEN}' -H 'Accept: application/vnd.github.v4.raw' -L https://api.github.com/repos/itdove/build-harness-extensions/contents/templates/Makefile.build-harness-bootstrap?branch=code_coverage -o .build-harness-bootstrap; echo .build-harness-bootstrap)
 -include $(shell curl -s -H 'Authorization: token ${GITHUB_TOKEN}' -H 'Accept: application/vnd.github.v4.raw' -L https://api.github.com/repos/open-cluster-management/build-harness-extensions/contents/templates/Makefile.build-harness-bootstrap -o .build-harness-bootstrap; echo .build-harness-bootstrap)
 else
 -include vbh/.build-harness-vendorized
@@ -80,11 +81,13 @@ deps: init component/init
 
 .PHONY: check
 ## Runs a set of required checks
-check: copyright-check
+check:
+	@build/check-copyright.sh
 
 .PHONY: test
 ## Runs go unit tests
-test: component/test/unit
+test:
+	@build/run-unit-tests.sh
 
 .PHONY: build
 ## Builds controller binary inside of an image
