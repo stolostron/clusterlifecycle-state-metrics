@@ -17,12 +17,9 @@ export PROJECT_NAME            = $(shell basename ${PROJECT_DIR})
 
 export BUILD_DIR              = $(PROJECT_DIR)/build
 
-export COMPONENT_NAME ?= $(shell cat ./COMPONENT_NAME 2> /dev/null)
-export COMPONENT_VERSION ?= $(shell cat ./COMPONENT_VERSION 2> /dev/null)
-
 export DOCKER_FILE        = $(BUILD_DIR)/Dockerfile.prow
 export DOCKER_FILE_COVERAGE = $(BUILD_DIR)/Dockerfile.coverage.prow
-export DOCKER_IMAGE      ?= $(COMPONENT_NAME)
+export DOCKER_IMAGE      ?= clusterlifecycle-state-metrics
 export DOCKER_IMAGE_COVERAGE_POSTFIX ?= -coverage
 export DOCKER_IMAGE_COVERAGE      ?= $(DOCKER_IMAGE)$(DOCKER_IMAGE_COVERAGE_POSTFIX)
 export DOCKER_BUILDER    ?= docker

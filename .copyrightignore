@@ -1,9 +1,0 @@
-#file extensions to ignore
-.copyrightignore
-.yml
-.yaml
-.properties
-# directories to ingore
-build-harness/*
-build-harness-extensions/*
-vendor/*
