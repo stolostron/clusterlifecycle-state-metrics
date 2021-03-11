@@ -20,15 +20,15 @@ addons:
       secure: "qU91fkwbwjR4vG211IFeTaVWdeuinJiq035yKZjoiBMZWtB5fj/QEdq3gZtaSyXQLYrfZdZb7UrhAjvhmD6Y8OTaTi42HbR5q2dMSpnGYyokSv30KSFIvyafwoK7xVvqR4KfkKquGW6XYzs0ffh2rIwCnI+dRSYm8wVo/ZlvjzJrwcIYanDvk3AWXiU57A6UgLwHPZBjwrWBOssgQa6U7ZFQwlpl4GgFfxG1jRRSurY5pKygrejV+zLo2qkZoj/RNbukj9LpH7YDs9a+dULUydFs9xP04Obq7QYdPGmiv2ieJfpFQFF5WrFhkUam8GPxrvoPqXS10IB/Xq6fuABiTFPE41Ru+/bhNbPG5/rpXlEBbm1euj6vTQNRMzQtelS352Cm2lViant4Tq4IdcM8xp40KhzOujUMIhIJSSPvVPlDszKRz2UdsFbcU2ITFVAWQBaGf+H4xI9kWYNJDsdmL4y76ObrQ57mYJT7m5ieGck1lsPFtaF3+oG+/wItuS78hX0ISweNyRKkMAMsqou1Zs/DUzKzfrJVXwLcc5kwrk+s1lnYWSxCQ/snprwVNYaXFKrOjbnobMu8HYgLgbIaULnBbp6hmJjq0dJLkS4I1OlkVOtQ4cIONX7WCyhpcHJHDUxlku+RVOlGJ5o/hCGRGBMScdsF5ykXuw7Z2A+gEzs="
 
 stages:
-  - unit-test
-  - build
+  # - unit-test
+  # - build
   # - functional-test
-  - release-ff
-  - publish
+  # - release-ff
+  # - publish
 
 before_script:
   # - git config --global url.git@github.com:open-cluster-management/.insteadOf https://github.com/open-cluster-management/
-  - make init
+  # - make init
 
 jobs:
   include:
