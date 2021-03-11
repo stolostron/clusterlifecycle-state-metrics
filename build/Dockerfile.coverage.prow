@@ -1,4 +1,4 @@
-FROM registry.ci.openshift.org/open-cluster-management/clusterlifecycle-state-metrics:latest
+FROM clusterlifecycle-state-metrics:latest
 
 ENV OPERATOR=/usr/local/bin/clusterlifecycle-state-metrics \
     USER_UID=1001 \
