@@ -112,12 +112,12 @@ for dir in overlays/test/* ; do
   echo "run functional test..."
   set +e
   make functional-test
-  # if [ $? != 0 ]; then
-  #   ERR=$?
+  if [ $? != 0 ]; then
+    ERR=$?
     POD_NAME=`kubectl get pods -n open-cluster-management -oname | grep clusterlifecycle-state-metrics`
     echo "$POD_NAME" | xargs -L 1 kubectl logs -n open-cluster-management
-  #   exit $ERR
-  # fi
+    exit $ERR
+  fi
   set -e
   # exit 1
 
