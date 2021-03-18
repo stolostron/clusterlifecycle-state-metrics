@@ -103,9 +103,6 @@ for dir in overlays/test/* ; do
   echo "Create ingress for functional test"
   kubectl apply -f test/functional/resources/ingress.yaml
   
-  echo "install imagePullSecret"
-  kubectl create secret -n open-cluster-management docker-registry multiclusterhub-operator-pull-secret --docker-server=quay.io --docker-username=${DOCKER_USER} --docker-password=${DOCKER_PASS}
-
   # patch image
   echo "Wait rollout"
   kubectl rollout status -n open-cluster-management deployment clusterlifecycle-state-metrics --timeout=180s
