@@ -117,8 +117,8 @@ for dir in overlays/test/* ; do
   make functional-test
   # if [ $? != 0 ]; then
   #   ERR=$?
-    POD_NAME=`kubectl get pods -n open-cluster-management | grep clusterlifecycle-state-metrics | cut -d ' ' -f1`
-    kubectl logs $POD_NAME -n open-cluster-management
+    POD_NAME=`kubectl get pods -n open-cluster-management -oname | grep clusterlifecycle-state-metrics`
+    echo "$POD_NAME" | xargs -L 1 kubectl logs -n open-cluster-management
   #   exit $ERR
   # fi
   set -e
