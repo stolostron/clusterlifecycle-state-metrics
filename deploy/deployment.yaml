@@ -43,13 +43,3 @@ spec:
             port: 8081
           initialDelaySeconds: 15
           periodSeconds: 5
-        volumeMounts:
-          - mountPath: "/var/run/clusterlifecycle-state-metrics"
-            name: certs
-            readOnly: true
-      imagePullSecrets:
-      - name: multiclusterhub-operator-pull-secret
-      volumes:
-        - name: certs
-          secret:
-            secretName: clusterlifecycle-state-metrics
