@@ -33,7 +33,10 @@ dependencies:
 
 .PHONY: check
 ## Runs a set of required checks
-check: dependencies
+check: dependencies check-copyright
+
+.PHONY: check-copyright
+check-copyright:
 	@build/check-copyright.sh
 
 .PHONY: test
