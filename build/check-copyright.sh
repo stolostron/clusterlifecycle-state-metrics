@@ -9,7 +9,7 @@
 # set -x
 TMP_FILE="tmp_file"
 
-ALL_FILES=$(find . -name "*" | grep -v build-harness | grep -v kind_kubeconfig.yaml | grep -v test/functional/tmp )
+ALL_FILES=$(git ls-files)
 
 COMMUNITY_COPY_HEADER_FILE="$PWD/build/copyright-header.txt"
 
