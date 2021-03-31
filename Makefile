@@ -27,6 +27,8 @@ export KUBECONFIG ?= ${HOME}/.kube/config
 
 BEFORE_SCRIPT := $(shell build/before-make.sh)
 
+all: build-image
+
 .PHONE: dependencies
 dependencies:
 	@build/install-dependencies.sh
