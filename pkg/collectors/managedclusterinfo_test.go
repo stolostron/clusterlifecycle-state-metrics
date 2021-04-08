@@ -1,7 +1,6 @@
 // Copyright (c) 2020 Red Hat, Inc.
 // Copyright Contributors to the Open Cluster Management project
 
-
 package collectors
 
 import (
@@ -9,6 +8,7 @@ import (
 	"testing"
 
 	mciv1beta1 "github.com/open-cluster-management/multicloud-operators-foundation/pkg/apis/internal.open-cluster-management.io/v1beta1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/client-go/dynamic"
@@ -36,6 +36,56 @@ func Test_getManagedClusterMetricFamilies(t *testing.T) {
 				Type: mciv1beta1.DistributionTypeOCP,
 				OCP: mciv1beta1.OCPDistributionInfo{
 					Version: "4.3.1",
+				},
+			},
+			NodeList: []mciv1beta1.NodeStatus{
+				//Label missing, so not a worker
+				mciv1beta1.NodeStatus{
+					Name: "worker-0",
+				},
+				//Label not worker, so not a valid worker
+				mciv1beta1.NodeStatus{
+					Name: "worker-1",
+					Labels: map[string]string{
+						"my-label": "my-label-value",
+					},
+				},
+				//Label worker no vCPU
+				mciv1beta1.NodeStatus{
+					Name: "worker-1",
+					Labels: map[string]string{
+						workerLabel: "",
+					},
+				},
+				//Label worker no vCPU
+				mciv1beta1.NodeStatus{
+					Name: "worker-2",
+					Labels: map[string]string{
+						workerLabel: "",
+					},
+					Capacity: mciv1beta1.ResourceList{
+						mciv1beta1.ResourceMemory: *resource.NewQuantity(100, resource.DecimalSI),
+					},
+				},
+				// Label worker with vCPU
+				mciv1beta1.NodeStatus{
+					Name: "worker-3",
+					Labels: map[string]string{
+						workerLabel: "",
+					},
+					Capacity: mciv1beta1.ResourceList{
+						mciv1beta1.ResourceCPU: *resource.NewQuantity(1, resource.DecimalSI),
+					},
+				},
+				// Label worker with vCPU
+				mciv1beta1.NodeStatus{
+					Name: "worker-3",
+					Labels: map[string]string{
+						workerLabel: "",
+					},
+					Capacity: mciv1beta1.ResourceList{
+						mciv1beta1.ResourceCPU: *resource.NewQuantity(2, resource.DecimalSI),
+					},
 				},
 			},
 		},
@@ -98,7 +148,7 @@ func Test_getManagedClusterMetricFamilies(t *testing.T) {
 			Obj:         mcU,
 			MetricNames: []string{"acm_managed_cluster_info"},
 			Want: `
-			acm_managed_cluster_info{cloud="Amazon",managed_cluster_id="managed_cluster_id",created_via="Other",hub_cluster_id="mycluster_id",vendor="OpenShift",version="4.3.1"} 1
+			acm_managed_cluster_info{cloud="Amazon",managed_cluster_id="managed_cluster_id",created_via="Other",hub_cluster_id="mycluster_id",vendor="OpenShift",version="4.3.1",vcpu="3"} 1
 				`,
 		},
 		{
@@ -110,7 +160,7 @@ func Test_getManagedClusterMetricFamilies(t *testing.T) {
 			Obj:         mcUOther,
 			MetricNames: []string{"acm_managed_cluster_info"},
 			Want: `
-			acm_managed_cluster_info{cloud="Amazon",managed_cluster_id="cluster-other",created_via="Other",hub_cluster_id="mycluster_id",vendor="Other",version="v1.16.2"} 1
+			acm_managed_cluster_info{cloud="Amazon",managed_cluster_id="cluster-other",created_via="Other",hub_cluster_id="mycluster_id",vendor="Other",version="v1.16.2",vcpu="0"} 1
 				`,
 		},
 	}
@@ -125,7 +175,7 @@ func Test_getManagedClusterMetricFamilies(t *testing.T) {
 			Obj:         mcU,
 			MetricNames: []string{"acm_managed_cluster_info"},
 			Want: `
-			acm_managed_cluster_info{cloud="Amazon",managed_cluster_id="managed_cluster_id",created_via="Hive",hub_cluster_id="mycluster_id",vendor="OpenShift",version="4.3.1"} 1
+			acm_managed_cluster_info{cloud="Amazon",managed_cluster_id="managed_cluster_id",created_via="Hive",hub_cluster_id="mycluster_id",vendor="OpenShift",version="4.3.1",vcpu="3"} 1
 				`,
 		},
 	}

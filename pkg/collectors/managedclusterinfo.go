@@ -1,11 +1,11 @@
 // Copyright (c) 2020 Red Hat, Inc.
 // Copyright Contributors to the Open Cluster Management project
 
-
 package collectors
 
 import (
 	"context"
+	"strconv"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -23,6 +23,8 @@ import (
 const (
 	createdViaHive  = "Hive"
 	createdViaOther = "Other"
+
+	workerLabel = "node-role.kubernetes.io/worker"
 )
 
 var (
@@ -33,7 +35,8 @@ var (
 		"vendor",
 		"cloud",
 		"version",
-		"created_via"}
+		"created_via",
+		"vcpu"}
 
 	cdGVR = schema.GroupVersionResource{
 		Group:    "hive.openshift.io",
@@ -80,6 +83,7 @@ func getManagedClusterInfoMetricFamilies(hubClusterID string, client dynamic.Int
 					clusterID = mci.GetName()
 				}
 				version := getVersion(mci)
+				vcpu := getSize(mci)
 				if clusterID == "" ||
 					mci.Status.KubeVendor == "" ||
 					mci.Status.CloudVendor == "" ||
@@ -97,7 +101,9 @@ func getManagedClusterInfoMetricFamilies(hubClusterID string, client dynamic.Int
 					string(mci.Status.KubeVendor),
 					string(mci.Status.CloudVendor),
 					version,
-					createdVia}
+					createdVia,
+					strconv.FormatInt(vcpu, 10),
+				}
 
 				f := metric.Family{Metrics: []*metric.Metric{
 					{
@@ -106,7 +112,7 @@ func getManagedClusterInfoMetricFamilies(hubClusterID string, client dynamic.Int
 						Value:       1,
 					},
 				}}
-				klog.Infof("Posting %v", f)
+				klog.Infof("Returning %v", f)
 				return f
 			}),
 		},
@@ -124,6 +130,18 @@ func getVersion(mci *mciv1beta1.ManagedClusterInfo) string {
 		return mci.Status.Version
 	}
 
+}
+
+//Get only the worker size
+func getSize(mci *mciv1beta1.ManagedClusterInfo) (vcpu int64) {
+	for _, n := range mci.Status.NodeList {
+		if _, ok := n.Labels[workerLabel]; ok {
+			if q, ok := n.Capacity[mciv1beta1.ResourceCPU]; ok {
+				vcpu += q.Value()
+			}
+		}
+	}
+	return
 }
 
 func wrapManagedClusterInfoFunc(f func(*unstructured.Unstructured) metric.Family) func(interface{}) metric.Family {

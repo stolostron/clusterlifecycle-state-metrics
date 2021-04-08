@@ -29,7 +29,11 @@ BEFORE_SCRIPT := $(shell build/before-make.sh)
 
 all: build-image
 
-.PHONE: dependencies
+.PHONY: clean
+clean:
+	kind delete cluster --name ${PROJECT_NAME}-functional-test
+	
+.PHONY: dependencies
 dependencies:
 	@build/install-dependencies.sh
 
