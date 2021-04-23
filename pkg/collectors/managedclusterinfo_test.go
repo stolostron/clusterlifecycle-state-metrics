@@ -142,7 +142,7 @@ func Test_getManagedClusterMetricFamilies(t *testing.T) {
 	}
 
 	client := fake.NewSimpleDynamicClient(s, mcU, mcUMissingInfo, mcUOther)
-	clientHive := fake.NewSimpleDynamicClient(s, mcU, cdU)
+	clientACM := fake.NewSimpleDynamicClient(s, mcU, cdU)
 	tests := []generateMetricsTestCase{
 		{
 			Obj:         mcU,
@@ -175,12 +175,12 @@ func Test_getManagedClusterMetricFamilies(t *testing.T) {
 			Obj:         mcU,
 			MetricNames: []string{"acm_managed_cluster_info"},
 			Want: `
-			acm_managed_cluster_info{cloud="Amazon",managed_cluster_id="managed_cluster_id",created_via="Hive",hub_cluster_id="mycluster_id",vendor="OpenShift",version="4.3.1",vcpu="3"} 1
+			acm_managed_cluster_info{cloud="Amazon",managed_cluster_id="managed_cluster_id",created_via="ACM",hub_cluster_id="mycluster_id",vendor="OpenShift",version="4.3.1",vcpu="3"} 1
 				`,
 		},
 	}
 	for i, c := range tests {
-		c.Func = metric.ComposeMetricGenFuncs(getManagedClusterInfoMetricFamilies("mycluster_id", clientHive))
+		c.Func = metric.ComposeMetricGenFuncs(getManagedClusterInfoMetricFamilies("mycluster_id", clientACM))
 		if err := c.run(); err != nil {
 			t.Errorf("unexpected collecting result in %vth run:\n%s", i, err)
 		}

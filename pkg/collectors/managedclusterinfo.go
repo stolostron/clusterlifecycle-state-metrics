@@ -21,7 +21,7 @@ import (
 )
 
 const (
-	createdViaHive  = "Hive"
+	createdViaACM   = "ACM"
 	createdViaOther = "Other"
 
 	workerLabel = "node-role.kubernetes.io/worker"
@@ -70,7 +70,7 @@ func getManagedClusterInfoMetricFamilies(hubClusterID string, client dynamic.Int
 				if err != nil {
 					return metric.Family{Metrics: []*metric.Metric{}}
 				}
-				createdVia := createdViaHive
+				createdVia := createdViaACM
 				cd, errCD := client.Resource(cdGVR).Namespace(mci.GetName()).Get(context.TODO(), mci.GetName(), metav1.GetOptions{})
 				if errCD != nil {
 					createdVia = createdViaOther
