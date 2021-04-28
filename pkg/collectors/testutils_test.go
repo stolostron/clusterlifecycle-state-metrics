@@ -1,7 +1,6 @@
 // Copyright (c) 2020 Red Hat, Inc.
 // Copyright Contributors to the Open Cluster Management project
 
-
 package collectors
 
 import (
@@ -17,14 +16,14 @@ type generateMetricsTestCase struct {
 	Obj         interface{}
 	MetricNames []string
 	Want        string
-	Func        func(interface{}) []metricsstore.FamilyStringer
+	Func        func(interface{}) []metricsstore.FamilyByteSlicer
 }
 
 func (testCase *generateMetricsTestCase) run() error {
 	metricFamilies := testCase.Func(testCase.Obj)
 	metricFamilyStrings := []string{}
 	for _, f := range metricFamilies {
-		metricFamilyStrings = append(metricFamilyStrings, f.String())
+		metricFamilyStrings = append(metricFamilyStrings, string(f.ByteSlice()))
 	}
 
 	metrics := strings.Split(strings.Join(metricFamilyStrings, ""), "\n")

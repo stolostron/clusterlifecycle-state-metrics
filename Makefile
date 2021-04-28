@@ -71,7 +71,7 @@ copyright-check:
 .PHONY: run
 ## Run the operator against the kubeconfig targeted cluster
 run:
-	go run cmd/clusterlifecycle-state-metrics/main.go --http-port=8080 --http-telemetry-port=8081 --csm-kubeconfig=${KUBECONFIG} -v=4; \
+	go run cmd/clusterlifecycle-state-metrics/main.go --http-port=8082 --http-telemetry-port=8083 --csm-kubeconfig=${KUBECONFIG} -v=4; \
 
 .PHONY: run-coverage
 ## Run the operator against the kubeconfig targeted cluster

@@ -44,20 +44,21 @@ const (
 var _ = Describe("Metrics", func() {
 	BeforeEach(func() {
 		SetDefaultEventuallyTimeout(20 * time.Second)
-		SetDefaultEventuallyPollingInterval(1 * time.Second)
+		SetDefaultEventuallyPollingInterval(10 * time.Second)
 		By("Cleaning status", func() {
 			Expect(updateMCIStatus("local-cluster", mciv1beta1.ClusterInfoStatus{})).Should(BeNil())
 			Expect(updateMCIStatus("cluster-hive", mciv1beta1.ClusterInfoStatus{})).Should(BeNil())
 			Expect(updateMCIStatus("cluster-import", mciv1beta1.ClusterInfoStatus{})).Should(BeNil())
 			Expect(updateMCStatus("local-cluster", mcv1.ManagedClusterStatus{
-				// Conditions: []metav1.Condition{
-				// 	{
-				// 		Type:               "hello",
-				// 		Status:             "True",
-				// 		LastTransitionTime: metav1.Now(),
-				// 		Reason:             "test",
-				// 	},
-				// },
+				Conditions: []metav1.Condition{
+					{
+						Type:               "hello",
+						Status:             "True",
+						LastTransitionTime: metav1.Now(),
+						Reason:             "test",
+						Message:            "hello",
+					},
+				},
 			})).Should(BeNil())
 			Expect(updateMCStatus("cluster-hive", mcv1.ManagedClusterStatus{
 				Conditions: []metav1.Condition{
@@ -66,6 +67,7 @@ var _ = Describe("Metrics", func() {
 						Status:             "True",
 						LastTransitionTime: metav1.Now(),
 						Reason:             "test",
+						Message:            "hello",
 					},
 				},
 			})).Should(BeNil())
@@ -76,6 +78,7 @@ var _ = Describe("Metrics", func() {
 						Status:             "True",
 						LastTransitionTime: metav1.Now(),
 						Reason:             "test",
+						Message:            "hello",
 					},
 				},
 			})).Should(BeNil())
@@ -128,10 +131,23 @@ var _ = Describe("Metrics", func() {
 						Status:             "True",
 						LastTransitionTime: metav1.Now(),
 						Reason:             "test",
+						Message:            "hello",
 					},
 				},
 				Capacity: mcv1.ResourceList{
 					mcv1.ResourceCPU: *resource.NewQuantity(1, resource.DecimalSI),
+				},
+				Allocatable: mcv1.ResourceList{
+					mcv1.ResourceCPU: *resource.NewQuantity(1, resource.DecimalSI),
+				},
+				Version: mcv1.ManagedClusterVersion{
+					Kubernetes: "v1.17.0",
+				},
+				ClusterClaims: []mcv1.ManagedClusterClaim{
+					{
+						Name:  "test",
+						Value: "testvalue",
+					},
 				},
 			})).Should(BeNil())
 		})
@@ -167,10 +183,23 @@ var _ = Describe("Metrics", func() {
 						Status:             "True",
 						LastTransitionTime: metav1.Now(),
 						Reason:             "test",
+						Message:            "hello",
 					},
 				},
 				Capacity: mcv1.ResourceList{
 					mcv1.ResourceCPU: *resource.NewQuantity(1, resource.DecimalSI),
+				},
+				Allocatable: mcv1.ResourceList{
+					mcv1.ResourceCPU: *resource.NewQuantity(1, resource.DecimalSI),
+				},
+				Version: mcv1.ManagedClusterVersion{
+					Kubernetes: "v1.17.0",
+				},
+				ClusterClaims: []mcv1.ManagedClusterClaim{
+					{
+						Name:  "test",
+						Value: "testvalue",
+					},
 				},
 			})).Should(BeNil())
 		})

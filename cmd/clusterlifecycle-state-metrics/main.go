@@ -16,21 +16,20 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/operator-framework/operator-sdk/pkg/log/zap"
+	// "github.com/operator-framework/operator-sdk/pkg/log/zap"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"k8s.io/klog/v2"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
-	kcollectors "k8s.io/kube-state-metrics/pkg/collector"
+	metricsstore "k8s.io/kube-state-metrics/pkg/metrics_store"
 	koptions "k8s.io/kube-state-metrics/pkg/options"
 	"k8s.io/kube-state-metrics/pkg/whiteblacklist"
 
 	ocollectors "github.com/open-cluster-management/clusterlifecycle-state-metrics/pkg/collectors"
 	"github.com/open-cluster-management/clusterlifecycle-state-metrics/pkg/options"
 	"github.com/open-cluster-management/clusterlifecycle-state-metrics/pkg/version"
-	"github.com/operator-framework/operator-sdk/pkg/leader"
+	// "github.com/operator-framework/operator-sdk/pkg/leader"
 )
 
 const (
@@ -46,7 +45,7 @@ type promLogger struct{}
 
 func init() {
 	//Used by the operator-framework as this code use the leader.Become function.
-	logf.SetLogger(zap.Logger())
+	// logf.SetLogger(zap.Logger())
 	opts = options.NewOptions()
 	opts.AddFlags()
 }
@@ -116,13 +115,13 @@ func start(opts *options.Options) {
 	}
 	go telemetryServer(ocmMetricsRegistry, opts.TelemetryHost, opts.HTTPTelemetryPort, opts.HTTPSTelemetryPort, opts.TLSCrtFile, opts.TLSKeyFile)
 
-	ctx := context.TODO()
-	// Become the leader before proceeding
-	err = leader.Become(ctx, leaderConfigMapName)
-	if err != nil {
-		klog.Error(err, "")
-		os.Exit(1)
-	}
+	// ctx := context.TODO()
+	// // Become the leader before proceeding
+	// err = leader.Become(ctx, leaderConfigMapName)
+	// if err != nil {
+	// 	klog.Error(err, "")
+	// 	os.Exit(1)
+	// }
 
 	collectors := collectorBuilder.Build()
 
@@ -181,7 +180,7 @@ func telemetryServer(
 	log.Fatal(http.ListenAndServe(listenAddress, mux))
 }
 
-func serveMetrics(collectors []*kcollectors.Collector,
+func serveMetrics(collectors []*metricsstore.MetricsStore,
 	host string,
 	httpPort int,
 	httpsPort int,
@@ -240,7 +239,7 @@ func serveMetrics(collectors []*kcollectors.Collector,
 }
 
 type metricHandler struct {
-	collectors         []*kcollectors.Collector
+	collectors         []*metricsstore.MetricsStore
 	enableGZIPEncoding bool
 }
 
@@ -265,7 +264,7 @@ func (m *metricHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	for _, c := range m.collectors {
-		c.Collect(w)
+		c.WriteAll(w)
 	}
 
 	// In case we gziped the response, we have to close the writer.

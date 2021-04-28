@@ -257,8 +257,13 @@ func Test_createManagedClusterInfoListWatchWithClient(t *testing.T) {
 	s := scheme.Scheme
 
 	s.AddKnownTypes(mciv1beta1.GroupVersion, &mciv1beta1.ManagedClusterInfo{})
+	s.AddKnownTypes(mciv1beta1.GroupVersion, &mciv1beta1.ManagedClusterInfoList{})
 
 	mc := &mciv1beta1.ManagedClusterInfo{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "ManagedClusterInfo",
+			APIVersion: "internal.open-cluster-management.io/v1beta1",
+		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "hive-cluster",
 			Namespace: "hive-cluster",
@@ -276,7 +281,7 @@ func Test_createManagedClusterInfoListWatchWithClient(t *testing.T) {
 		t.Error(err)
 	}
 
-	client := fake.NewSimpleDynamicClient(s, mcU)
+	client := fake.NewSimpleDynamicClient(s, mc)
 	type args struct {
 		client dynamic.Interface
 		ns     string

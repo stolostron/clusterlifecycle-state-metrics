@@ -20,7 +20,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/klog"
 
-	libgoapplier "github.com/open-cluster-management/library-go/pkg/applier"
+	libgoapplier "github.com/open-cluster-management/applier/pkg/applier"
 )
 
 const (
@@ -66,11 +66,10 @@ func setupHub() {
 
 	yamlReader := templateprocessor.NewYamlFileReader("resources")
 	clientApplier, err = libgoapplier.NewApplier(yamlReader,
-		&templateprocessor.Options{},
+		nil,
 		defaultClient,
 		nil,
 		nil,
-		libgoapplier.DefaultKubernetesMerger,
 		nil)
 	Expect(err).To(BeNil())
 	Expect(clientApplier.CreateOrUpdateInPath("cr", nil, false, nil)).To(BeNil())

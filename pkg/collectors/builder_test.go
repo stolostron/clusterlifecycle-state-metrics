@@ -1,7 +1,6 @@
 // Copyright (c) 2020 Red Hat, Inc.
 // Copyright Contributors to the Open Cluster Management project
 
-
 package collectors
 
 import (
@@ -16,7 +15,7 @@ import (
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/dynamic/fake"
 	"k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/kube-state-metrics/pkg/collector"
+	metricsstore "k8s.io/kube-state-metrics/pkg/metrics_store"
 	koptions "k8s.io/kube-state-metrics/pkg/options"
 	"k8s.io/kube-state-metrics/pkg/whiteblacklist"
 )
@@ -361,7 +360,7 @@ func TestBuilder_buildManagedClusterCollectorWithClient(t *testing.T) {
 		name   string
 		fields fields
 		args   args
-		want   *collector.Collector
+		want   *metricsstore.MetricsStore
 	}{
 		{
 			name: "buildManagedClusterCollectorWithClient",

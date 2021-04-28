@@ -69,26 +69,26 @@ func getManagedClusterInfoMetricFamilies(hubClusterID string, client dynamic.Int
 	return []metric.FamilyGenerator{
 		{
 			Name: descClusterInfoName,
-			Type: metric.MetricTypeGauge,
+			Type: metric.Gauge,
 			Help: descClusterInfoHelp,
 			GenerateFunc: wrapManagedClusterInfoFunc(func(mciObj *unstructured.Unstructured) metric.Family {
 				klog.Infof("Wrap %s", mciObj.GetName())
 				mci := &mciv1beta1.ManagedClusterInfo{}
 				err := runtime.DefaultUnstructuredConverter.FromUnstructured(mciObj.UnstructuredContent(), &mci)
 				if err != nil {
-					klog.Error(err)
+					klog.Errorf("Error: %v", err)
 					return metric.Family{Metrics: []*metric.Metric{}}
 				}
 				mcU, errMC := client.Resource(mcGVR).Get(context.TODO(), mci.GetName(), metav1.GetOptions{})
 				if errMC != nil {
-					klog.Error(errMC)
+					klog.Errorf("Error: %v", errMC)
 					return metric.Family{Metrics: []*metric.Metric{}}
 				}
 				klog.Infof("mcU: %v", mcU.Object)
 				mc := &mcv1.ManagedCluster{}
 				err = runtime.DefaultUnstructuredConverter.FromUnstructured(mcU.UnstructuredContent(), &mc)
 				if err != nil {
-					klog.Error(err)
+					klog.Errorf("Error: %v", err)
 					return metric.Family{Metrics: []*metric.Metric{}}
 				}
 				klog.Infof("mc: %v", mc)
@@ -140,7 +140,7 @@ func getManagedClusterInfoMetricFamilies(hubClusterID string, client dynamic.Int
 						Value:       1,
 					},
 				}}
-				klog.Infof("Returning %v", f)
+				klog.Infof("Returning %v", string(f.ByteSlice()))
 				return f
 			}),
 		},
@@ -181,8 +181,8 @@ func getTotalCPU(mc *mcv1.ManagedCluster) (cpu int64) {
 	return
 }
 
-func wrapManagedClusterInfoFunc(f func(*unstructured.Unstructured) metric.Family) func(interface{}) metric.Family {
-	return func(obj interface{}) metric.Family {
+func wrapManagedClusterInfoFunc(f func(*unstructured.Unstructured) metric.Family) func(interface{}) *metric.Family {
+	return func(obj interface{}) *metric.Family {
 		Cluster := obj.(*unstructured.Unstructured)
 
 		metricFamily := f(Cluster)
@@ -192,7 +192,7 @@ func wrapManagedClusterInfoFunc(f func(*unstructured.Unstructured) metric.Family
 			m.LabelValues = append([]string{}, m.LabelValues...)
 		}
 
-		return metricFamily
+		return &metricFamily
 	}
 }
 
