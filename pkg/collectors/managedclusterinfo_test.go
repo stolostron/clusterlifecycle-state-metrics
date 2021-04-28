@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"testing"
 
+	mcv1 "github.com/open-cluster-management/api/cluster/v1"
 	mciv1beta1 "github.com/open-cluster-management/multicloud-operators-foundation/pkg/apis/internal.open-cluster-management.io/v1beta1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -21,8 +22,9 @@ func Test_getManagedClusterMetricFamilies(t *testing.T) {
 	s := scheme.Scheme
 
 	s.AddKnownTypes(mciv1beta1.GroupVersion, &mciv1beta1.ManagedClusterInfo{})
+	s.AddKnownTypes(mcv1.GroupVersion, &mcv1.ManagedCluster{})
 
-	mc := &mciv1beta1.ManagedClusterInfo{
+	mci := &mciv1beta1.ManagedClusterInfo{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "hive-cluster",
 			Namespace: "hive-cluster",
@@ -40,25 +42,25 @@ func Test_getManagedClusterMetricFamilies(t *testing.T) {
 			},
 			NodeList: []mciv1beta1.NodeStatus{
 				//Label missing, so not a worker
-				mciv1beta1.NodeStatus{
+				{
 					Name: "worker-0",
 				},
 				//Label not worker, so not a valid worker
-				mciv1beta1.NodeStatus{
+				{
 					Name: "worker-1",
 					Labels: map[string]string{
 						"my-label": "my-label-value",
 					},
 				},
 				//Label worker no vCPU
-				mciv1beta1.NodeStatus{
+				{
 					Name: "worker-1",
 					Labels: map[string]string{
 						workerLabel: "",
 					},
 				},
 				//Label worker no vCPU
-				mciv1beta1.NodeStatus{
+				{
 					Name: "worker-2",
 					Labels: map[string]string{
 						workerLabel: "",
@@ -68,7 +70,7 @@ func Test_getManagedClusterMetricFamilies(t *testing.T) {
 					},
 				},
 				// Label worker with vCPU
-				mciv1beta1.NodeStatus{
+				{
 					Name: "worker-3",
 					Labels: map[string]string{
 						workerLabel: "",
@@ -77,6 +79,52 @@ func Test_getManagedClusterMetricFamilies(t *testing.T) {
 						mciv1beta1.ResourceCPU: *resource.NewQuantity(1, resource.DecimalSI),
 					},
 				},
+				// Label worker with vCPU
+				{
+					Name: "worker-3",
+					Labels: map[string]string{
+						workerLabel: "",
+					},
+					Capacity: mciv1beta1.ResourceList{
+						mciv1beta1.ResourceCPU: *resource.NewQuantity(2, resource.DecimalSI),
+					},
+				},
+			},
+		},
+	}
+	mciU := &unstructured.Unstructured{}
+	err := scheme.Scheme.Convert(mci, mciU, nil)
+	if err != nil {
+		t.Error(err)
+	}
+
+	mc := &mcv1.ManagedCluster{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "hive-cluster",
+		},
+		Status: mcv1.ManagedClusterStatus{
+			Capacity: mcv1.ResourceList{
+				mcv1.ResourceCPU: *resource.NewQuantity(4, resource.DecimalSI),
+			},
+		},
+	}
+
+	mcU := &unstructured.Unstructured{}
+	err = scheme.Scheme.Convert(mc, mcU, nil)
+	if err != nil {
+		t.Error(err)
+	}
+
+	mciOther := &mciv1beta1.ManagedClusterInfo{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "cluster-other",
+			Namespace: "cluster-other",
+		},
+		Status: mciv1beta1.ClusterInfoStatus{
+			KubeVendor:  mciv1beta1.KubeVendorOther,
+			CloudVendor: mciv1beta1.CloudVendorAWS,
+			Version:     "v1.16.2",
+			NodeList: []mciv1beta1.NodeStatus{
 				// Label worker with vCPU
 				mciv1beta1.NodeStatus{
 					Name: "worker-3",
@@ -90,30 +138,30 @@ func Test_getManagedClusterMetricFamilies(t *testing.T) {
 			},
 		},
 	}
-	mcU := &unstructured.Unstructured{}
-	err := scheme.Scheme.Convert(mc, mcU, nil)
+	mciUOther := &unstructured.Unstructured{}
+	err = scheme.Scheme.Convert(mciOther, mciUOther, nil)
 	if err != nil {
 		t.Error(err)
 	}
 
-	mcOther := &mciv1beta1.ManagedClusterInfo{
+	mcOther := &mcv1.ManagedCluster{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "cluster-other",
-			Namespace: "cluster-other",
+			Name: "cluster-other",
 		},
-		Status: mciv1beta1.ClusterInfoStatus{
-			KubeVendor:  mciv1beta1.KubeVendorOther,
-			CloudVendor: mciv1beta1.CloudVendorAWS,
-			Version:     "v1.16.2",
+		Status: mcv1.ManagedClusterStatus{
+			Capacity: mcv1.ResourceList{
+				mcv1.ResourceCPU: *resource.NewQuantity(4, resource.DecimalSI),
+			},
 		},
 	}
+
 	mcUOther := &unstructured.Unstructured{}
 	err = scheme.Scheme.Convert(mcOther, mcUOther, nil)
 	if err != nil {
 		t.Error(err)
 	}
 
-	mcMissingInfo := &mciv1beta1.ManagedClusterInfo{
+	mciMissingInfo := &mciv1beta1.ManagedClusterInfo{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "hive-cluster-2",
 			Namespace: "hive-cluster-2",
@@ -124,6 +172,24 @@ func Test_getManagedClusterMetricFamilies(t *testing.T) {
 			ClusterID:   "managed_cluster_id",
 		},
 	}
+
+	mciUMissingInfo := &unstructured.Unstructured{}
+	err = scheme.Scheme.Convert(mciMissingInfo, mciUMissingInfo, nil)
+	if err != nil {
+		t.Error(err)
+	}
+
+	mcMissingInfo := &mcv1.ManagedCluster{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "hive-cluster-2",
+		},
+		Status: mcv1.ManagedClusterStatus{
+			Capacity: mcv1.ResourceList{
+				mcv1.ResourceCPU: *resource.NewQuantity(4, resource.DecimalSI),
+			},
+		},
+	}
+
 	mcUMissingInfo := &unstructured.Unstructured{}
 	err = scheme.Scheme.Convert(mcMissingInfo, mcUMissingInfo, nil)
 	if err != nil {
@@ -141,26 +207,26 @@ func Test_getManagedClusterMetricFamilies(t *testing.T) {
 		},
 	}
 
-	client := fake.NewSimpleDynamicClient(s, mcU, mcUMissingInfo, mcUOther)
-	clientHive := fake.NewSimpleDynamicClient(s, mcU, cdU)
+	client := fake.NewSimpleDynamicClient(s, mciU, mciUMissingInfo, mciUOther, mcU, mcUOther, mcUMissingInfo)
+	clientHive := fake.NewSimpleDynamicClient(s, mciU, cdU, mcU, mcUOther, mcUMissingInfo)
 	tests := []generateMetricsTestCase{
 		{
-			Obj:         mcU,
+			Obj:         mciU,
 			MetricNames: []string{"acm_managed_cluster_info"},
 			Want: `
-			acm_managed_cluster_info{cloud="Amazon",managed_cluster_id="managed_cluster_id",created_via="Other",hub_cluster_id="mycluster_id",vendor="OpenShift",version="4.3.1",vcpu="3"} 1
+			acm_managed_cluster_info{cloud="Amazon",cpu="4",cpu_worker="3",managed_cluster_id="managed_cluster_id",created_via="Other",hub_cluster_id="mycluster_id",vendor="OpenShift",version="4.3.1"} 1
 				`,
 		},
 		{
-			Obj:         mcUMissingInfo,
+			Obj:         mciUMissingInfo,
 			MetricNames: []string{"acm_managed_cluster_info"},
 			Want:        "",
 		},
 		{
-			Obj:         mcUOther,
+			Obj:         mciUOther,
 			MetricNames: []string{"acm_managed_cluster_info"},
 			Want: `
-			acm_managed_cluster_info{cloud="Amazon",managed_cluster_id="cluster-other",created_via="Other",hub_cluster_id="mycluster_id",vendor="Other",version="v1.16.2",vcpu="0"} 1
+			acm_managed_cluster_info{cloud="Amazon",cpu="4",cpu_worker="2",managed_cluster_id="cluster-other",created_via="Other",hub_cluster_id="mycluster_id",vendor="Other",version="v1.16.2"} 1
 				`,
 		},
 	}
@@ -172,10 +238,10 @@ func Test_getManagedClusterMetricFamilies(t *testing.T) {
 	}
 	tests = []generateMetricsTestCase{
 		{
-			Obj:         mcU,
+			Obj:         mciU,
 			MetricNames: []string{"acm_managed_cluster_info"},
 			Want: `
-			acm_managed_cluster_info{cloud="Amazon",managed_cluster_id="managed_cluster_id",created_via="Hive",hub_cluster_id="mycluster_id",vendor="OpenShift",version="4.3.1",vcpu="3"} 1
+			acm_managed_cluster_info{cloud="Amazon",cpu="4",cpu_worker="3",managed_cluster_id="managed_cluster_id",created_via="Hive",hub_cluster_id="mycluster_id",vendor="OpenShift",version="4.3.1"} 1
 				`,
 		},
 	}

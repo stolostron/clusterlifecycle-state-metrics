@@ -16,6 +16,7 @@ import (
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/kube-state-metrics/pkg/metric"
 
+	mcv1 "github.com/open-cluster-management/api/cluster/v1"
 	mciv1beta1 "github.com/open-cluster-management/multicloud-operators-foundation/pkg/apis/internal.open-cluster-management.io/v1beta1"
 	"k8s.io/klog/v2"
 )
@@ -36,7 +37,8 @@ var (
 		"cloud",
 		"version",
 		"created_via",
-		"vcpu"}
+		"cpu",
+		"cpu_worker"}
 
 	cdGVR = schema.GroupVersionResource{
 		Group:    "hive.openshift.io",
@@ -55,6 +57,12 @@ var (
 		Version:  "v1beta1",
 		Resource: "managedclusterinfos",
 	}
+
+	mcGVR = schema.GroupVersionResource{
+		Group:    "cluster.open-cluster-management.io",
+		Version:  "v1",
+		Resource: "managedclusters",
+	}
 )
 
 func getManagedClusterInfoMetricFamilies(hubClusterID string, client dynamic.Interface) []metric.FamilyGenerator {
@@ -68,8 +76,22 @@ func getManagedClusterInfoMetricFamilies(hubClusterID string, client dynamic.Int
 				mci := &mciv1beta1.ManagedClusterInfo{}
 				err := runtime.DefaultUnstructuredConverter.FromUnstructured(mciObj.UnstructuredContent(), &mci)
 				if err != nil {
+					klog.Error(err)
 					return metric.Family{Metrics: []*metric.Metric{}}
 				}
+				mcU, errMC := client.Resource(mcGVR).Get(context.TODO(), mci.GetName(), metav1.GetOptions{})
+				if errMC != nil {
+					klog.Error(errMC)
+					return metric.Family{Metrics: []*metric.Metric{}}
+				}
+				klog.Infof("mcU: %v", mcU.Object)
+				mc := &mcv1.ManagedCluster{}
+				err = runtime.DefaultUnstructuredConverter.FromUnstructured(mcU.UnstructuredContent(), &mc)
+				if err != nil {
+					klog.Error(err)
+					return metric.Family{Metrics: []*metric.Metric{}}
+				}
+				klog.Infof("mc: %v", mc)
 				createdVia := createdViaHive
 				cd, errCD := client.Resource(cdGVR).Namespace(mci.GetName()).Get(context.TODO(), mci.GetName(), metav1.GetOptions{})
 				if errCD != nil {
@@ -83,17 +105,22 @@ func getManagedClusterInfoMetricFamilies(hubClusterID string, client dynamic.Int
 					clusterID = mci.GetName()
 				}
 				version := getVersion(mci)
-				vcpu := getSize(mci)
+				cpu := getTotalCPU(mc)
+				cpu_worker := getWorkerCPU(mci)
+
 				if clusterID == "" ||
 					mci.Status.KubeVendor == "" ||
 					mci.Status.CloudVendor == "" ||
-					version == "" {
+					version == "" ||
+					cpu == 0 || cpu_worker == 0 {
 					klog.Infof("Not enough information available for %s", mci.GetName())
-					klog.Infof("\tClusterID=%s,KubeVendor=%s,CloudVendor=%s,Version=%s",
+					klog.Infof("\tClusterID=%s,KubeVendor=%s,CloudVendor=%s,Version=%s,cpu=%d,cpu_worker=%d",
 						clusterID,
 						mci.Status.KubeVendor,
 						mci.Status.CloudVendor,
-						mci.Status.Version)
+						version,
+						cpu,
+						cpu_worker)
 					return metric.Family{Metrics: []*metric.Metric{}}
 				}
 				labelsValues := []string{hubClusterID,
@@ -102,7 +129,8 @@ func getManagedClusterInfoMetricFamilies(hubClusterID string, client dynamic.Int
 					string(mci.Status.CloudVendor),
 					version,
 					createdVia,
-					strconv.FormatInt(vcpu, 10),
+					strconv.FormatInt(cpu, 10),
+					strconv.FormatInt(cpu_worker, 10),
 				}
 
 				f := metric.Family{Metrics: []*metric.Metric{
@@ -133,13 +161,22 @@ func getVersion(mci *mciv1beta1.ManagedClusterInfo) string {
 }
 
 //Get only the worker size
-func getSize(mci *mciv1beta1.ManagedClusterInfo) (vcpu int64) {
+func getWorkerCPU(mci *mciv1beta1.ManagedClusterInfo) (vcpu int64) {
 	for _, n := range mci.Status.NodeList {
 		if _, ok := n.Labels[workerLabel]; ok {
 			if q, ok := n.Capacity[mciv1beta1.ResourceCPU]; ok {
 				vcpu += q.Value()
 			}
 		}
+	}
+	return
+}
+
+func getTotalCPU(mc *mcv1.ManagedCluster) (cpu int64) {
+	klog.Infof("getTotalCPU: %v", mc.Status)
+	klog.Infof("getTotalCPU: %v", mc.Status.Capacity[mcv1.ResourceCPU])
+	if q, ok := mc.Status.Capacity[mcv1.ResourceCPU]; ok {
+		cpu = q.Value()
 	}
 	return
 }
