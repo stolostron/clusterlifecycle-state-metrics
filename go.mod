@@ -26,6 +26,7 @@ require (
 	github.com/open-cluster-management/multicloud-operators-foundation v0.0.0-20210415053135-434684dc0274
 	github.com/openshift/api v3.9.1-0.20191111211345-a27ff30ebf09+incompatible
 	github.com/openshift/build-machinery-go v0.0.0-20210423112049-9415d7ebd33e
+	github.com/operator-framework/operator-sdk v0.17.0
 	github.com/prometheus/client_golang v1.10.0
 	github.com/prometheus/common v0.20.0 // indirect
 	github.com/stretchr/testify v1.7.0 // indirect
@@ -35,7 +36,6 @@ require (
 	golang.org/x/tools v0.1.0 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
 	k8s.io/api v0.21.0-rc.0 // indirect
-	k8s.io/apiextensions-apiserver v0.20.1
 	k8s.io/apimachinery v0.21.0-rc.0
 	k8s.io/client-go v12.0.0+incompatible
 	k8s.io/klog v1.0.0

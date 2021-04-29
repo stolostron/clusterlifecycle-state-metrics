@@ -16,7 +16,8 @@ import (
 	"strconv"
 	"strings"
 
-	// "github.com/operator-framework/operator-sdk/pkg/log/zap"
+	"github.com/operator-framework/operator-sdk/pkg/log/zap"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -30,7 +31,7 @@ import (
 	ocollectors "github.com/open-cluster-management/clusterlifecycle-state-metrics/pkg/collectors"
 	"github.com/open-cluster-management/clusterlifecycle-state-metrics/pkg/options"
 	"github.com/open-cluster-management/clusterlifecycle-state-metrics/pkg/version"
-	// "github.com/operator-framework/operator-sdk/pkg/leader"
+	"github.com/operator-framework/operator-sdk/pkg/leader"
 )
 
 const (
@@ -46,7 +47,7 @@ type promLogger struct{}
 
 func init() {
 	//Used by the operator-framework as this code use the leader.Become function.
-	// logf.SetLogger(zap.Logger())
+	logf.SetLogger(zap.Logger())
 	opts = options.NewOptions()
 	opts.AddFlags()
 }
@@ -116,13 +117,13 @@ func start(opts *options.Options) {
 	}
 	go telemetryServer(ocmMetricsRegistry, opts.TelemetryHost, opts.HTTPTelemetryPort, opts.HTTPSTelemetryPort, opts.TLSCrtFile, opts.TLSKeyFile)
 
-	// ctx := context.TODO()
-	// // Become the leader before proceeding
-	// err = leader.Become(ctx, leaderConfigMapName)
-	// if err != nil {
-	// 	klog.Error(err, "")
-	// 	os.Exit(1)
-	// }
+	ctx := context.TODO()
+	// Become the leader before proceeding
+	err = leader.Become(ctx, leaderConfigMapName)
+	if err != nil {
+		klog.Error(err, "")
+		os.Exit(1)
+	}
 
 	collectors := collectorBuilder.Build()
 
