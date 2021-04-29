@@ -6,9 +6,6 @@ metadata:
   creationTimestamp: "2020-11-02T13:57:09Z"
   generation: 9735
   name: clusterversions.config.openshift.io
-  resourceVersion: "9780559"
-  selfLink: /apis/apiextensions.k8s.io/v1/customresourcedefinitions/clusterversions.config.openshift.io
-  uid: 04139bf9-71be-4040-932c-c51cc13d4e9d
 spec:
   conversion:
     strategy: None

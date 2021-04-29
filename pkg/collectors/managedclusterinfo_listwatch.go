@@ -18,3 +18,12 @@ func createManagedClusterInfoListWatch(apiserver string, kubeconfig string, ns s
 	client := dynamic.NewForConfigOrDie(config)
 	return createManagedClusterInfoListWatchWithClient(client, ns)
 }
+
+func createManagedClusterListWatch(apiserver string, kubeconfig string) cache.ListWatch {
+	config, err := clientcmd.BuildConfigFromFlags(apiserver, kubeconfig)
+	if err != nil {
+		klog.Fatalf("cannot create Dynamic client: %v", err)
+	}
+	client := dynamic.NewForConfigOrDie(config)
+	return createManagedClusterListWatchWithClient(client)
+}

@@ -11,9 +11,6 @@ metadata:
   labels:
     controller-tools.k8s.io: "1.0"
   name: clusterdeployments.hive.openshift.io
-  resourceVersion: "18851233"
-  selfLink: /apis/apiextensions.k8s.io/v1beta1/customresourcedefinitions/clusterdeployments.hive.openshift.io
-  uid: 17f83775-32fd-11ea-bd35-1240a91566d5
 spec:
   additionalPrinterColumns:
   - JSONPath: .spec.clusterName

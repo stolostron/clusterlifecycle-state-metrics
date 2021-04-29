@@ -26,6 +26,12 @@ const (
 	createdViaOther = "Other"
 
 	workerLabel = "node-role.kubernetes.io/worker"
+
+	resourceSocket       mcv1.ResourceName = "socket"
+	resourceCore         mcv1.ResourceName = "core"
+	resourceCoreWorker   mcv1.ResourceName = "core_worker"
+	resourceSocketWorker mcv1.ResourceName = "socket_worker"
+	resourceCPUWorker    mcv1.ResourceName = "cpu_worker"
 )
 
 var (
@@ -38,7 +44,11 @@ var (
 		"version",
 		"created_via",
 		"cpu",
-		"cpu_worker"}
+		"cpu_worker",
+		"core",
+		"core_worker",
+		"socket",
+		"socket_worker"}
 
 	cdGVR = schema.GroupVersionResource{
 		Group:    "hive.openshift.io",
@@ -71,10 +81,15 @@ func getManagedClusterInfoMetricFamilies(hubClusterID string, client dynamic.Int
 			Name: descClusterInfoName,
 			Type: metric.Gauge,
 			Help: descClusterInfoHelp,
-			GenerateFunc: wrapManagedClusterInfoFunc(func(mciObj *unstructured.Unstructured) metric.Family {
-				klog.Infof("Wrap %s", mciObj.GetName())
+			GenerateFunc: wrapManagedClusterInfoFunc(func(obj *unstructured.Unstructured) metric.Family {
+				klog.Infof("Wrap %s", obj.GetName())
+				mciU, errMCI := client.Resource(mciGVR).Namespace(obj.GetName()).Get(context.TODO(), obj.GetName(), metav1.GetOptions{})
+				if errMCI != nil {
+					klog.Errorf("Error: %v", errMCI)
+					return metric.Family{Metrics: []*metric.Metric{}}
+				}
 				mci := &mciv1beta1.ManagedClusterInfo{}
-				err := runtime.DefaultUnstructuredConverter.FromUnstructured(mciObj.UnstructuredContent(), &mci)
+				err := runtime.DefaultUnstructuredConverter.FromUnstructured(mciU.UnstructuredContent(), &mci)
 				if err != nil {
 					klog.Errorf("Error: %v", err)
 					return metric.Family{Metrics: []*metric.Metric{}}
@@ -84,14 +99,14 @@ func getManagedClusterInfoMetricFamilies(hubClusterID string, client dynamic.Int
 					klog.Errorf("Error: %v", errMC)
 					return metric.Family{Metrics: []*metric.Metric{}}
 				}
-				klog.Infof("mcU: %v", mcU.Object)
+				klog.Infof("mcU: %v", mcU)
 				mc := &mcv1.ManagedCluster{}
 				err = runtime.DefaultUnstructuredConverter.FromUnstructured(mcU.UnstructuredContent(), &mc)
 				if err != nil {
 					klog.Errorf("Error: %v", err)
 					return metric.Family{Metrics: []*metric.Metric{}}
 				}
-				klog.Infof("mc: %v", mc)
+				// klog.Infof("mc: %v", mc)
 				createdVia := createdViaHive
 				cd, errCD := client.Resource(cdGVR).Namespace(mci.GetName()).Get(context.TODO(), mci.GetName(), metav1.GetOptions{})
 				if errCD != nil {
@@ -105,22 +120,35 @@ func getManagedClusterInfoMetricFamilies(hubClusterID string, client dynamic.Int
 					clusterID = mci.GetName()
 				}
 				version := getVersion(mci)
-				cpu := getTotalCPU(mc)
-				cpu_worker := getWorkerCPU(mci)
+				cpu, cpu_worker, core, core_worker, socket, socket_worker := getCapacity(mc)
 
 				if clusterID == "" ||
 					mci.Status.KubeVendor == "" ||
 					mci.Status.CloudVendor == "" ||
 					version == "" ||
-					cpu == 0 || cpu_worker == 0 {
+					cpu == 0 ||
+					(cpu_worker == 0 && hasWorker(mci)) {
 					klog.Infof("Not enough information available for %s", mci.GetName())
-					klog.Infof("\tClusterID=%s,KubeVendor=%s,CloudVendor=%s,Version=%s,cpu=%d,cpu_worker=%d",
+					klog.Infof(`\tClusterID=%s,
+KubeVendor=%s,
+CloudVendor=%s,
+Version=%s,
+cpu=%d,
+cpu_worker=%d,
+core=%d,
+core_worker=%d,
+socket=%d,
+socket_worker=%d`,
 						clusterID,
 						mci.Status.KubeVendor,
 						mci.Status.CloudVendor,
 						version,
 						cpu,
-						cpu_worker)
+						cpu_worker,
+						core,
+						core_worker,
+						socket,
+						socket_worker)
 					return metric.Family{Metrics: []*metric.Metric{}}
 				}
 				labelsValues := []string{hubClusterID,
@@ -131,6 +159,10 @@ func getManagedClusterInfoMetricFamilies(hubClusterID string, client dynamic.Int
 					createdVia,
 					strconv.FormatInt(cpu, 10),
 					strconv.FormatInt(cpu_worker, 10),
+					strconv.FormatInt(core, 10),
+					strconv.FormatInt(core_worker, 10),
+					strconv.FormatInt(socket, 10),
+					strconv.FormatInt(socket_worker, 10),
 				}
 
 				f := metric.Family{Metrics: []*metric.Metric{
@@ -161,22 +193,44 @@ func getVersion(mci *mciv1beta1.ManagedClusterInfo) string {
 }
 
 //Get only the worker size
-func getWorkerCPU(mci *mciv1beta1.ManagedClusterInfo) (vcpu int64) {
+// func getWorkerCPU(mci *mciv1beta1.ManagedClusterInfo) (vcpu int64) {
+// 	for _, n := range mci.Status.NodeList {
+// 		if _, ok := n.Labels[workerLabel]; ok {
+// 			if q, ok := n.Capacity[mciv1beta1.ResourceCPU]; ok {
+// 				vcpu += q.Value()
+// 			}
+// 		}
+// 	}
+// 	return
+// }
+
+func hasWorker(mci *mciv1beta1.ManagedClusterInfo) bool {
 	for _, n := range mci.Status.NodeList {
 		if _, ok := n.Labels[workerLabel]; ok {
-			if q, ok := n.Capacity[mciv1beta1.ResourceCPU]; ok {
-				vcpu += q.Value()
-			}
+			return true
 		}
 	}
-	return
+	return false
 }
 
-func getTotalCPU(mc *mcv1.ManagedCluster) (cpu int64) {
-	klog.Infof("getTotalCPU: %v", mc.Status)
-	klog.Infof("getTotalCPU: %v", mc.Status.Capacity[mcv1.ResourceCPU])
+func getCapacity(mc *mcv1.ManagedCluster) (cpu, cpu_worker, core, core_worker, socket, socket_worker int64) {
 	if q, ok := mc.Status.Capacity[mcv1.ResourceCPU]; ok {
 		cpu = q.Value()
+	}
+	if q, ok := mc.Status.Capacity[resourceCPUWorker]; ok {
+		cpu_worker = q.Value()
+	}
+	if q, ok := mc.Status.Capacity[resourceCore]; ok {
+		core = q.Value()
+	}
+	if q, ok := mc.Status.Capacity[resourceCoreWorker]; ok {
+		core_worker = q.Value()
+	}
+	if q, ok := mc.Status.Capacity[resourceSocket]; ok {
+		socket = q.Value()
+	}
+	if q, ok := mc.Status.Capacity[resourceSocketWorker]; ok {
+		socket_worker = q.Value()
 	}
 	return
 }
@@ -203,6 +257,17 @@ func createManagedClusterInfoListWatchWithClient(client dynamic.Interface, ns st
 		},
 		WatchFunc: func(opts metav1.ListOptions) (watch.Interface, error) {
 			return client.Resource(mciGVR).Namespace(ns).Watch(context.TODO(), opts)
+		},
+	}
+}
+
+func createManagedClusterListWatchWithClient(client dynamic.Interface) cache.ListWatch {
+	return cache.ListWatch{
+		ListFunc: func(opts metav1.ListOptions) (runtime.Object, error) {
+			return client.Resource(mcGVR).List(context.TODO(), opts)
+		},
+		WatchFunc: func(opts metav1.ListOptions) (watch.Interface, error) {
+			return client.Resource(mcGVR).Watch(context.TODO(), opts)
 		},
 	}
 }

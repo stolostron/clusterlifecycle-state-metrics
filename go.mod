@@ -8,7 +8,6 @@ replace (
 	github.com/metal3-io/cluster-api-provider-baremetal => github.com/openshift/cluster-api-provider-baremetal v0.0.0-20190821174549-a2a477909c1d
 	github.com/terraform-providers/terraform-provider-ignition/v2 => github.com/community-terraform-providers/terraform-provider-ignition/v2 v2.1.0
 	k8s.io/api => k8s.io/api v0.20.0
-	k8s.io/apimachinery => k8s.io/apimachinery v0.20.0
 	k8s.io/client-go => k8s.io/client-go v0.20.0
 	kubevirt.io/client-go => kubevirt.io/client-go v0.29.0
 	sigs.k8s.io/cluster-api-provider-aws => github.com/openshift/cluster-api-provider-aws v0.2.1-0.20201022175424-d30c7a274820
@@ -36,10 +35,12 @@ require (
 	golang.org/x/tools v0.1.0 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
 	k8s.io/api v0.21.0-rc.0 // indirect
+	k8s.io/apiextensions-apiserver v0.20.1
 	k8s.io/apimachinery v0.21.0-rc.0
 	k8s.io/client-go v12.0.0+incompatible
 	k8s.io/klog v1.0.0
 	k8s.io/klog/v2 v2.8.0
 	k8s.io/kube-state-metrics v1.9.8
+	k8s.io/kubernetes v1.13.0
 	sigs.k8s.io/controller-runtime v0.8.3
 )

@@ -123,7 +123,6 @@ for dir in overlays/test/* ; do
     exit $ERR
   fi
   set -e
-  exit 1
 
   echo "remove deployment"
   kubectl delete --wait=true -k "$dir"

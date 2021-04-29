@@ -4,20 +4,20 @@
 package collectors
 
 import (
+	"bytes"
 	"reflect"
 	"testing"
-	"time"
 
-	managedclusterv1 "github.com/open-cluster-management/api/cluster/v1"
 	ocinfrav1 "github.com/openshift/api/config/v1"
 	"golang.org/x/net/context"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/dynamic"
-	"k8s.io/client-go/dynamic/fake"
-	"k8s.io/client-go/kubernetes/scheme"
 	metricsstore "k8s.io/kube-state-metrics/pkg/metrics_store"
 	koptions "k8s.io/kube-state-metrics/pkg/options"
 	"k8s.io/kube-state-metrics/pkg/whiteblacklist"
+	"sigs.k8s.io/controller-runtime/pkg/envtest"
 )
 
 var (
@@ -312,28 +312,27 @@ func TestBuilder_WithWhiteBlackList(t *testing.T) {
 }
 
 func TestBuilder_buildManagedClusterCollectorWithClient(t *testing.T) {
-	s := scheme.Scheme
-
-	s.AddKnownTypes(managedclusterv1.SchemeGroupVersion, &managedclusterv1.ManagedCluster{})
-	s.AddKnownTypes(ocinfrav1.SchemeGroupVersion, &ocinfrav1.ClusterVersion{})
-
-	mcImported := &managedclusterv1.ManagedCluster{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:              "imported-cluster",
-			CreationTimestamp: metav1.Time{Time: time.Unix(1500000000, 0)},
-			Labels: map[string]string{
-				"cloud":  "aws",
-				"vendor": "OpneShift",
-			},
-		},
-		Status: managedclusterv1.ManagedClusterStatus{
-			Version: managedclusterv1.ManagedClusterVersion{
-				Kubernetes: "v1.16.2",
-			},
-		},
+	const headers = `# HELP acm_managed_cluster_info Managed cluster information
+# TYPE acm_managed_cluster_info gauge
+`
+	envTest, kubeconfig, _, _ := setupEnvTest(t)
+	_, err := envtest.InstallCRDs(envTest.Config, envtest.CRDInstallOptions{
+		Paths: []string{"../../test/unit/resources/crds"},
+	})
+	if err != nil {
+		t.Fatal(err)
 	}
+	_, _, err = envTest.ControlPlane.KubeCtl().Run("create", "ns", "imported-cluster")
+	if err != nil {
+		t.Fatal(err)
+	}
+	clientDynamic := dynamic.NewForConfigOrDie(envTest.Config)
 
 	version := &ocinfrav1.ClusterVersion{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: cvGVR.GroupVersion().String(),
+			Kind:       "ClusterVersion",
+		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "version",
 		},
@@ -342,7 +341,17 @@ func TestBuilder_buildManagedClusterCollectorWithClient(t *testing.T) {
 		},
 	}
 
-	client := fake.NewSimpleDynamicClient(s, mcImported, version)
+	versionU := &unstructured.Unstructured{}
+	versionM, err := runtime.DefaultUnstructuredConverter.ToUnstructured(version)
+	if err != nil {
+		t.Error(err)
+	}
+	versionU.SetUnstructuredContent(versionM)
+	_, err = clientDynamic.Resource(cvGVR).Create(context.TODO(), versionU, metav1.CreateOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	// client := fake.NewSimpleDynamicClient(s, mcImported, version)
 
 	w, _ := whiteblacklist.New(map[string]struct{}{}, map[string]struct{}{})
 	type fields struct {
@@ -365,15 +374,15 @@ func TestBuilder_buildManagedClusterCollectorWithClient(t *testing.T) {
 		{
 			name: "buildManagedClusterCollectorWithClient",
 			fields: fields{
-				apiserver:         "",
-				kubeconfig:        "",
+				apiserver:         envTest.ControlPlane.APIURL().String(),
+				kubeconfig:        kubeconfig,
 				namespaces:        koptions.NamespaceList{},
 				ctx:               ctx,
 				enabledCollectors: []string{"managedclusterinfos"},
 				whiteBlackList:    w,
 			},
 			args: args{
-				client: client,
+				client: clientDynamic,
 			},
 			want: nil,
 		},
@@ -388,8 +397,14 @@ func TestBuilder_buildManagedClusterCollectorWithClient(t *testing.T) {
 				enabledCollectors: tt.fields.enabledCollectors,
 				whiteBlackList:    tt.fields.whiteBlackList,
 			}
-			if got := b.buildManagedClusterInfoCollectorWithClient(tt.args.client); got == nil {
+			got := b.buildManagedClusterInfoCollectorWithClient(tt.args.client)
+			if got == nil {
 				t.Errorf("Builder.buildManagedClusterCollectorWithClient() = %v, want %v", got, tt.want)
+			}
+			buf := new(bytes.Buffer)
+			got.WriteAll(buf)
+			if buf.String() != headers {
+				t.Errorf("Expected headers \n%s\ngot\n%s", headers, buf.String())
 			}
 		})
 	}

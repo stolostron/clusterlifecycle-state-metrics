@@ -17,6 +17,7 @@ import (
 	"strings"
 
 	// "github.com/operator-framework/operator-sdk/pkg/log/zap"
+
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"

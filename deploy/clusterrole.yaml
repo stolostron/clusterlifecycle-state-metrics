@@ -21,10 +21,10 @@ rules:
   verbs: ["get"]
 - apiGroups: ["internal.open-cluster-management.io"]
   resources: ["managedclusterinfos"]
-  verbs: ["list","watch"]
+  verbs: ["get","list","watch"]
 - apiGroups: ["cluster.open-cluster-management.io"]
   resources: ["managedclusters"]
-  verbs: ["get"]
+  verbs: ["get","list","watch"]
 # Allow to query the CVO on the Hub Cluster to get the ClusterId
 - apiGroups: ["config.openshift.io"]
   resources: ["clusterversions"]

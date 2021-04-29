@@ -10,6 +10,8 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
+	"sort"
+	"strings"
 	"time"
 
 	. "github.com/onsi/ginkgo"
@@ -27,24 +29,32 @@ const (
 `
 	managedClusterResponse = `# HELP acm_managed_cluster_info Managed cluster information
 # TYPE acm_managed_cluster_info gauge
-acm_managed_cluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="import_cluster_id",vendor="OpenShift",cloud="Amazon",version="4.3.1",created_via="Other",cpu="1",cpu_worker="1"} 1
-acm_managed_cluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="local_cluster_id",vendor="OpenShift",cloud="Amazon",version="4.3.1",created_via="Other",cpu="1",cpu_worker="1"} 1
+acm_managed_cluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="import_cluster_id",vendor="OpenShift",cloud="Amazon",version="4.3.1",created_via="Other",cpu="3",cpu_worker="1",core="4",core_worker="2",socket="2",socket_worker="1"} 1
+acm_managed_cluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="local_cluster_id",vendor="OpenShift",cloud="Amazon",version="4.3.1",created_via="Other",cpu="2",cpu_worker="1",core="0",core_worker="0",socket="0",socket_worker="0"} 1
+acm_managed_cluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="import_cluster_id",vendor="OpenShift",cloud="Amazon",version="4.3.1",created_via="Other",cpu="3",cpu_worker="1",core="4",core_worker="2",socket="2",socket_worker="1"} 1
+acm_managed_cluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="local_cluster_id",vendor="OpenShift",cloud="Amazon",version="4.3.1",created_via="Other",cpu="2",cpu_worker="1",core="0",core_worker="0",socket="0",socket_worker="0"} 1
 `
 	managedClusterHiveResponse = `# HELP acm_managed_cluster_info Managed cluster information
 # TYPE acm_managed_cluster_info gauge
-acm_managed_cluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="hive_cluster_id",vendor="OpenShift",cloud="Amazon",version="4.3.1",created_via="Hive",cpu="4",cpu_worker="3"} 1
+acm_managed_cluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="hive_cluster_id",vendor="OpenShift",cloud="Amazon",version="4.3.1",created_via="Hive",cpu="2",cpu_worker="1",core="0",core_worker="0",socket="0",socket_worker="0"} 1
 `
 )
 
 const (
 	masterLabel = "node-role.kubernetes.io/master"
 	workerLabel = "node-role.kubernetes.io/worker"
+
+	resourceSocket       mcv1.ResourceName = "socket"
+	resourceCore         mcv1.ResourceName = "core"
+	resourceCoreWorker   mcv1.ResourceName = "core_worker"
+	resourceSocketWorker mcv1.ResourceName = "socket_worker"
+	resourceCPUWorker    mcv1.ResourceName = "cpu_worker"
 )
 
 var _ = Describe("Metrics", func() {
 	BeforeEach(func() {
 		SetDefaultEventuallyTimeout(20 * time.Second)
-		SetDefaultEventuallyPollingInterval(10 * time.Second)
+		SetDefaultEventuallyPollingInterval(1 * time.Second)
 		By("Cleaning status", func() {
 			Expect(updateMCIStatus("local-cluster", mciv1beta1.ClusterInfoStatus{})).Should(BeNil())
 			Expect(updateMCIStatus("cluster-hive", mciv1beta1.ClusterInfoStatus{})).Should(BeNil())
@@ -85,18 +95,18 @@ var _ = Describe("Metrics", func() {
 		})
 	})
 
-	// It("Get Empty Metrics", func() {
-	// 	By("Getting metrics", func() {
-	// 		Eventually(func() string {
-	// 			resp, b, err := getMetrics()
-	// 			klog.Infof("Get Empty Metrics response: %s", b)
-	// 			if err != nil || resp.StatusCode != http.StatusOK {
-	// 				return ""
-	// 			}
-	// 			return b
-	// 		}).Should(Equal(clusterDeploymentResponse))
-	// 	})
-	// })
+	It("Get Empty Metrics", func() {
+		By("Getting metrics", func() {
+			Eventually(func() string {
+				resp, b, err := getMetrics()
+				klog.Infof("Get Empty Metrics response: %s", b)
+				if err != nil || resp.StatusCode != http.StatusOK {
+					return ""
+				}
+				return sortLines(b)
+			}).Should(Equal(sortLines(clusterDeploymentResponse)))
+		})
+	})
 
 	It("Get imported cluster Metrics", func() {
 		By("Updating status local-cluster", func() {
@@ -118,9 +128,6 @@ var _ = Describe("Metrics", func() {
 						Labels: map[string]string{
 							workerLabel: "",
 						},
-						Capacity: mciv1beta1.ResourceList{
-							mciv1beta1.ResourceCPU: *resource.NewQuantity(1, resource.DecimalSI),
-						},
 					},
 				},
 			})).Should(BeNil())
@@ -135,19 +142,8 @@ var _ = Describe("Metrics", func() {
 					},
 				},
 				Capacity: mcv1.ResourceList{
-					mcv1.ResourceCPU: *resource.NewQuantity(1, resource.DecimalSI),
-				},
-				Allocatable: mcv1.ResourceList{
-					mcv1.ResourceCPU: *resource.NewQuantity(1, resource.DecimalSI),
-				},
-				Version: mcv1.ManagedClusterVersion{
-					Kubernetes: "v1.17.0",
-				},
-				ClusterClaims: []mcv1.ManagedClusterClaim{
-					{
-						Name:  "test",
-						Value: "testvalue",
-					},
+					mcv1.ResourceCPU:  *resource.NewQuantity(2, resource.DecimalSI),
+					resourceCPUWorker: *resource.NewQuantity(1, resource.DecimalSI),
 				},
 			})).Should(BeNil())
 		})
@@ -170,9 +166,6 @@ var _ = Describe("Metrics", func() {
 						Labels: map[string]string{
 							workerLabel: "",
 						},
-						Capacity: mciv1beta1.ResourceList{
-							mciv1beta1.ResourceCPU: *resource.NewQuantity(1, resource.DecimalSI),
-						},
 					},
 				},
 			})).Should(BeNil())
@@ -187,19 +180,12 @@ var _ = Describe("Metrics", func() {
 					},
 				},
 				Capacity: mcv1.ResourceList{
-					mcv1.ResourceCPU: *resource.NewQuantity(1, resource.DecimalSI),
-				},
-				Allocatable: mcv1.ResourceList{
-					mcv1.ResourceCPU: *resource.NewQuantity(1, resource.DecimalSI),
-				},
-				Version: mcv1.ManagedClusterVersion{
-					Kubernetes: "v1.17.0",
-				},
-				ClusterClaims: []mcv1.ManagedClusterClaim{
-					{
-						Name:  "test",
-						Value: "testvalue",
-					},
+					mcv1.ResourceCPU:     *resource.NewQuantity(3, resource.DecimalSI),
+					resourceCPUWorker:    *resource.NewQuantity(1, resource.DecimalSI),
+					resourceCore:         *resource.NewQuantity(4, resource.DecimalSI),
+					resourceCoreWorker:   *resource.NewQuantity(2, resource.DecimalSI),
+					resourceSocket:       *resource.NewQuantity(2, resource.DecimalSI),
+					resourceSocketWorker: *resource.NewQuantity(1, resource.DecimalSI),
 				},
 			})).Should(BeNil())
 		})
@@ -211,82 +197,67 @@ var _ = Describe("Metrics", func() {
 				if err != nil || resp.StatusCode != http.StatusOK {
 					return ""
 				}
-				return b
-			}).Should(Equal(managedClusterResponse))
+				return sortLines(b)
+			}).Should(Equal(sortLines(managedClusterResponse)))
 		})
 	})
 
-	// It("Get created cluster-hive Metrics", func() {
-	// 	By("Updating status cluster-hive", func() {
-	// 		Expect(updateMCIStatus("cluster-hive", mciv1beta1.ClusterInfoStatus{
-	// 			KubeVendor:  mciv1beta1.KubeVendorOpenShift,
-	// 			CloudVendor: mciv1beta1.CloudVendorAWS,
-	// 			Version:     "v1.16.2",
-	// 			ClusterID:   "hive_cluster_id",
-	// 			DistributionInfo: mciv1beta1.DistributionInfo{
-	// 				Type: mciv1beta1.DistributionTypeOCP,
-	// 				OCP: mciv1beta1.OCPDistributionInfo{
-	// 					Version: "4.3.1",
-	// 				},
-	// 			},
-	// 			NodeList: []mciv1beta1.NodeStatus{
-	// 				// Label master with vCPU
-	// 				{
-	// 					Name: "master",
-	// 					Labels: map[string]string{
-	// 						masterLabel: "",
-	// 					},
-	// 					Capacity: mciv1beta1.ResourceList{
-	// 						mciv1beta1.ResourceCPU: *resource.NewQuantity(1, resource.DecimalSI),
-	// 					},
-	// 				},
-	// 				// Label worker with vCPU
-	// 				{
-	// 					Name: "worker-3",
-	// 					Labels: map[string]string{
-	// 						workerLabel: "",
-	// 					},
-	// 					Capacity: mciv1beta1.ResourceList{
-	// 						mciv1beta1.ResourceCPU: *resource.NewQuantity(1, resource.DecimalSI),
-	// 					},
-	// 				},
-	// 				// Label worker with vCPU
-	// 				{
-	// 					Name: "worker-3",
-	// 					Labels: map[string]string{
-	// 						workerLabel: "",
-	// 					},
-	// 					Capacity: mciv1beta1.ResourceList{
-	// 						mciv1beta1.ResourceCPU: *resource.NewQuantity(2, resource.DecimalSI),
-	// 					},
-	// 				},
-	// 			},
-	// 		})).Should(BeNil())
-	// 		Expect(updateMCStatus("cluster-hive", mcv1.ManagedClusterStatus{
-	// Conditions: []metav1.Condition{
-	// 	{
-	// 		Type:               "hello",
-	// 		Status:             "True",
-	// 		LastTransitionTime: metav1.Now(),
-	// 		Reason:             "test",
-	// 	},
-	// },
-	// 			Capacity: mcv1.ResourceList{
-	// 				mcv1.ResourceCPU: *resource.NewQuantity(4, resource.DecimalSI),
-	// 			},
-	// 		})).Should(BeNil())
-	// 	})
-	// 	By("Getting metrics", func() {
-	// 		Eventually(func() string {
-	// 			resp, b, err := getMetrics()
-	// 			klog.Infof("Get created cluster-hive Metrics response: %s", b)
-	// 			if err != nil || resp.StatusCode != http.StatusOK {
-	// 				return ""
-	// 			}
-	// 			return b
-	// 		}).Should(Equal(managedClusterHiveResponse))
-	// 	})
-	// })
+	It("Get created cluster-hive Metrics", func() {
+		By("Updating status cluster-hive", func() {
+			Expect(updateMCIStatus("cluster-hive", mciv1beta1.ClusterInfoStatus{
+				KubeVendor:  mciv1beta1.KubeVendorOpenShift,
+				CloudVendor: mciv1beta1.CloudVendorAWS,
+				Version:     "v1.16.2",
+				ClusterID:   "hive_cluster_id",
+				DistributionInfo: mciv1beta1.DistributionInfo{
+					Type: mciv1beta1.DistributionTypeOCP,
+					OCP: mciv1beta1.OCPDistributionInfo{
+						Version: "4.3.1",
+					},
+				},
+				NodeList: []mciv1beta1.NodeStatus{
+					// Label master with vCPU
+					{
+						Name: "master",
+						Labels: map[string]string{
+							masterLabel: "",
+						},
+					},
+					// Label worker with vCPU
+					{
+						Name: "worker-3",
+						Labels: map[string]string{
+							workerLabel: "",
+						},
+					},
+				},
+			})).Should(BeNil())
+			Expect(updateMCStatus("cluster-hive", mcv1.ManagedClusterStatus{
+				Conditions: []metav1.Condition{
+					{
+						Type:               "hello",
+						Status:             "True",
+						LastTransitionTime: metav1.Now(),
+						Reason:             "test",
+					},
+				},
+				Capacity: mcv1.ResourceList{
+					mcv1.ResourceCPU:  *resource.NewQuantity(2, resource.DecimalSI),
+					resourceCPUWorker: *resource.NewQuantity(1, resource.DecimalSI),
+				},
+			})).Should(BeNil())
+		})
+		By("Getting metrics", func() {
+			Eventually(func() string {
+				resp, b, err := getMetrics()
+				klog.Infof("Get created cluster-hive Metrics response: %s", b)
+				if err != nil || resp.StatusCode != http.StatusOK {
+					return ""
+				}
+				return sortLines(b)
+			}).Should(Equal(sortLines(managedClusterHiveResponse)))
+		})
+	})
 })
 
 func getMetrics() (resp *http.Response, bodyString string, err error) {
@@ -362,4 +333,19 @@ func updateMCStatus(name string, status mcv1.ManagedClusterStatus) error {
 	}
 	klog.Infof("UpdateMCStatus updated: %v", mcU)
 	return err
+}
+
+func sortLines(input string) string {
+	var sorted sort.StringSlice
+
+	sorted = strings.Split(input, "\n") // convert to slice
+
+	// just for fun
+	//fmt.Println("Sorted: ", sort.StringsAreSorted(sorted))
+
+	sorted.Sort()
+
+	//fmt.Println("Sorted: ", sort.StringsAreSorted(sorted))
+
+	return strings.Join(sorted, "\n")
 }

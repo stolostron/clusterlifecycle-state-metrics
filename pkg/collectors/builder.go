@@ -133,6 +133,8 @@ func (b *Builder) buildManagedClusterInfoCollectorWithClient(client dynamic.Inte
 	)
 	reflectorPerNamespace(b.ctx, &unstructured.Unstructured{}, store,
 		b.apiserver, b.kubeconfig, b.namespaces, createManagedClusterInfoListWatch)
+	reflectorClusterScoped(b.ctx, &unstructured.Unstructured{}, store,
+		b.apiserver, b.kubeconfig, createManagedClusterListWatch)
 
 	return store
 }
@@ -153,4 +155,19 @@ func reflectorPerNamespace(
 		reflector := cache.NewReflector(&lw, expectedType, store, 0)
 		go reflector.Run(ctx.Done())
 	}
+}
+
+// reflectorClusterScoped creates a Kubernetes client-go reflectorClusterScoped with the given
+// listWatchFunc for each given namespace and registers it with the given store.
+func reflectorClusterScoped(
+	ctx context.Context,
+	expectedType interface{},
+	store cache.Store,
+	apiserver string,
+	kubeconfig string,
+	listWatchFunc func(apiserver string, kubeconfig string) cache.ListWatch,
+) {
+	lw := listWatchFunc(apiserver, kubeconfig)
+	reflector := cache.NewReflector(&lw, expectedType, store, 0)
+	go reflector.Run(ctx.Done())
 }
