@@ -1,6 +1,6 @@
 module github.com/open-cluster-management/clusterlifecycle-state-metrics
 
-go 1.14
+go 1.16
 
 replace (
 	github.com/kubevirt/terraform-provider-kubevirt => github.com/nirarg/terraform-provider-kubevirt v0.0.0-20201222125919-101cee051ed3

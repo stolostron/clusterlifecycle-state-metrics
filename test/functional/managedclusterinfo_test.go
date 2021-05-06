@@ -29,14 +29,14 @@ const (
 `
 	managedClusterResponse = `# HELP acm_managed_cluster_info Managed cluster information
 # TYPE acm_managed_cluster_info gauge
-acm_managed_cluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="import_cluster_id",vendor="OpenShift",cloud="Amazon",version="4.3.1",created_via="Other",cpu="3",cpu_worker="1",core="4",core_worker="2",socket="2",socket_worker="1"} 1
-acm_managed_cluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="local_cluster_id",vendor="OpenShift",cloud="Amazon",version="4.3.1",created_via="Other",cpu="2",cpu_worker="1",core="0",core_worker="0",socket="0",socket_worker="0"} 1
-acm_managed_cluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="import_cluster_id",vendor="OpenShift",cloud="Amazon",version="4.3.1",created_via="Other",cpu="3",cpu_worker="1",core="4",core_worker="2",socket="2",socket_worker="1"} 1
-acm_managed_cluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="local_cluster_id",vendor="OpenShift",cloud="Amazon",version="4.3.1",created_via="Other",cpu="2",cpu_worker="1",core="0",core_worker="0",socket="0",socket_worker="0"} 1
+acm_managed_cluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="import_cluster_id",vendor="OpenShift",cloud="Amazon",version="4.3.1",created_via="Other",core_worker="2",socket_worker="1"} 1
+acm_managed_cluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="local_cluster_id",vendor="OpenShift",cloud="Amazon",version="4.3.1",created_via="Other",core_worker="2",socket_worker="1"} 1
+acm_managed_cluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="import_cluster_id",vendor="OpenShift",cloud="Amazon",version="4.3.1",created_via="Other",core_worker="2",socket_worker="1"} 1
+acm_managed_cluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="local_cluster_id",vendor="OpenShift",cloud="Amazon",version="4.3.1",created_via="Other",core_worker="2",socket_worker="1"} 1
 `
 	managedClusterHiveResponse = `# HELP acm_managed_cluster_info Managed cluster information
 # TYPE acm_managed_cluster_info gauge
-acm_managed_cluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="hive_cluster_id",vendor="OpenShift",cloud="Amazon",version="4.3.1",created_via="Hive",cpu="2",cpu_worker="1",core="0",core_worker="0",socket="0",socket_worker="0"} 1
+acm_managed_cluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="hive_cluster_id",vendor="OpenShift",cloud="Amazon",version="4.3.1",created_via="Hive",core_worker="2",socket_worker="1"} 1
 `
 )
 
@@ -142,8 +142,8 @@ var _ = Describe("Metrics", func() {
 					},
 				},
 				Capacity: mcv1.ResourceList{
-					mcv1.ResourceCPU:  *resource.NewQuantity(2, resource.DecimalSI),
-					resourceCPUWorker: *resource.NewQuantity(1, resource.DecimalSI),
+					resourceCoreWorker:   *resource.NewQuantity(2, resource.DecimalSI),
+					resourceSocketWorker: *resource.NewQuantity(1, resource.DecimalSI),
 				},
 			})).Should(BeNil())
 		})
@@ -180,11 +180,7 @@ var _ = Describe("Metrics", func() {
 					},
 				},
 				Capacity: mcv1.ResourceList{
-					mcv1.ResourceCPU:     *resource.NewQuantity(3, resource.DecimalSI),
-					resourceCPUWorker:    *resource.NewQuantity(1, resource.DecimalSI),
-					resourceCore:         *resource.NewQuantity(4, resource.DecimalSI),
 					resourceCoreWorker:   *resource.NewQuantity(2, resource.DecimalSI),
-					resourceSocket:       *resource.NewQuantity(2, resource.DecimalSI),
 					resourceSocketWorker: *resource.NewQuantity(1, resource.DecimalSI),
 				},
 			})).Should(BeNil())
@@ -242,8 +238,8 @@ var _ = Describe("Metrics", func() {
 					},
 				},
 				Capacity: mcv1.ResourceList{
-					mcv1.ResourceCPU:  *resource.NewQuantity(2, resource.DecimalSI),
-					resourceCPUWorker: *resource.NewQuantity(1, resource.DecimalSI),
+					resourceCoreWorker:   *resource.NewQuantity(2, resource.DecimalSI),
+					resourceSocketWorker: *resource.NewQuantity(1, resource.DecimalSI),
 				},
 			})).Should(BeNil())
 		})

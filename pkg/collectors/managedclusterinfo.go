@@ -27,11 +27,8 @@ const (
 
 	workerLabel = "node-role.kubernetes.io/worker"
 
-	resourceSocket       mcv1.ResourceName = "socket"
-	resourceCore         mcv1.ResourceName = "core"
 	resourceCoreWorker   mcv1.ResourceName = "core_worker"
 	resourceSocketWorker mcv1.ResourceName = "socket_worker"
-	resourceCPUWorker    mcv1.ResourceName = "cpu_worker"
 )
 
 var (
@@ -43,11 +40,7 @@ var (
 		"cloud",
 		"version",
 		"created_via",
-		"cpu",
-		"cpu_worker",
-		"core",
 		"core_worker",
-		"socket",
 		"socket_worker"}
 
 	cdGVR = schema.GroupVersionResource{
@@ -120,34 +113,25 @@ func getManagedClusterInfoMetricFamilies(hubClusterID string, client dynamic.Int
 					clusterID = mci.GetName()
 				}
 				version := getVersion(mci)
-				cpu, cpu_worker, core, core_worker, socket, socket_worker := getCapacity(mc)
+				core_worker, socket_worker := getCapacity(mc)
 
 				if clusterID == "" ||
 					mci.Status.KubeVendor == "" ||
 					mci.Status.CloudVendor == "" ||
 					version == "" ||
-					cpu == 0 ||
-					(cpu_worker == 0 && hasWorker(mci)) {
+					(core_worker == 0 && hasWorker(mci)) {
 					klog.Infof("Not enough information available for %s", mci.GetName())
 					klog.Infof(`\tClusterID=%s,
 KubeVendor=%s,
 CloudVendor=%s,
 Version=%s,
-cpu=%d,
-cpu_worker=%d,
-core=%d,
 core_worker=%d,
-socket=%d,
 socket_worker=%d`,
 						clusterID,
 						mci.Status.KubeVendor,
 						mci.Status.CloudVendor,
 						version,
-						cpu,
-						cpu_worker,
-						core,
 						core_worker,
-						socket,
 						socket_worker)
 					return metric.Family{Metrics: []*metric.Metric{}}
 				}
@@ -157,11 +141,7 @@ socket_worker=%d`,
 					string(mci.Status.CloudVendor),
 					version,
 					createdVia,
-					strconv.FormatInt(cpu, 10),
-					strconv.FormatInt(cpu_worker, 10),
-					strconv.FormatInt(core, 10),
 					strconv.FormatInt(core_worker, 10),
-					strconv.FormatInt(socket, 10),
 					strconv.FormatInt(socket_worker, 10),
 				}
 
@@ -213,21 +193,9 @@ func hasWorker(mci *mciv1beta1.ManagedClusterInfo) bool {
 	return false
 }
 
-func getCapacity(mc *mcv1.ManagedCluster) (cpu, cpu_worker, core, core_worker, socket, socket_worker int64) {
-	if q, ok := mc.Status.Capacity[mcv1.ResourceCPU]; ok {
-		cpu = q.Value()
-	}
-	if q, ok := mc.Status.Capacity[resourceCPUWorker]; ok {
-		cpu_worker = q.Value()
-	}
-	if q, ok := mc.Status.Capacity[resourceCore]; ok {
-		core = q.Value()
-	}
+func getCapacity(mc *mcv1.ManagedCluster) (core_worker, socket_worker int64) {
 	if q, ok := mc.Status.Capacity[resourceCoreWorker]; ok {
 		core_worker = q.Value()
-	}
-	if q, ok := mc.Status.Capacity[resourceSocket]; ok {
-		socket = q.Value()
 	}
 	if q, ok := mc.Status.Capacity[resourceSocketWorker]; ok {
 		socket_worker = q.Value()
