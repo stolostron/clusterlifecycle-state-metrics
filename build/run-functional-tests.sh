@@ -112,14 +112,17 @@ for dir in overlays/test/* ; do
   echo "run functional test..."
   set +e
   make functional-test
-  if [ $? != 0 ]; then
-    ERR=$?
-    POD_NAME=`kubectl get pods -n open-cluster-management -oname | grep clusterlifecycle-state-metrics`
-    echo "$POD_NAME" | xargs -L 1 kubectl logs -n open-cluster-management
+  ERR=$?
+  if [ $ERR != 0 ]; then
+    POD_NAMES=`kubectl get pods -n open-cluster-management -oname | grep clusterlifecycle-state-metrics`
+    for p in $POD_NAMES; do
+      echo "-----------------------${p}------------------------------"
+      echo "$p" | xargs -L 1 kubectl logs -n open-cluster-management
+    done;
+    echo "Error: $ERR"
     exit $ERR
   fi
   set -e
-  # exit 1
 
   echo "remove deployment"
   kubectl delete --wait=true -k "$dir"

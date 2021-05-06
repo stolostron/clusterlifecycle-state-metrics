@@ -17,13 +17,14 @@ import (
 	"strings"
 
 	"github.com/operator-framework/operator-sdk/pkg/log/zap"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
+
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"k8s.io/klog/v2"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
-	kcollectors "k8s.io/kube-state-metrics/pkg/collector"
+	metricsstore "k8s.io/kube-state-metrics/pkg/metrics_store"
 	koptions "k8s.io/kube-state-metrics/pkg/options"
 	"k8s.io/kube-state-metrics/pkg/whiteblacklist"
 
@@ -181,7 +182,7 @@ func telemetryServer(
 	log.Fatal(http.ListenAndServe(listenAddress, mux))
 }
 
-func serveMetrics(collectors []*kcollectors.Collector,
+func serveMetrics(collectors []*metricsstore.MetricsStore,
 	host string,
 	httpPort int,
 	httpsPort int,
@@ -240,7 +241,7 @@ func serveMetrics(collectors []*kcollectors.Collector,
 }
 
 type metricHandler struct {
-	collectors         []*kcollectors.Collector
+	collectors         []*metricsstore.MetricsStore
 	enableGZIPEncoding bool
 }
 
@@ -265,7 +266,7 @@ func (m *metricHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	for _, c := range m.collectors {
-		c.Collect(w)
+		c.WriteAll(w)
 	}
 
 	// In case we gziped the response, we have to close the writer.

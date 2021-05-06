@@ -71,7 +71,7 @@ copyright-check:
 .PHONY: run
 ## Run the operator against the kubeconfig targeted cluster
 run:
-	go run cmd/clusterlifecycle-state-metrics/main.go --http-port=8080 --http-telemetry-port=8081 --csm-kubeconfig=${KUBECONFIG} -v=4; \
+	go run cmd/clusterlifecycle-state-metrics/main.go --http-port=8082 --http-telemetry-port=8083 --csm-kubeconfig=${KUBECONFIG} -v=4; \
 
 .PHONY: run-coverage
 ## Run the operator against the kubeconfig targeted cluster
@@ -107,12 +107,13 @@ undeploy:
 .PHONY: install-fake-crds
 install-fake-crds:
 	@echo installing crds
-	kubectl apply -f test/functional/resources/certificates_crd.yaml
-	kubectl apply -f test/functional/resources/issuers_crd.yaml
-	kubectl apply -f test/functional/resources/managedclusterinfos_crd.yaml
-	kubectl apply -f test/functional/resources/hive_v1_clusterdeployment_crd.yaml
-	kubectl apply -f test/functional/resources/clusterversions_crd.yaml
-	kubectl apply -f test/functional/resources/servicemonitor_crd.yaml
+	kubectl apply -f test/functional/resources/crds/certificates_crd.yaml
+	kubectl apply -f test/functional/resources/crds/issuers_crd.yaml
+	kubectl apply -f test/functional/resources/crds/managedclusterinfos_crd.yaml
+	kubectl apply -f test/functional/resources/crds/managedclusters_crd.yaml
+	kubectl apply -f test/functional/resources/crds/hive_v1_clusterdeployment_crd.yaml
+	kubectl apply -f test/functional/resources/crds/clusterversions_crd.yaml
+	kubectl apply -f test/functional/resources/crds/servicemonitor_crd.yaml
 	@sleep 10 
 
 .PHONY: kind-cluster-setup

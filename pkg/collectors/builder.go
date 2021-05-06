@@ -1,7 +1,6 @@
 // Copyright (c) 2020 Red Hat, Inc.
 // Copyright Contributors to the Open Cluster Management project
 
-
 package collectors
 
 import (
@@ -9,14 +8,12 @@ import (
 	"strings"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/clientcmd"
-	"k8s.io/kube-state-metrics/pkg/collector"
 	"k8s.io/kube-state-metrics/pkg/metric"
 	metricsstore "k8s.io/kube-state-metrics/pkg/metrics_store"
 	"k8s.io/kube-state-metrics/pkg/options"
-
-	"k8s.io/client-go/dynamic"
-	"k8s.io/client-go/tools/cache"
 
 	"golang.org/x/net/context"
 	"k8s.io/klog/v2"
@@ -84,12 +81,12 @@ func (b *Builder) WithWhiteBlackList(l whiteBlackLister) *Builder {
 }
 
 // Build initializes and registers all enabled collectors.
-func (b *Builder) Build() []*collector.Collector {
+func (b *Builder) Build() []*metricsstore.MetricsStore {
 	if b.whiteBlackList == nil {
 		panic("whiteBlackList should not be nil")
 	}
 
-	collectors := []*collector.Collector{}
+	collectors := []*metricsstore.MetricsStore{}
 	activeCollectorNames := []string{}
 
 	for _, c := range b.enabledCollectors {
@@ -109,11 +106,11 @@ func (b *Builder) Build() []*collector.Collector {
 	return collectors
 }
 
-var availableCollectors = map[string]func(f *Builder) *collector.Collector{
-	"managedclusterinfos": func(b *Builder) *collector.Collector { return b.buildManagedClusterInfoCollector() },
+var availableCollectors = map[string]func(f *Builder) *metricsstore.MetricsStore{
+	"managedclusterinfos": func(b *Builder) *metricsstore.MetricsStore { return b.buildManagedClusterInfoCollector() },
 }
 
-func (b *Builder) buildManagedClusterInfoCollector() *collector.Collector {
+func (b *Builder) buildManagedClusterInfoCollector() *metricsstore.MetricsStore {
 	config, err := clientcmd.BuildConfigFromFlags(b.apiserver, b.kubeconfig)
 	if err != nil {
 		klog.Fatalf("cannot create Dynamic client: %v", err)
@@ -122,7 +119,7 @@ func (b *Builder) buildManagedClusterInfoCollector() *collector.Collector {
 	return b.buildManagedClusterInfoCollectorWithClient(client)
 }
 
-func (b *Builder) buildManagedClusterInfoCollectorWithClient(client dynamic.Interface) *collector.Collector {
+func (b *Builder) buildManagedClusterInfoCollectorWithClient(client dynamic.Interface) *metricsstore.MetricsStore {
 	hubClusterID := getHubClusterID(client)
 	filteredMetricFamilies := metric.FilterMetricFamilies(b.whiteBlackList,
 		getManagedClusterInfoMetricFamilies(hubClusterID, client))
@@ -136,8 +133,10 @@ func (b *Builder) buildManagedClusterInfoCollectorWithClient(client dynamic.Inte
 	)
 	reflectorPerNamespace(b.ctx, &unstructured.Unstructured{}, store,
 		b.apiserver, b.kubeconfig, b.namespaces, createManagedClusterInfoListWatch)
+	reflectorClusterScoped(b.ctx, &unstructured.Unstructured{}, store,
+		b.apiserver, b.kubeconfig, createManagedClusterListWatch)
 
-	return collector.NewCollector(store)
+	return store
 }
 
 // reflectorPerNamespace creates a Kubernetes client-go reflector with the given
@@ -156,4 +155,19 @@ func reflectorPerNamespace(
 		reflector := cache.NewReflector(&lw, expectedType, store, 0)
 		go reflector.Run(ctx.Done())
 	}
+}
+
+// reflectorClusterScoped creates a Kubernetes client-go reflectorClusterScoped with the given
+// listWatchFunc for each given namespace and registers it with the given store.
+func reflectorClusterScoped(
+	ctx context.Context,
+	expectedType interface{},
+	store cache.Store,
+	apiserver string,
+	kubeconfig string,
+	listWatchFunc func(apiserver string, kubeconfig string) cache.ListWatch,
+) {
+	lw := listWatchFunc(apiserver, kubeconfig)
+	reflector := cache.NewReflector(&lw, expectedType, store, 0)
+	go reflector.Run(ctx.Done())
 }

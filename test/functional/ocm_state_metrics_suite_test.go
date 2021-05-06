@@ -1,7 +1,6 @@
 // Copyright (c) 2020 Red Hat, Inc.
 // Copyright Contributors to the Open Cluster Management project
 
-
 // +build functional
 
 package functional
@@ -21,7 +20,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/klog"
 
-	libgoapplier "github.com/open-cluster-management/library-go/pkg/applier"
+	libgoapplier "github.com/open-cluster-management/applier/pkg/applier"
 )
 
 const (
@@ -35,6 +34,7 @@ var (
 	clientDynamic         dynamic.Interface
 	clientApplier         *libgoapplier.Applier
 	gvrManagedclusterInfo schema.GroupVersionResource
+	gvrManagedcluster     schema.GroupVersionResource
 )
 
 func init() {
@@ -44,6 +44,7 @@ func init() {
 
 var _ = BeforeSuite(func() {
 	gvrManagedclusterInfo = schema.GroupVersionResource{Group: "internal.open-cluster-management.io", Version: "v1beta1", Resource: "managedclusterinfos"}
+	gvrManagedcluster = schema.GroupVersionResource{Group: "cluster.open-cluster-management.io", Version: "v1", Resource: "managedclusters"}
 
 	setupHub()
 
@@ -65,11 +66,10 @@ func setupHub() {
 
 	yamlReader := templateprocessor.NewYamlFileReader("resources")
 	clientApplier, err = libgoapplier.NewApplier(yamlReader,
-		&templateprocessor.Options{},
+		nil,
 		defaultClient,
 		nil,
 		nil,
-		libgoapplier.DefaultKubernetesMerger,
 		nil)
 	Expect(err).To(BeNil())
 	Expect(clientApplier.CreateOrUpdateInPath("cr", nil, false, nil)).To(BeNil())
