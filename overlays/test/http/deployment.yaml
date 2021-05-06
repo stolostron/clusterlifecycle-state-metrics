@@ -4,6 +4,7 @@ kind: Deployment
 apiVersion: apps/v1
 metadata:
   name: clusterlifecycle-state-metrics
+  namespace: open-cluster-management
 spec:
   template:
     spec:
