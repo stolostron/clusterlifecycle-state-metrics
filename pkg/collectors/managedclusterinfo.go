@@ -115,22 +115,27 @@ func getManagedClusterInfoMetricFamilies(hubClusterID string, client dynamic.Int
 				version := getVersion(mci)
 				core_worker, socket_worker := getCapacity(mc)
 
+				nodeListLength := len(mci.Status.NodeList)
+
 				if clusterID == "" ||
 					mci.Status.KubeVendor == "" ||
 					mci.Status.CloudVendor == "" ||
 					version == "" ||
+					nodeListLength == 0 ||
 					(core_worker == 0 && hasWorker(mci)) {
 					klog.Infof("Not enough information available for %s", mci.GetName())
 					klog.Infof(`\tClusterID=%s,
 KubeVendor=%s,
 CloudVendor=%s,
 Version=%s,
+NodeList length=%d,
 core_worker=%d,
 socket_worker=%d`,
 						clusterID,
 						mci.Status.KubeVendor,
 						mci.Status.CloudVendor,
 						version,
+						nodeListLength,
 						core_worker,
 						socket_worker)
 					return metric.Family{Metrics: []*metric.Metric{}}
