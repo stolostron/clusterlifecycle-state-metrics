@@ -122,7 +122,7 @@ func getManagedClusterInfoMetricFamilies(hubClusterID string, client dynamic.Int
 					mci.Status.CloudVendor == "" ||
 					version == "" ||
 					nodeListLength == 0 ||
-					(core_worker == 0 && hasWorker(mci)) {
+					((core_worker == 0 || socket_worker == 0) && hasWorker(mci)) {
 					klog.Infof("Not enough information available for %s", mci.GetName())
 					klog.Infof(`\tClusterID=%s,
 KubeVendor=%s,
