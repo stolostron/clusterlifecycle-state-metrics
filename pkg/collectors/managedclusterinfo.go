@@ -99,6 +99,21 @@ func getManagedClusterInfoMetricFamilies(hubClusterID string, client dynamic.Int
 					klog.Errorf("Error: %v", err)
 					return metric.Family{Metrics: []*metric.Metric{}}
 				}
+				//Filter when condition is unknown
+				conditionAvailableExists := false
+				for _, c := range mc.Status.Conditions {
+					if c.Type == mcv1.ManagedClusterConditionAvailable {
+						conditionAvailableExists = true
+						if c.Status == metav1.ConditionUnknown {
+							klog.Infof("ManagedCluster Condition ManagedClusterConditionAvailable is unknown %s", mci.GetName())
+							return metric.Family{Metrics: []*metric.Metric{}}
+						}
+					}
+				}
+				if !conditionAvailableExists {
+					klog.Infof("ManagedCluster Condition ManagedClusterConditionAvailable doesn't exist %s", mci.GetName())
+					return metric.Family{Metrics: []*metric.Metric{}}
+				}
 				// klog.Infof("mc: %v", mc)
 				createdVia := createdViaHive
 				cd, errCD := client.Resource(cdGVR).Namespace(mci.GetName()).Get(context.TODO(), mci.GetName(), metav1.GetOptions{})
@@ -121,8 +136,8 @@ func getManagedClusterInfoMetricFamilies(hubClusterID string, client dynamic.Int
 					mci.Status.KubeVendor == "" ||
 					mci.Status.CloudVendor == "" ||
 					version == "" ||
-					nodeListLength == 0 {
-					// ||((core_worker == 0 || socket_worker == 0) && hasWorker(mci)) {
+					nodeListLength == 0 ||
+					((core_worker == 0 || socket_worker == 0) && hasWorker(mci)) {
 					klog.Infof("Not enough information available for %s", mci.GetName())
 					klog.Infof(`\tClusterID=%s,
 KubeVendor=%s,
