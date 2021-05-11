@@ -153,9 +153,9 @@ func telemetryServer(
 	// Add index
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if _, err := w.Write([]byte(`<html>
-             <head><title>openshift-State-Metrics Metrics Server</title></head>
+             <head><title>clusterlifecycle-State-Metrics Metrics Server</title></head>
              <body>
-             <h1>openshift-State-Metrics Metrics</h1>
+             <h1>clusterlifecycle-State-Metrics Metrics</h1>
 			 <ul>
              <li><a href='` + metricsPath + `'>metrics</a></li>
 			 </ul>
@@ -210,7 +210,7 @@ func serveMetrics(collectors []*metricsstore.MetricsStore,
 	// Add index
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if _, err := w.Write([]byte(`<html>
-             <head><title>Open Cluster Managementt Metrics Server</title></head>
+             <head><title>Open Cluster Management Metrics Server</title></head>
              <body>
              <h1>ACM Metrics</h1>
 			 <ul>
