@@ -39,6 +39,7 @@ var (
 		"vendor",
 		"cloud",
 		"version",
+		"status",
 		"created_via",
 		"core_worker",
 		"socket_worker"}
@@ -99,6 +100,7 @@ func getManagedClusterInfoMetricFamilies(hubClusterID string, client dynamic.Int
 					klog.Errorf("Error: %v", err)
 					return metric.Family{Metrics: []*metric.Metric{}}
 				}
+				status := getStatus(mc)
 				// klog.Infof("mc: %v", mc)
 				createdVia := createdViaHive
 				cd, errCD := client.Resource(cdGVR).Namespace(mci.GetName()).Get(context.TODO(), mci.GetName(), metav1.GetOptions{})
@@ -128,6 +130,7 @@ func getManagedClusterInfoMetricFamilies(hubClusterID string, client dynamic.Int
 KubeVendor=%s,
 CloudVendor=%s,
 Version=%s,
+status=%s,
 NodeList length=%d,
 core_worker=%d,
 socket_worker=%d`,
@@ -135,6 +138,7 @@ socket_worker=%d`,
 						mci.Status.KubeVendor,
 						mci.Status.CloudVendor,
 						version,
+						status,
 						nodeListLength,
 						core_worker,
 						socket_worker)
@@ -145,6 +149,7 @@ socket_worker=%d`,
 					string(mci.Status.KubeVendor),
 					string(mci.Status.CloudVendor),
 					version,
+					status,
 					createdVia,
 					strconv.FormatInt(core_worker, 10),
 					strconv.FormatInt(socket_worker, 10),
@@ -206,6 +211,15 @@ func getCapacity(mc *mcv1.ManagedCluster) (core_worker, socket_worker int64) {
 		socket_worker = q.Value()
 	}
 	return
+}
+
+func getStatus(mc *mcv1.ManagedCluster) string {
+	for _, c := range mc.Status.Conditions {
+		if c.Type == mcv1.ManagedClusterConditionAvailable {
+			return string(c.Status)
+		}
+	}
+	return string(metav1.ConditionUnknown)
 }
 
 func wrapManagedClusterInfoFunc(f func(*unstructured.Unstructured) metric.Family) func(interface{}) *metric.Family {
