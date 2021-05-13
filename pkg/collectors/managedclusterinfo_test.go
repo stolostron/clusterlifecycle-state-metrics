@@ -175,7 +175,7 @@ func Test_getManagedClusterMetricFamilies(t *testing.T) {
 		{
 			Obj:         mciU,
 			MetricNames: []string{"acm_managed_cluster_info"},
-			Want:        `acm_managed_cluster_info{cloud="Amazon",core_worker="4",managed_cluster_id="managed_cluster_id",created_via="Other",hub_cluster_id="mycluster_id",socket_worker="2",vendor="OpenShift",version="4.3.1"} 1`,
+			Want:        `acm_managed_cluster_info{cloud="Amazon",core_worker="4",managed_cluster_id="managed_cluster_id",created_via="Other",hub_cluster_id="mycluster_id",socket_worker="2",available="Unknown",vendor="OpenShift",version="4.3.1"} 1`,
 		},
 		{
 			Obj:         mciUMissingInfo,
@@ -185,7 +185,7 @@ func Test_getManagedClusterMetricFamilies(t *testing.T) {
 		{
 			Obj:         mciUOther,
 			MetricNames: []string{"acm_managed_cluster_info"},
-			Want:        `acm_managed_cluster_info{cloud="Amazon",core_worker="4",managed_cluster_id="cluster-other",created_via="Other",hub_cluster_id="mycluster_id",socket_worker="2",vendor="Other",version="v1.16.2"} 1`,
+			Want:        `acm_managed_cluster_info{cloud="Amazon",core_worker="4",managed_cluster_id="cluster-other",created_via="Other",hub_cluster_id="mycluster_id",socket_worker="2",available="Unknown",vendor="Other",version="v1.16.2"} 1`,
 		},
 	}
 	for i, c := range tests {
@@ -198,7 +198,7 @@ func Test_getManagedClusterMetricFamilies(t *testing.T) {
 		{
 			Obj:         mciU,
 			MetricNames: []string{"acm_managed_cluster_info"},
-			Want:        `acm_managed_cluster_info{cloud="Amazon",core_worker="4",managed_cluster_id="managed_cluster_id",created_via="Hive",hub_cluster_id="mycluster_id",socket_worker="2",vendor="OpenShift",version="4.3.1"} 1`,
+			Want:        `acm_managed_cluster_info{cloud="Amazon",core_worker="4",managed_cluster_id="managed_cluster_id",created_via="Hive",hub_cluster_id="mycluster_id",socket_worker="2",available="Unknown",vendor="OpenShift",version="4.3.1"} 1`,
 		},
 	}
 	for i, c := range tests {
