@@ -182,18 +182,6 @@ func getVersion(mci *mciv1beta1.ManagedClusterInfo) string {
 
 }
 
-//Get only the worker size
-// func getWorkerCPU(mci *mciv1beta1.ManagedClusterInfo) (vcpu int64) {
-// 	for _, n := range mci.Status.NodeList {
-// 		if _, ok := n.Labels[workerLabel]; ok {
-// 			if q, ok := n.Capacity[mciv1beta1.ResourceCPU]; ok {
-// 				vcpu += q.Value()
-// 			}
-// 		}
-// 	}
-// 	return
-// }
-
 func hasWorker(mci *mciv1beta1.ManagedClusterInfo) bool {
 	for _, n := range mci.Status.NodeList {
 		if _, ok := n.Labels[workerLabel]; ok {
@@ -214,12 +202,17 @@ func getCapacity(mc *mcv1.ManagedCluster) (core_worker, socket_worker int64) {
 }
 
 func getAvailableStatus(mc *mcv1.ManagedCluster) string {
+	status := metav1.ConditionUnknown
 	for _, c := range mc.Status.Conditions {
 		if c.Type == mcv1.ManagedClusterConditionAvailable {
-			return string(c.Status)
+			status = c.Status
+			break
 		}
 	}
-	return string(metav1.ConditionUnknown)
+	if status == metav1.ConditionFalse {
+		status = metav1.ConditionUnknown
+	}
+	return string(status)
 }
 
 func wrapManagedClusterInfoFunc(f func(*unstructured.Unstructured) metric.Family) func(interface{}) *metric.Family {
