@@ -111,7 +111,9 @@ func getManagedClusterInfoMetricFamilies(hubClusterID string, client dynamic.Int
 					klog.Infof("Cluster Deployment: %v,", cd.Object)
 				}
 				clusterID := mci.Status.ClusterID
-				if clusterID == "" && mci.Status.KubeVendor != mciv1beta1.KubeVendorOpenShift {
+				if clusterID == "" &&
+					(mci.Status.KubeVendor != mciv1beta1.KubeVendorOpenShift ||
+						(mci.Status.KubeVendor == mciv1beta1.KubeVendorOpenShift && mci.Status.DistributionInfo.OCP.Version == "3")) {
 					clusterID = mci.GetName()
 				}
 				version := getVersion(mci)
