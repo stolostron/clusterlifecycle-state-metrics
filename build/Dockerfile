@@ -1,4 +1,4 @@
-FROM openshift/origin-release:golang-1.14 as builder
+FROM openshift/origin-release:golang-1.16 as builder
 
 ARG REMOTE_SOURCE
 ARG REMOTE_SOURCE_DIR
