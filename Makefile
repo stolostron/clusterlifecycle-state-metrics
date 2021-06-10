@@ -126,6 +126,7 @@ kind-cluster-setup: install-fake-crds
 	kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/master/deploy/static/provider/kind/deploy.yaml
 	@echo "Wait ingress NGNIX ready"
 	kubectl wait --namespace ingress-nginx --for=condition=ready pod --selector=app.kubernetes.io/component=controller --timeout=180s
+	kubectl delete ValidatingWebhookCOnfiguration ingress-nginx-admission
 
 .PHONY: functional-test
 functional-test:
