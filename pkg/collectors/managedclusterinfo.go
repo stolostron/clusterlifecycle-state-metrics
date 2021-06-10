@@ -259,16 +259,12 @@ func createManagedClusterListWatchWithClient(client dynamic.Interface) cache.Lis
 }
 
 func getCreateVia(client dynamic.Interface, mci *mciv1beta1.ManagedClusterInfo, mc *mcv1.ManagedCluster) string {
-	createdVia := createdViaHive
-	cd, errCD := client.Resource(cdGVR).Namespace(mci.GetName()).Get(context.TODO(), mci.GetName(), metav1.GetOptions{})
-	if errCD != nil {
-		createdVia = createdViaOther
-		klog.Infof("Cluster Deployment %s not found, err: %s", mci.GetName(), errCD)
-	} else {
-		if v, ok := mc.Annotations[createdViaAnnotation]; ok && v == createdViaAnnotationDiscovery {
-			createdVia = createdViaDiscovery
-		}
-		klog.Infof("Cluster Deployment: %v,", cd.Object)
+	_, errCD := client.Resource(cdGVR).Namespace(mci.GetName()).Get(context.TODO(), mci.GetName(), metav1.GetOptions{})
+	if errCD == nil {
+		return createdViaHive
 	}
-	return createdVia
+	if v, ok := mc.Annotations[createdViaAnnotation]; ok && v == createdViaAnnotationDiscovery {
+		return createdViaDiscovery
+	}
+	return createdViaOther
 }
