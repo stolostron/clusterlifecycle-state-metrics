@@ -78,6 +78,64 @@ func Test_getManagedClusterMetricFamilies(t *testing.T) {
 		t.Error(err)
 	}
 
+	mciDiscovery := &mciv1beta1.ManagedClusterInfo{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "discovery-cluster",
+			Namespace: "discovery-cluster",
+		},
+		Status: mciv1beta1.ClusterInfoStatus{
+			KubeVendor:  mciv1beta1.KubeVendorOpenShift,
+			CloudVendor: mciv1beta1.CloudVendorAWS,
+			Version:     "v1.16.2",
+			ClusterID:   "managed_cluster_id",
+			DistributionInfo: mciv1beta1.DistributionInfo{
+				Type: mciv1beta1.DistributionTypeOCP,
+				OCP: mciv1beta1.OCPDistributionInfo{
+					Version: "4.3.1",
+				},
+			},
+			NodeList: []mciv1beta1.NodeStatus{
+				//Label worker no vCPU
+				{
+					Name: "worker-2",
+					Labels: map[string]string{
+						workerLabel: "",
+					},
+					Capacity: mciv1beta1.ResourceList{
+						mciv1beta1.ResourceMemory: *resource.NewQuantity(100, resource.DecimalSI),
+					},
+				},
+			},
+		},
+	}
+
+	mciUDiscovery := &unstructured.Unstructured{}
+	err = scheme.Scheme.Convert(mciDiscovery, mciUDiscovery, nil)
+	if err != nil {
+		t.Error(err)
+	}
+
+	mcDiscovery := &mcv1.ManagedCluster{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "discovery-cluster",
+			Annotations: map[string]string{
+				"open-cluster-management/created-via": "discovery",
+			},
+		},
+		Status: mcv1.ManagedClusterStatus{
+			Capacity: mcv1.ResourceList{
+				resourceCoreWorker:   *resource.NewQuantity(4, resource.DecimalSI),
+				resourceSocketWorker: *resource.NewQuantity(2, resource.DecimalSI),
+			},
+		},
+	}
+
+	mcUDiscovery := &unstructured.Unstructured{}
+	err = scheme.Scheme.Convert(mcDiscovery, mcUDiscovery, nil)
+	if err != nil {
+		t.Error(err)
+	}
+
 	mciOther := &mciv1beta1.ManagedClusterInfo{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "cluster-other",
@@ -169,13 +227,18 @@ func Test_getManagedClusterMetricFamilies(t *testing.T) {
 		},
 	}
 
-	client := fake.NewSimpleDynamicClient(s, mciU, mciUMissingInfo, mciUOther, mcU, mcUOther, mcUMissingInfo)
-	clientHive := fake.NewSimpleDynamicClient(s, mciU, cdU, mcU, mcUOther, mcUMissingInfo)
+	client := fake.NewSimpleDynamicClient(s, mciU, mciUDiscovery, mciUMissingInfo, mciUOther, mcU, mcDiscovery, mcUOther, mcUMissingInfo)
+	clientHive := fake.NewSimpleDynamicClient(s, mciU, mciDiscovery, cdU, mcU, mcUOther, mcUMissingInfo)
 	tests := []generateMetricsTestCase{
 		{
 			Obj:         mciU,
 			MetricNames: []string{"acm_managed_cluster_info"},
 			Want:        `acm_managed_cluster_info{cloud="Amazon",core_worker="4",managed_cluster_id="managed_cluster_id",created_via="Other",hub_cluster_id="mycluster_id",socket_worker="2",available="Unknown",vendor="OpenShift",version="4.3.1"} 1`,
+		},
+		{
+			Obj:         mciUDiscovery,
+			MetricNames: []string{"acm_managed_cluster_info"},
+			Want:        `acm_managed_cluster_info{cloud="Amazon",core_worker="4",managed_cluster_id="managed_cluster_id",created_via="Discovery",hub_cluster_id="mycluster_id",socket_worker="2",available="Unknown",vendor="OpenShift",version="4.3.1"} 1`,
 		},
 		{
 			Obj:         mciUMissingInfo,
