@@ -106,7 +106,7 @@ func getManagedClusterInfoMetricFamilies(hubClusterID string, client dynamic.Int
 				}
 				available := getAvailableStatus(mc)
 				// klog.Infof("mc: %v", mc)
-				createdVia := getCreateVia(client, mci, mc)
+				createdVia := getCreatedVia(client, mci, mc)
 				clusterID := mci.Status.ClusterID
 				//Cluster ID is not available on non-OCP thus use the name
 				if clusterID == "" &&
@@ -258,7 +258,7 @@ func createManagedClusterListWatchWithClient(client dynamic.Interface) cache.Lis
 	}
 }
 
-func getCreateVia(client dynamic.Interface, mci *mciv1beta1.ManagedClusterInfo, mc *mcv1.ManagedCluster) string {
+func getCreatedVia(client dynamic.Interface, mci *mciv1beta1.ManagedClusterInfo, mc *mcv1.ManagedCluster) string {
 	_, errCD := client.Resource(cdGVR).Namespace(mci.GetName()).Get(context.TODO(), mci.GetName(), metav1.GetOptions{})
 	if errCD == nil {
 		return createdViaHive
