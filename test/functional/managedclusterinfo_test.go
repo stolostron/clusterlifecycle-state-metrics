@@ -31,9 +31,8 @@ const (
 # TYPE acm_managed_cluster_info gauge
 acm_managed_cluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="import_cluster_id",vendor="OpenShift",cloud="Amazon",version="4.3.1",available="Unknown",created_via="Other",core_worker="2",socket_worker="1"} 1
 acm_managed_cluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="local_cluster_id",vendor="OpenShift",cloud="Amazon",version="4.3.1",available="Unknown",created_via="Other",core_worker="2",socket_worker="1"} 1
-acm_managed_cluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="import_cluster_id",vendor="OpenShift",cloud="Amazon",version="4.3.1",available="Unknown",created_via="Other",core_worker="2",socket_worker="1"} 1
-acm_managed_cluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="local_cluster_id",vendor="OpenShift",cloud="Amazon",version="4.3.1",available="Unknown",created_via="Other",core_worker="2",socket_worker="1"} 1
 `
+
 	managedClusterHiveResponse = `# HELP acm_managed_cluster_info Managed cluster information
 # TYPE acm_managed_cluster_info gauge
 acm_managed_cluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="hive_cluster_id",vendor="OpenShift",cloud="Amazon",version="4.3.1",available="Unknown",created_via="Hive",core_worker="2",socket_worker="1"} 1
@@ -339,9 +338,23 @@ func sortLines(input string) string {
 	// just for fun
 	//fmt.Println("Sorted: ", sort.StringsAreSorted(sorted))
 
+	sorted = unique(sorted)
+
 	sorted.Sort()
 
 	//fmt.Println("Sorted: ", sort.StringsAreSorted(sorted))
 
 	return strings.Join(sorted, "\n")
+}
+
+func unique(s []string) []string {
+	keys := make(map[string]bool)
+	list := []string{}
+	for _, entry := range s {
+		if _, value := keys[entry]; !value {
+			keys[entry] = true
+			list = append(list, entry)
+		}
+	}
+	return list
 }

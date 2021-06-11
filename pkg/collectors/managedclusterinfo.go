@@ -22,13 +22,17 @@ import (
 )
 
 const (
-	createdViaHive  = "Hive"
-	createdViaOther = "Other"
+	createdViaHive      = "Hive"
+	createdViaOther     = "Other"
+	createdViaDiscovery = "Discovery"
 
 	workerLabel = "node-role.kubernetes.io/worker"
 
 	resourceCoreWorker   mcv1.ResourceName = "core_worker"
 	resourceSocketWorker mcv1.ResourceName = "socket_worker"
+
+	createdViaAnnotation          = "open-cluster-management/created-via"
+	createdViaAnnotationDiscovery = "discovery"
 )
 
 var (
@@ -102,14 +106,7 @@ func getManagedClusterInfoMetricFamilies(hubClusterID string, client dynamic.Int
 				}
 				available := getAvailableStatus(mc)
 				// klog.Infof("mc: %v", mc)
-				createdVia := createdViaHive
-				cd, errCD := client.Resource(cdGVR).Namespace(mci.GetName()).Get(context.TODO(), mci.GetName(), metav1.GetOptions{})
-				if errCD != nil {
-					createdVia = createdViaOther
-					klog.Infof("Cluster Deployment %s not found, err: %s", mci.GetName(), errCD)
-				} else {
-					klog.Infof("Cluster Deployment: %v,", cd.Object)
-				}
+				createdVia := getCreatedVia(client, mci, mc)
 				clusterID := mci.Status.ClusterID
 				//Cluster ID is not available on non-OCP thus use the name
 				if clusterID == "" &&
@@ -259,4 +256,15 @@ func createManagedClusterListWatchWithClient(client dynamic.Interface) cache.Lis
 			return client.Resource(mcGVR).Watch(context.TODO(), opts)
 		},
 	}
+}
+
+func getCreatedVia(client dynamic.Interface, mci *mciv1beta1.ManagedClusterInfo, mc *mcv1.ManagedCluster) string {
+	_, errCD := client.Resource(cdGVR).Namespace(mci.GetName()).Get(context.TODO(), mci.GetName(), metav1.GetOptions{})
+	if errCD == nil {
+		return createdViaHive
+	}
+	if v, ok := mc.Annotations[createdViaAnnotation]; ok && v == createdViaAnnotationDiscovery {
+		return createdViaDiscovery
+	}
+	return createdViaOther
 }

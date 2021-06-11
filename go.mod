@@ -18,6 +18,7 @@ replace (
 require (
 	cloud.google.com/go v0.74.0 // indirect
 	github.com/Azure/go-autorest/autorest v0.11.18 // indirect
+	github.com/mitchellh/copystructure v1.2.0 // indirect
 	github.com/onsi/ginkgo v1.16.1
 	github.com/onsi/gomega v1.11.0
 	github.com/open-cluster-management/api v0.0.0-20210409125704-06f2aec1a73f
@@ -32,11 +33,10 @@ require (
 	github.com/stretchr/testify v1.7.0 // indirect
 	golang.org/x/net v0.0.0-20210428140749-89ef3d95e781
 	golang.org/x/oauth2 v0.0.0-20210210192628-66670185b0cd // indirect
-	golang.org/x/time v0.0.0-20201208040808-7e3f01d25324 // indirect
-	golang.org/x/tools v0.1.0 // indirect
+	golang.org/x/time v0.0.0-20210220033141-f8bda1e9f3ba // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
-	k8s.io/api v0.21.0-rc.0 // indirect
-	k8s.io/apimachinery v0.21.0-rc.0
+	k8s.io/apiextensions-apiserver v0.21.1 // indirect
+	k8s.io/apimachinery v0.21.1
 	k8s.io/client-go v12.0.0+incompatible
 	k8s.io/klog v1.0.0
 	k8s.io/klog/v2 v2.8.0
