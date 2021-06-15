@@ -4,6 +4,8 @@ apiVersion: cluster.open-cluster-management.io/v1
 kind: ManagedCluster
 metadata:
   name: cluster-hive
+  annotations: 
+    "open-cluster-management/created-via": "hive"
 spec:
   hubAcceptsClient: true
   leaseDurationSeconds: 60

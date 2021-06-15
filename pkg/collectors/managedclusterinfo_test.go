@@ -63,6 +63,9 @@ func Test_getManagedClusterMetricFamilies(t *testing.T) {
 	mc := &mcv1.ManagedCluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "hive-cluster",
+			Annotations: map[string]string{
+				"open-cluster-management/created-via": "hive",
+			},
 		},
 		Status: mcv1.ManagedClusterStatus{
 			Capacity: mcv1.ResourceList{
@@ -216,24 +219,13 @@ func Test_getManagedClusterMetricFamilies(t *testing.T) {
 		t.Error(err)
 	}
 
-	cdU := &unstructured.Unstructured{
-		Object: map[string]interface{}{
-			"kind":       "ClusterDeployment",
-			"apiVersion": "hive.openshift.io/v1",
-			"metadata": map[string]interface{}{
-				"name":      "hive-cluster",
-				"namespace": "hive-cluster",
-			},
-		},
-	}
-
 	client := fake.NewSimpleDynamicClient(s, mciU, mciUDiscovery, mciUMissingInfo, mciUOther, mcU, mcDiscovery, mcUOther, mcUMissingInfo)
-	clientHive := fake.NewSimpleDynamicClient(s, mciU, mciDiscovery, cdU, mcU, mcUOther, mcUMissingInfo)
+	clientHive := fake.NewSimpleDynamicClient(s, mciU, mciDiscovery, mcU, mcUOther, mcUMissingInfo)
 	tests := []generateMetricsTestCase{
 		{
 			Obj:         mciU,
 			MetricNames: []string{"acm_managed_cluster_info"},
-			Want:        `acm_managed_cluster_info{cloud="Amazon",core_worker="4",managed_cluster_id="managed_cluster_id",created_via="Other",hub_cluster_id="mycluster_id",socket_worker="2",available="Unknown",vendor="OpenShift",version="4.3.1"} 1`,
+			Want:        `acm_managed_cluster_info{cloud="Amazon",core_worker="4",managed_cluster_id="managed_cluster_id",created_via="Hive",hub_cluster_id="mycluster_id",socket_worker="2",available="Unknown",vendor="OpenShift",version="4.3.1"} 1`,
 		},
 		{
 			Obj:         mciUDiscovery,
