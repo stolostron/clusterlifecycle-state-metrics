@@ -22,18 +22,23 @@ import (
 )
 
 const (
-	createdViaHive      = "Hive"
-	createdViaOther     = "Other"
-	createdViaDiscovery = "Discovery"
-
 	workerLabel = "node-role.kubernetes.io/worker"
 
 	resourceCoreWorker   mcv1.ResourceName = "core_worker"
 	resourceSocketWorker mcv1.ResourceName = "socket_worker"
-
-	createdViaAnnotation          = "open-cluster-management/created-via"
-	createdViaAnnotationDiscovery = "discovery"
 )
+
+const (
+	createdViaAnnotation      = "open-cluster-management/created-via"
+	createdViaAnnotationOther = "Other"
+)
+
+var createdViaMapping map[string]string = map[string]string{
+	"discovery":          "Discovery",
+	"assisted-installer": "AssistedInstaller",
+	"hive":               "Hive",
+	"other":              createdViaAnnotationOther,
+}
 
 var (
 	descClusterInfoName          = "acm_managed_cluster_info"
@@ -47,12 +52,6 @@ var (
 		"created_via",
 		"core_worker",
 		"socket_worker"}
-
-	cdGVR = schema.GroupVersionResource{
-		Group:    "hive.openshift.io",
-		Version:  "v1",
-		Resource: "clusterdeployments",
-	}
 
 	cvGVR = schema.GroupVersionResource{
 		Group:    "config.openshift.io",
@@ -106,7 +105,7 @@ func getManagedClusterInfoMetricFamilies(hubClusterID string, client dynamic.Int
 				}
 				available := getAvailableStatus(mc)
 				// klog.Infof("mc: %v", mc)
-				createdVia := getCreatedVia(client, mci, mc)
+				createdVia := getCreatedVia(mc)
 				clusterID := mci.Status.ClusterID
 				//Cluster ID is not available on non-OCP thus use the name
 				if clusterID == "" &&
@@ -258,13 +257,12 @@ func createManagedClusterListWatchWithClient(client dynamic.Interface) cache.Lis
 	}
 }
 
-func getCreatedVia(client dynamic.Interface, mci *mciv1beta1.ManagedClusterInfo, mc *mcv1.ManagedCluster) string {
-	_, errCD := client.Resource(cdGVR).Namespace(mci.GetName()).Get(context.TODO(), mci.GetName(), metav1.GetOptions{})
-	if errCD == nil {
-		return createdViaHive
+func getCreatedVia(mc *mcv1.ManagedCluster) string {
+	if mc.GetAnnotations() == nil {
+		return createdViaAnnotationOther
 	}
-	if v, ok := mc.Annotations[createdViaAnnotation]; ok && v == createdViaAnnotationDiscovery {
-		return createdViaDiscovery
+	if a, ok := mc.GetAnnotations()[createdViaAnnotation]; ok {
+		return createdViaMapping[a]
 	}
-	return createdViaOther
+	return createdViaAnnotationOther
 }

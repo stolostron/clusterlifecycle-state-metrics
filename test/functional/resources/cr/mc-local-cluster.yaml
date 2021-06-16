@@ -4,6 +4,8 @@ apiVersion: cluster.open-cluster-management.io/v1
 kind: ManagedCluster
 metadata:
   name: local-cluster
+  annotations: 
+    "open-cluster-management/created-via": "other"
 spec:
   hubAcceptsClient: true
   leaseDurationSeconds: 60
