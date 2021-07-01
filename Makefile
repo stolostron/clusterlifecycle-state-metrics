@@ -20,6 +20,8 @@ export GOARCH       = $(ARCH_TYPE)
 export GOPACKAGES   = $(shell go list ./... | grep -v /vendor | grep -v /internal | grep -v /build | grep -v /test)
 
 export PROJECT_DIR            = $(shell 'pwd')
+export PROJECT_NAME            = $(shell basename ${PROJECT_DIR})
+
 export BUILD_DIR              = $(PROJECT_DIR)/build
 export COMPONENT_SCRIPTS_PATH = $(BUILD_DIR)
 export KLUSTERLET_CRD_FILE      = $(PROJECT_DIR)/build/resources/agent.open-cluster-management.io_v1beta1_klusterlet_crd.yaml
@@ -100,9 +102,7 @@ copyright-check:
 ## Clean build-harness and remove Go generated build and test files
 clean::
 	@rm -rf $(BUILD_DIR)/_output
-	@[ "$(BUILD_HARNESS_PATH)" == '/' ] || \
-	 [ "$(BUILD_HARNESS_PATH)" == '.' ] || \
-	   rm -rf $(BUILD_HARNESS_PATH)
+	kind delete cluster --name ${PROJECT_NAME}-functional-test
 
 .PHONY: run
 ## Run the operator against the kubeconfig targeted cluster
@@ -166,6 +166,7 @@ kind-cluster-setup: install-fake-crds
 	kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/master/deploy/static/provider/kind/deploy.yaml
 	@echo "Wait ingress NGNIX ready"
 	kubectl wait --namespace ingress-nginx --for=condition=ready pod --selector=app.kubernetes.io/component=controller --timeout=180s
+	kubectl delete ValidatingWebhookCOnfiguration ingress-nginx-admission
 
 .PHONY: functional-test
 functional-test:
