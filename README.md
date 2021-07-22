@@ -68,3 +68,4 @@ sum by (hub_cluster_id, version) (
    acm_managed_cluster_info 
 ) 
 ```
+
