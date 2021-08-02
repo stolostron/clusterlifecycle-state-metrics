@@ -46,7 +46,7 @@ func NewBuilder(
 
 func (b *Builder) WithApiserver(apiserver string) *Builder {
 	b.apiserver = apiserver
-	return b
+	return bb
 }
 
 func (b *Builder) WithKubeConfig(kubeconfig string) *Builder {

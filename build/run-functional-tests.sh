@@ -89,6 +89,8 @@ kind get kubeconfig --name $CLUSTER_NAME > ${KIND_KUBECONFIG}
 
 # load image if possible
 kind load docker-image ${DOCKER_IMAGE_AND_TAG} --name=$CLUSTER_NAME -v 99 || echo "failed to load image locally, will use imagePullSecret"
+docker pull docker.io/jettech/kube-webhook-certgen:v1.5.1
+kind load docker-image docker.io/jettech/kube-webhook-certgen:v1.5.1 --name=$CLUSTER_NAME
 
 echo "install cluster"
 # setup cluster
