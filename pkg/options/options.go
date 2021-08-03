@@ -54,7 +54,7 @@ func (o *Options) AddFlags() {
 		flag.PrintDefaults()
 	}
 
-	flag.StringVar(&o.Apiserver, "apiserver", "", `The URL of the apiserver to use as a master`)
+	flag.StringVar(&o.Apiserver, "apiserver", "", `The URL of the apiserver to use as a server`)
 	flag.StringVar(&o.Kubeconfig, "csm-kubeconfig", "", "Absolute path to the kubeconfig file")
 	flag.BoolVar(&o.Help, "help", false, "Print Help text")
 	flag.IntVar(&o.HTTPPort, "http-port", 8080, `http Port to expose metrics on.`)
