@@ -25,6 +25,10 @@ export DOCKER_BUILDER    ?= docker
 
 export KUBECONFIG ?= ${HOME}/.kube/config
 
+export KUBEBUILDER_HOME := /usr/local/kubebuilder
+
+export PATH := ${PATH}:${KUBEBUILDER_HOME}/bin
+
 BEFORE_SCRIPT := $(shell build/before-make.sh)
 
 all: build-image
