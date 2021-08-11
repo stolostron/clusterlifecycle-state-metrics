@@ -15,28 +15,11 @@ export DOCKER_IMAGE_AND_TAG=${1}
 export FUNCT_TEST_TMPDIR="${CURR_FOLDER_PATH}/../test/functional/tmp"
 export FUNCT_TEST_COVERAGE="${CURR_FOLDER_PATH}/../test/functional/coverage"
 
-if ! which kubectl > /dev/null; then
-    echo "installing kubectl"
-    curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/$(uname | awk '{print tolower($0)}')/amd64/kubectl && chmod +x kubectl && sudo mv kubectl /usr/local/bin/
-fi
 if ! which kind > /dev/null; then
     echo "installing kind"
     curl -Lo ./kind https://github.com/kubernetes-sigs/kind/releases/download/v0.9.0/kind-$(uname)-amd64
     chmod +x ./kind
     sudo mv ./kind /usr/local/bin/kind
-fi
-if ! which ginkgo > /dev/null; then
-    echo "Installing ginkgo ..."
-    pushd $(mktemp -d)
-    GOSUMDB=off go get github.com/onsi/ginkgo/ginkgo
-    GOSUMDB=off go get github.com/onsi/gomega/...
-    popd
-fi
-if ! which gocovmerge > /dev/null; then
-    echo "Installing gocovmerge..."
-    pushd $(mktemp -d)
-    GOSUMDB=off go get -u github.com/wadey/gocovmerge
-    popd
 fi
 
 echo "setting up test tmp folder"
@@ -89,6 +72,8 @@ kind get kubeconfig --name $CLUSTER_NAME > ${KIND_KUBECONFIG}
 
 # load image if possible
 kind load docker-image ${DOCKER_IMAGE_AND_TAG} --name=$CLUSTER_NAME -v 99 || echo "failed to load image locally, will use imagePullSecret"
+docker pull docker.io/jettech/kube-webhook-certgen:v1.5.1
+kind load docker-image docker.io/jettech/kube-webhook-certgen:v1.5.1 --name=$CLUSTER_NAME
 
 echo "install cluster"
 # setup cluster

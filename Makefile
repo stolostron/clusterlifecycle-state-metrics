@@ -19,6 +19,9 @@ export BUILD_DIR              = $(PROJECT_DIR)/build
 export DOCKER_FILE        = $(BUILD_DIR)/Dockerfile.prow
 export DOCKER_FILE_COVERAGE = $(BUILD_DIR)/Dockerfile.coverage.prow
 export DOCKER_IMAGE      ?= clusterlifecycle-state-metrics
+export DOCKER_IMAGE_REGISTRY ?= quay.io/open-cluster-management
+export DOCKER_IMAGE_TAG ?= latest
+export DOCKER_IMAGE_NAME   ?= $(DOCKER_IMAGE_REGISTRY)/$(DOCKER_IMAGE):$(DOCKER_IMAGE_TAG)
 export DOCKER_IMAGE_COVERAGE_POSTFIX ?= -coverage
 export DOCKER_IMAGE_COVERAGE      ?= $(DOCKER_IMAGE)$(DOCKER_IMAGE_COVERAGE_POSTFIX)
 export DOCKER_BUILDER    ?= docker
@@ -92,12 +95,10 @@ lint:
 
 .PHONY: deploy
 deploy:
-	cd overlays/deploy
-	kustomize build overlays/deploy | kubectl apply -f -
+	kubectl apply -k overlays/deploy --dry-run=client -o yaml | sed "s|REPLACE_IMAGE|${DOCKER_IMAGE_NAME}|g" | kubectl apply -f -
 
 .PHONY: undeploy
 undeploy:
-	cd overlays/deploy
 	kubectl delete --wait=true -k overlays/deploy
 
 ############################################################
@@ -134,5 +135,35 @@ functional-test:
 
 .PHONY: functional-test-full
 # functional-test-full: 
-functional-test-full: build-image-coverage
+functional-test-full: dependencies build-image-coverage
 	@build/run-functional-tests.sh ${DOCKER_IMAGE_COVERAGE}:latest
+
+############################################################
+# e2e test section
+############################################################
+
+## Build e2e tests
+.PHONY: build-e2e
+build-e2e:
+#	go test -c ./test/e2e
+
+.PHONY: deploy-foundation
+deploy-foundation:
+	@build/install-e2e-tests.sh
+
+.PHONY: clean-foundation
+clean-foundation:
+	@build/clean-e2e-tests.sh
+
+.PHONY: deploy-e2e
+deploy-e2e: deploy-foundation deploy
+	@echo "Install ingress for e2e test"
+	kubectl apply -f test/e2e/resources/route.yaml
+
+.PHONY: clean-e2e
+clean-e2e: undeploy clean-foundation
+
+.PHONY: test-e2e
+test-e2e: dependencies build-e2e deploy-e2e
+#	./e2e.test -test.v -ginkgo.v
+

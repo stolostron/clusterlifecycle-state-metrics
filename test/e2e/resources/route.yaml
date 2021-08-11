@@ -1,0 +1,17 @@
+# Copyright Contributors to the Open Cluster Management project
+
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: clusterlifecycle-state-metrics
+  namespace: open-cluster-management
+spec:
+  port:
+    targetPort: 8443
+  tls:
+    insecureEdgeTerminationPolicy: Redirect
+    termination: reencrypt
+  to:
+    kind: Service
+    name: clusterlifecycle-state-metrics
+    weight: 100

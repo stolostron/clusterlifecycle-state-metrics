@@ -8,7 +8,7 @@ metadata:
   labels:
     ocm-app: clusterlifecycle-state-metrics
   annotations:
-    service.beta.openshift.io/serving-cert-secret-name: clusterlifecycle-state-metrics
+    service.beta.openshift.io/serving-cert-secret-name: clusterlifecycle-state-metrics-certs
 spec:
   type: ClusterIP
   ports:

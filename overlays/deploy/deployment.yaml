@@ -10,4 +10,12 @@ spec:
     spec:
       containers:
       - name: clusterlifecycle-state-metrics
-        image: quay.io/open-cluster-management/clusterlifecycle-state-metrics:REPLACE_IMAGE
+        image: REPLACE_IMAGE
+        volumeMounts:
+          - mountPath: "/var/run/clusterlifecycle-state-metrics"
+            name: certs
+            readOnly: true
+      volumes:
+      - name: certs
+        secret:
+          secretName: clusterlifecycle-state-metrics-certs

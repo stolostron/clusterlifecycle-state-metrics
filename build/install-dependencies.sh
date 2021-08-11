@@ -5,12 +5,19 @@
 
 export GO111MODULE=off
 
+# K8S tools
+if ! which kubectl > /dev/null; then
+    echo "installing kubectl"
+    curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/$(uname | awk '{print tolower($0)}')/amd64/kubectl && chmod +x kubectl && sudo mv kubectl /usr/local/bin/
+fi
+
 # Go tools
 _OS=$(go env GOOS)
 _ARCH=$(go env GOARCH)
 KubeBuilderVersion="2.3.0"
 
 if ! which patter > /dev/null; then      echo "Installing patter ..."; go get -u github.com/apg/patter; fi
+if ! which ginkgo > /dev/null; then  echo "Installing ginkgo ..."; go get github.com/onsi/ginkgo/ginkgo; go get github.com/onsi/gomega/...; fi
 if ! which gocovmerge > /dev/null; then  echo "Installing gocovmerge..."; go get -u github.com/wadey/gocovmerge; fi
 if ! which golangci-lint > /dev/null; then
    curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.23.6
@@ -36,3 +43,4 @@ fi
 # Image tools
 
 # Check tools
+
