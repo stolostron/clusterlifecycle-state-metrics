@@ -19,10 +19,12 @@ require (
 	cloud.google.com/go v0.74.0 // indirect
 	github.com/Azure/go-autorest/autorest v0.11.18 // indirect
 	github.com/mitchellh/copystructure v1.2.0 // indirect
-	github.com/onsi/ginkgo v1.16.1
-	github.com/onsi/gomega v1.11.0
+	github.com/onsi/ginkgo v1.16.4
+	github.com/onsi/gomega v1.13.0
 	github.com/open-cluster-management/api v0.0.0-20210409125704-06f2aec1a73f
 	github.com/open-cluster-management/applier v0.0.0-20210422205113-6c10f923726b
+	github.com/open-cluster-management/cluster-lifecycle-e2e v0.0.0-20210929030724-42a25e43461c
+	github.com/open-cluster-management/library-e2e-go v0.0.0-20210805091056-8286a707d7a3
 	github.com/open-cluster-management/library-go v0.0.0-20210325215722-d989f79194f6
 	github.com/open-cluster-management/multicloud-operators-foundation v0.0.0-20210415053135-434684dc0274
 	github.com/openshift/api v3.9.1-0.20191111211345-a27ff30ebf09+incompatible
@@ -31,11 +33,12 @@ require (
 	github.com/prometheus/client_golang v1.10.0
 	github.com/prometheus/common v0.20.0 // indirect
 	github.com/stretchr/testify v1.7.0 // indirect
-	golang.org/x/net v0.0.0-20210428140749-89ef3d95e781
+	golang.org/x/net v0.0.0-20210805182204-aaa1db679c0d
 	golang.org/x/oauth2 v0.0.0-20210210192628-66670185b0cd // indirect
 	golang.org/x/time v0.0.0-20210220033141-f8bda1e9f3ba // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
-	k8s.io/apiextensions-apiserver v0.21.1 // indirect
+	k8s.io/api v0.21.1
+	k8s.io/apiextensions-apiserver v0.21.1
 	k8s.io/apimachinery v0.21.1
 	k8s.io/client-go v12.0.0+incompatible
 	k8s.io/klog v1.0.0
