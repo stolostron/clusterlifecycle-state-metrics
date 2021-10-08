@@ -7,9 +7,7 @@ import (
 	"sort"
 	"strings"
 
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/client-go/dynamic"
-	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/kube-state-metrics/pkg/metric"
 	metricsstore "k8s.io/kube-state-metrics/pkg/metrics_store"
@@ -131,43 +129,11 @@ func (b *Builder) buildManagedClusterInfoCollectorWithClient(client dynamic.Inte
 		familyHeaders,
 		composedMetricGenFuncs,
 	)
-	reflectorPerNamespace(b.ctx, &unstructured.Unstructured{}, store,
-		b.apiserver, b.kubeconfig, b.namespaces, createManagedClusterInfoListWatch)
-	reflectorClusterScoped(b.ctx, &unstructured.Unstructured{}, store,
-		b.apiserver, b.kubeconfig, createManagedClusterListWatch)
+
+	for _, ns := range b.namespaces {
+		createManagedClusterInfoInformer(b.apiserver, b.kubeconfig, ns, store)
+	}
+	createManagedClusterInformer(b.apiserver, b.kubeconfig, store)
 
 	return store
-}
-
-// reflectorPerNamespace creates a Kubernetes client-go reflector with the given
-// listWatchFunc for each given namespace and registers it with the given store.
-func reflectorPerNamespace(
-	ctx context.Context,
-	expectedType interface{},
-	store cache.Store,
-	apiserver string,
-	kubeconfig string,
-	namespaces []string,
-	listWatchFunc func(apiserver string, kubeconfig string, ns string) cache.ListWatch,
-) {
-	for _, ns := range namespaces {
-		lw := listWatchFunc(apiserver, kubeconfig, ns)
-		reflector := cache.NewReflector(&lw, expectedType, store, 0)
-		go reflector.Run(ctx.Done())
-	}
-}
-
-// reflectorClusterScoped creates a Kubernetes client-go reflectorClusterScoped with the given
-// listWatchFunc for each given namespace and registers it with the given store.
-func reflectorClusterScoped(
-	ctx context.Context,
-	expectedType interface{},
-	store cache.Store,
-	apiserver string,
-	kubeconfig string,
-	listWatchFunc func(apiserver string, kubeconfig string) cache.ListWatch,
-) {
-	lw := listWatchFunc(apiserver, kubeconfig)
-	reflector := cache.NewReflector(&lw, expectedType, store, 0)
-	go reflector.Run(ctx.Done())
 }

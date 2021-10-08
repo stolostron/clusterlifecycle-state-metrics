@@ -11,9 +11,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/dynamic"
-	"k8s.io/client-go/tools/cache"
 	"k8s.io/kube-state-metrics/pkg/metric"
 
 	mcv1 "github.com/open-cluster-management/api/cluster/v1"
@@ -232,28 +230,6 @@ func wrapManagedClusterInfoFunc(f func(*unstructured.Unstructured) metric.Family
 		}
 
 		return &metricFamily
-	}
-}
-
-func createManagedClusterInfoListWatchWithClient(client dynamic.Interface, ns string) cache.ListWatch {
-	return cache.ListWatch{
-		ListFunc: func(opts metav1.ListOptions) (runtime.Object, error) {
-			return client.Resource(mciGVR).Namespace(ns).List(context.TODO(), opts)
-		},
-		WatchFunc: func(opts metav1.ListOptions) (watch.Interface, error) {
-			return client.Resource(mciGVR).Namespace(ns).Watch(context.TODO(), opts)
-		},
-	}
-}
-
-func createManagedClusterListWatchWithClient(client dynamic.Interface) cache.ListWatch {
-	return cache.ListWatch{
-		ListFunc: func(opts metav1.ListOptions) (runtime.Object, error) {
-			return client.Resource(mcGVR).List(context.TODO(), opts)
-		},
-		WatchFunc: func(opts metav1.ListOptions) (watch.Interface, error) {
-			return client.Resource(mcGVR).Watch(context.TODO(), opts)
-		},
 	}
 }
 
