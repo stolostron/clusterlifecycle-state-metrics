@@ -8,6 +8,7 @@ import (
 	"reflect"
 	"testing"
 
+	clusterclient "github.com/open-cluster-management/api/client/cluster/clientset/versioned"
 	ocinfrav1 "github.com/openshift/api/config/v1"
 	"golang.org/x/net/context"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -327,6 +328,7 @@ func TestBuilder_buildManagedClusterCollectorWithClient(t *testing.T) {
 		t.Fatal(err)
 	}
 	clientDynamic := dynamic.NewForConfigOrDie(envTest.Config)
+	clusterClient, _ := clusterclient.NewForConfig(envTest.Config)
 
 	version := &ocinfrav1.ClusterVersion{
 		TypeMeta: metav1.TypeMeta{
@@ -363,7 +365,8 @@ func TestBuilder_buildManagedClusterCollectorWithClient(t *testing.T) {
 		whiteBlackList    whiteBlackLister
 	}
 	type args struct {
-		client dynamic.Interface
+		client        dynamic.Interface
+		clusterClient *clusterclient.Clientset
 	}
 	tests := []struct {
 		name   string
@@ -382,7 +385,8 @@ func TestBuilder_buildManagedClusterCollectorWithClient(t *testing.T) {
 				whiteBlackList:    w,
 			},
 			args: args{
-				client: clientDynamic,
+				client:        clientDynamic,
+				clusterClient: clusterClient,
 			},
 			want: nil,
 		},
@@ -397,7 +401,7 @@ func TestBuilder_buildManagedClusterCollectorWithClient(t *testing.T) {
 				enabledCollectors: tt.fields.enabledCollectors,
 				whiteBlackList:    tt.fields.whiteBlackList,
 			}
-			got := b.buildManagedClusterInfoCollectorWithClient(tt.args.client)
+			got := b.buildManagedClusterInfoCollectorWithClient(tt.args.client, tt.args.clusterClient)
 			if got == nil {
 				t.Errorf("Builder.buildManagedClusterCollectorWithClient() = %v, want %v", got, tt.want)
 			}

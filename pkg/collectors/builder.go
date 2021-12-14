@@ -7,6 +7,8 @@ import (
 	"sort"
 	"strings"
 
+	clusterclient "github.com/open-cluster-management/api/client/cluster/clientset/versioned"
+
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/kube-state-metrics/pkg/metric"
@@ -114,13 +116,17 @@ func (b *Builder) buildManagedClusterInfoCollector() *metricsstore.MetricsStore 
 		klog.Fatalf("cannot create Dynamic client: %v", err)
 	}
 	client := dynamic.NewForConfigOrDie(config)
-	return b.buildManagedClusterInfoCollectorWithClient(client)
+	clusterclient, err := clusterclient.NewForConfig(config)
+	if err != nil {
+		klog.Fatalf("cannot create clusterclient: %v", err)
+	}
+	return b.buildManagedClusterInfoCollectorWithClient(client, clusterclient)
 }
 
-func (b *Builder) buildManagedClusterInfoCollectorWithClient(client dynamic.Interface) *metricsstore.MetricsStore {
+func (b *Builder) buildManagedClusterInfoCollectorWithClient(client dynamic.Interface, clusterclient *clusterclient.Clientset) *metricsstore.MetricsStore {
 	hubClusterID := getHubClusterID(client)
 	filteredMetricFamilies := metric.FilterMetricFamilies(b.whiteBlackList,
-		getManagedClusterInfoMetricFamilies(hubClusterID, client))
+		getManagedClusterInfoMetricFamilies(hubClusterID, clusterclient))
 	composedMetricGenFuncs := metric.ComposeMetricGenFuncs(filteredMetricFamilies)
 
 	familyHeaders := metric.ExtractMetricFamilyHeaders(filteredMetricFamilies)
@@ -130,9 +136,6 @@ func (b *Builder) buildManagedClusterInfoCollectorWithClient(client dynamic.Inte
 		composedMetricGenFuncs,
 	)
 
-	for _, ns := range b.namespaces {
-		createManagedClusterInfoInformer(b.apiserver, b.kubeconfig, ns, store)
-	}
 	createManagedClusterInformer(b.apiserver, b.kubeconfig, store)
 
 	return store
