@@ -49,7 +49,9 @@ func setupEnvTestByName(name string) (envTest *envtest.Environment,
 			filepath.Clean(kubeConfigFileCerts + kubeConfigNameExtension)
 	}
 	//Create an envTest
-	envTest = &envtest.Environment{}
+	envTest = &envtest.Environment{
+		CRDDirectoryPaths: []string{filepath.Join("..", "..", "test", "functional", "resources", "crds", "managedclusters_crd.yaml")},
+	}
 	envTests[name] = envTest
 	envConfig, err := envTest.Start()
 	if err != nil {

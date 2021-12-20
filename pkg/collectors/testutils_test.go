@@ -9,11 +9,12 @@ import (
 	"sort"
 	"strings"
 
+	mcv1 "github.com/open-cluster-management/api/cluster/v1"
 	metricsstore "k8s.io/kube-state-metrics/pkg/metrics_store"
 )
 
 type generateMetricsTestCase struct {
-	Obj         interface{}
+	Obj         *mcv1.ManagedCluster
 	MetricNames []string
 	Want        string
 	Func        func(interface{}) []metricsstore.FamilyByteSlicer
@@ -25,10 +26,14 @@ func (testCase *generateMetricsTestCase) run() error {
 	for _, f := range metricFamilies {
 		metricFamilyStrings = append(metricFamilyStrings, string(f.ByteSlice()))
 	}
+	fmt.Printf("HQ metricFamilies: %s \n", metricFamilies)
 
 	metrics := strings.Split(strings.Join(metricFamilyStrings, ""), "\n")
 
+	fmt.Printf("HQ metrics: %s \n", metrics)
+	fmt.Printf("HQ test.metrics: %s \n", testCase.MetricNames)
 	metrics = filterMetrics(metrics, testCase.MetricNames)
+	fmt.Printf("HQ after metrics: %s \n", metrics)
 
 	out := strings.Join(metrics, "\n")
 
