@@ -20,7 +20,7 @@ require (
 	github.com/onsi/gomega v1.13.0
 	github.com/open-cluster-management/api v0.0.0-20210527013639-a6845f2ebcb1
 	github.com/open-cluster-management/applier v0.0.0-20210422205113-6c10f923726b
-	github.com/open-cluster-management/library-go v0.0.0-20210325215722-d989f79194f6
+	github.com/open-cluster-management/library-go v0.0.0-20211008065140-521095fbdcb7
 	github.com/open-cluster-management/multicloud-operators-foundation v0.0.0-20210415053135-434684dc0274
 	github.com/openshift/api v3.9.1-0.20191111211345-a27ff30ebf09+incompatible
 	github.com/openshift/build-machinery-go v0.0.0-20210423112049-9415d7ebd33e

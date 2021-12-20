@@ -6,6 +6,11 @@ metadata:
   name: cluster-import
   annotations: 
     "open-cluster-management/created-via": "other"
+  labels:
+    "openshiftVersion": "4.3.1"
+    "vendor": "OpenShift"
+    "cloud": "Amazon"
+    "clusterID": "import_cluster_id"
 spec:
   hubAcceptsClient: true
   leaseDurationSeconds: 60

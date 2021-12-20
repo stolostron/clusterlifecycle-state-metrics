@@ -1403,8 +1403,8 @@ github.com/open-cluster-management/api v0.0.0-20210527013639-a6845f2ebcb1 h1:AaF
 github.com/open-cluster-management/api v0.0.0-20210527013639-a6845f2ebcb1/go.mod h1:ot+A1DWq+v1IV+e1S7nhIteYAmNByFgtazvzpoeAfRQ=
 github.com/open-cluster-management/applier v0.0.0-20210422205113-6c10f923726b h1:lRKMWWtTsy//TJqGYIZbpelBVotp0ZgWFaUspMEqZ9c=
 github.com/open-cluster-management/applier v0.0.0-20210422205113-6c10f923726b/go.mod h1:F2t4tTJeDGWOGepcRt46YVKbf+IMS7huFQ3JjvlxkOc=
-github.com/open-cluster-management/library-go v0.0.0-20210325215722-d989f79194f6 h1:p5yldyIj5Yng9t6o4jIQFbGmZIRgzczcAJLdyyfYK54=
-github.com/open-cluster-management/library-go v0.0.0-20210325215722-d989f79194f6/go.mod h1:N7Mi4eqvPUnCQqbZ1OAzceZ+2aHpixG3tMRwSHfLBCg=
+github.com/open-cluster-management/library-go v0.0.0-20211008065140-521095fbdcb7 h1:saI3NoG6FedgVFMHQo+SfUvtDGAKjMzS8WrCu6ZWEeg=
+github.com/open-cluster-management/library-go v0.0.0-20211008065140-521095fbdcb7/go.mod h1:N7Mi4eqvPUnCQqbZ1OAzceZ+2aHpixG3tMRwSHfLBCg=
 github.com/open-cluster-management/multicloud-operators-foundation v0.0.0-20210415053135-434684dc0274 h1:hk6iX2+6/ofy/YOpt/W08yHyx/qKbNsD3zmuodBcZRA=
 github.com/open-cluster-management/multicloud-operators-foundation v0.0.0-20210415053135-434684dc0274/go.mod h1:ZC1KngKqWKjrwGDoBqytg9DvRO605YMmPFEQn24UTzA=
 github.com/opencontainers/go-digest v0.0.0-20170106003457-a6d0ee40d420/go.mod h1:cMLVZDEM3+U2I4VmLI6N8jQYUd2OVphdqWwCJHrFt2s=

@@ -1,6 +1,7 @@
 // Copyright (c) 2020 Red Hat, Inc.
 // Copyright Contributors to the Open Cluster Management project
 
+//go:build functional
 // +build functional
 
 package functional
@@ -29,12 +30,11 @@ const (
 )
 
 var (
-	kubeClient            kubernetes.Interface
-	defaultClient         client.Client
-	clientDynamic         dynamic.Interface
-	clientApplier         *libgoapplier.Applier
-	gvrManagedclusterInfo schema.GroupVersionResource
-	gvrManagedcluster     schema.GroupVersionResource
+	kubeClient        kubernetes.Interface
+	defaultClient     client.Client
+	clientDynamic     dynamic.Interface
+	clientApplier     *libgoapplier.Applier
+	gvrManagedcluster schema.GroupVersionResource
 )
 
 func init() {
@@ -43,7 +43,6 @@ func init() {
 }
 
 var _ = BeforeSuite(func() {
-	gvrManagedclusterInfo = schema.GroupVersionResource{Group: "internal.open-cluster-management.io", Version: "v1beta1", Resource: "managedclusterinfos"}
 	gvrManagedcluster = schema.GroupVersionResource{Group: "cluster.open-cluster-management.io", Version: "v1", Resource: "managedclusters"}
 
 	setupHub()
