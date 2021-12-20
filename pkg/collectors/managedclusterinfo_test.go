@@ -23,10 +23,10 @@ func Test_getManagedClusterMetricFamilies(t *testing.T) {
 				"open-cluster-management/created-via": "hive",
 			},
 			Labels: map[string]string{
-				OCPVersion:       "4.3.1",
-				LabelKubeVendor:  string(mciv1beta1.KubeVendorOpenShift),
-				LabelCloudVendor: string(mciv1beta1.CloudVendorAWS),
-				LabelClusterID:   "managed_cluster_id",
+				mciv1beta1.OCPVersion:       "4.3.1",
+				mciv1beta1.LabelKubeVendor:  string(mciv1beta1.KubeVendorOpenShift),
+				mciv1beta1.LabelCloudVendor: string(mciv1beta1.CloudVendorAWS),
+				mciv1beta1.LabelClusterID:   "managed_cluster_id",
 			},
 		},
 		Status: mcv1.ManagedClusterStatus{
@@ -51,10 +51,10 @@ func Test_getManagedClusterMetricFamilies(t *testing.T) {
 				"open-cluster-management/created-via": "discovery",
 			},
 			Labels: map[string]string{
-				OCPVersion:       "4.3.1",
-				LabelKubeVendor:  string(mciv1beta1.KubeVendorOpenShift),
-				LabelCloudVendor: string(mciv1beta1.CloudVendorAWS),
-				LabelClusterID:   "managed_cluster_id",
+				mciv1beta1.OCPVersion:       "4.3.1",
+				mciv1beta1.LabelKubeVendor:  string(mciv1beta1.KubeVendorOpenShift),
+				mciv1beta1.LabelCloudVendor: string(mciv1beta1.CloudVendorAWS),
+				mciv1beta1.LabelClusterID:   "managed_cluster_id",
 			},
 		},
 		Status: mcv1.ManagedClusterStatus{
@@ -76,8 +76,8 @@ func Test_getManagedClusterMetricFamilies(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "cluster-other",
 			Labels: map[string]string{
-				LabelKubeVendor:  string(mciv1beta1.KubeVendorOther),
-				LabelCloudVendor: string(mciv1beta1.CloudVendorAWS),
+				mciv1beta1.LabelKubeVendor:  string(mciv1beta1.KubeVendorOther),
+				mciv1beta1.LabelCloudVendor: string(mciv1beta1.CloudVendorAWS),
 			},
 		},
 		Status: mcv1.ManagedClusterStatus{
@@ -99,9 +99,9 @@ func Test_getManagedClusterMetricFamilies(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "hive-cluster-2",
 			Labels: map[string]string{
-				LabelKubeVendor:  string(mciv1beta1.KubeVendorOther),
-				LabelCloudVendor: string(mciv1beta1.CloudVendorAWS),
-				LabelClusterID:   "managed_cluster_id",
+				mciv1beta1.LabelKubeVendor:  string(mciv1beta1.KubeVendorOther),
+				mciv1beta1.LabelCloudVendor: string(mciv1beta1.CloudVendorAWS),
+				mciv1beta1.LabelClusterID:   "managed_cluster_id",
 			},
 		},
 		Status: mcv1.ManagedClusterStatus{

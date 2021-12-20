@@ -13,15 +13,11 @@ import (
 
 	clusterclient "github.com/open-cluster-management/api/client/cluster/clientset/versioned"
 	mcv1 "github.com/open-cluster-management/api/cluster/v1"
+	mciv1beta1 "github.com/open-cluster-management/multicloud-operators-foundation/pkg/apis/internal.open-cluster-management.io/v1beta1"
 	"k8s.io/klog/v2"
 )
 
 const (
-	LabelCloudVendor = "cloud"
-	LabelKubeVendor  = "vendor"
-	LabelClusterID   = "clusterID"
-	OCPVersion       = "openshiftVersion"
-
 	resourceCoreWorker   mcv1.ResourceName = "core_worker"
 	resourceSocketWorker mcv1.ResourceName = "socket_worker"
 )
@@ -72,24 +68,11 @@ func getManagedClusterInfoMetricFamilies(hubClusterID string, clusterclient *clu
 					return metric.Family{Metrics: []*metric.Metric{}}
 				}
 				// klog.Infof("mc: %v", mc)
-				clusterID := mc.ObjectMeta.Labels[LabelClusterID]
-				if clusterID == "" {
-					clusterID = mc.GetName()
-				}
-				//				kubeVendor := mc.ObjectMeta.Labels[mciv1beta1.LabelKubeVendor]
-				//				cloudVendor := mc.ObjectMeta.Labels[mciv1beta1.LabelCloudVendor]
-				//				version := mc.ObjectMeta.Labels[mciv1beta1.OCPVersion]
-				kubeVendor := mc.ObjectMeta.Labels[LabelKubeVendor]
-				cloudVendor := mc.ObjectMeta.Labels[LabelCloudVendor]
-				version := mc.ObjectMeta.Labels[OCPVersion]
-				if version == "" {
-					for _, c := range mc.Status.ClusterClaims {
-						if c.Name == "kubeversion.open-cluster-management.io" {
-							version = c.Value
-						}
-					}
-				}
+				kubeVendor := mc.ObjectMeta.Labels[mciv1beta1.LabelKubeVendor]
+				cloudVendor := mc.ObjectMeta.Labels[mciv1beta1.LabelCloudVendor]
 
+				clusterID := getClusterID(mc)
+				version := getVersion(mc)
 				createdVia := getCreatedVia(mc)
 				available := getAvailableStatus(mc)
 				core_worker, socket_worker := getCapacity(mc)
@@ -140,6 +123,44 @@ socket_worker=%d`,
 			}),
 		},
 	}
+}
+
+func getClusterID(mc *mcv1.ManagedCluster) string {
+	kubeVendor := mc.ObjectMeta.Labels[mciv1beta1.LabelKubeVendor]
+	clusterID := mc.ObjectMeta.Labels[mciv1beta1.LabelClusterID]
+
+	//Cluster ID is not available on non-OCP thus use the name
+	if clusterID == "" && (kubeVendor != string(mciv1beta1.KubeVendorOpenShift)) {
+		clusterID = mc.GetName()
+	}
+	//ClusterID is not available on OCP 3.x thus use the name
+	if clusterID == "" && (kubeVendor == string(mciv1beta1.KubeVendorOpenShift)) && mc.ObjectMeta.Labels[mciv1beta1.OCPVersion] == "3" {
+		clusterID = mc.GetName()
+	}
+
+	return clusterID
+}
+
+func getVersion(mc *mcv1.ManagedCluster) string {
+	kubeVendor := mc.ObjectMeta.Labels[mciv1beta1.LabelKubeVendor]
+	version := ""
+
+	if kubeVendor == "" {
+		return version
+	}
+
+	switch kubeVendor {
+	case string(mciv1beta1.KubeVendorOpenShift):
+		version = mc.ObjectMeta.Labels[mciv1beta1.OCPVersion]
+	default:
+		for _, c := range mc.Status.ClusterClaims {
+			if c.Name == "kubeversion.open-cluster-management.io" {
+				version = c.Value
+			}
+		}
+	}
+
+	return version
 }
 
 func getCapacity(mc *mcv1.ManagedCluster) (core_worker, socket_worker int64) {
