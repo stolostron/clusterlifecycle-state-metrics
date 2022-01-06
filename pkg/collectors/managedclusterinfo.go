@@ -8,7 +8,6 @@ import (
 	"strconv"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/kube-state-metrics/pkg/metric"
 
 	clusterclient "github.com/open-cluster-management/api/client/cluster/clientset/versioned"
@@ -46,12 +45,6 @@ var (
 		"created_via",
 		"core_worker",
 		"socket_worker"}
-
-	cvGVR = schema.GroupVersionResource{
-		Group:    "config.openshift.io",
-		Version:  "v1",
-		Resource: "clusterversions",
-	}
 )
 
 func getManagedClusterInfoMetricFamilies(hubClusterID string, clusterclient *clusterclient.Clientset) []metric.FamilyGenerator {

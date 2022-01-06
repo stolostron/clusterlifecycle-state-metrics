@@ -1,23 +1,25 @@
 // Copyright (c) 2020 Red Hat, Inc.
 // Copyright Contributors to the Open Cluster Management project
 
-
 package collectors
 
 import (
 	"testing"
 
 	ocinfrav1 "github.com/openshift/api/config/v1"
+	ocpclient "github.com/openshift/client-go/config/clientset/versioned"
+	"golang.org/x/net/context"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/dynamic"
-	"k8s.io/client-go/dynamic/fake"
-	"k8s.io/client-go/kubernetes/scheme"
+	"sigs.k8s.io/controller-runtime/pkg/envtest"
 )
 
 func Test_getHubClusterID(t *testing.T) {
-	s := scheme.Scheme
+	envTest, _, _, _ := setupEnvTest(t)
+	_, err := envtest.InstallCRDs(envTest.Config, envtest.CRDInstallOptions{
+		Paths: []string{"../../test/unit/resources/crds"},
+	})
+	ocpClient, _ := ocpclient.NewForConfig(envTest.Config)
 
-	s.AddKnownTypes(ocinfrav1.SchemeGroupVersion, &ocinfrav1.ClusterVersion{})
 	version := &ocinfrav1.ClusterVersion{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "version",
@@ -26,10 +28,13 @@ func Test_getHubClusterID(t *testing.T) {
 			ClusterID: "mycluster_id",
 		},
 	}
+	_, err = ocpClient.ConfigV1().ClusterVersions().Create(context.TODO(), version, metav1.CreateOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
 
-	client := fake.NewSimpleDynamicClient(s, version)
 	type args struct {
-		c dynamic.Interface
+		c *ocpclient.Clientset
 	}
 	tests := []struct {
 		name string
@@ -39,7 +44,7 @@ func Test_getHubClusterID(t *testing.T) {
 		{
 			name: "Get cluster id",
 			args: args{
-				c: client,
+				c: ocpClient,
 			},
 			want: "mycluster_id",
 		},

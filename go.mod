@@ -25,6 +25,7 @@ require (
 	github.com/open-cluster-management/multicloud-operators-foundation v0.0.0-20210526063916-557500acad64
 	github.com/openshift/api v3.9.1-0.20191111211345-a27ff30ebf09+incompatible
 	github.com/openshift/build-machinery-go v0.0.0-20210423112049-9415d7ebd33e
+	github.com/openshift/client-go v0.0.0-20201214125552-e615e336eb49
 	github.com/operator-framework/operator-sdk v0.17.0
 	github.com/prometheus/client_golang v1.10.0
 	golang.org/x/net v0.0.0-20210805182204-aaa1db679c0d
