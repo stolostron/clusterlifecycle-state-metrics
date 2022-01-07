@@ -8,12 +8,11 @@ import (
 	"reflect"
 	"testing"
 
+	clusterclient "github.com/open-cluster-management/api/client/cluster/clientset/versioned"
 	ocinfrav1 "github.com/openshift/api/config/v1"
+	ocpclient "github.com/openshift/client-go/config/clientset/versioned"
 	"golang.org/x/net/context"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/dynamic"
 	metricsstore "k8s.io/kube-state-metrics/pkg/metrics_store"
 	koptions "k8s.io/kube-state-metrics/pkg/options"
 	"k8s.io/kube-state-metrics/pkg/whiteblacklist"
@@ -326,13 +325,10 @@ func TestBuilder_buildManagedClusterCollectorWithClient(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	clientDynamic := dynamic.NewForConfigOrDie(envTest.Config)
+	ocpClient, _ := ocpclient.NewForConfig(envTest.Config)
+	clusterClient, _ := clusterclient.NewForConfig(envTest.Config)
 
 	version := &ocinfrav1.ClusterVersion{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: cvGVR.GroupVersion().String(),
-			Kind:       "ClusterVersion",
-		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "version",
 		},
@@ -341,17 +337,10 @@ func TestBuilder_buildManagedClusterCollectorWithClient(t *testing.T) {
 		},
 	}
 
-	versionU := &unstructured.Unstructured{}
-	versionM, err := runtime.DefaultUnstructuredConverter.ToUnstructured(version)
-	if err != nil {
-		t.Error(err)
-	}
-	versionU.SetUnstructuredContent(versionM)
-	_, err = clientDynamic.Resource(cvGVR).Create(context.TODO(), versionU, metav1.CreateOptions{})
+	_, err = ocpClient.ConfigV1().ClusterVersions().Create(context.TODO(), version, metav1.CreateOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	// client := fake.NewSimpleDynamicClient(s, mcImported, version)
 
 	w, _ := whiteblacklist.New(map[string]struct{}{}, map[string]struct{}{})
 	type fields struct {
@@ -363,7 +352,8 @@ func TestBuilder_buildManagedClusterCollectorWithClient(t *testing.T) {
 		whiteBlackList    whiteBlackLister
 	}
 	type args struct {
-		client dynamic.Interface
+		ocpClient     *ocpclient.Clientset
+		clusterClient *clusterclient.Clientset
 	}
 	tests := []struct {
 		name   string
@@ -382,7 +372,8 @@ func TestBuilder_buildManagedClusterCollectorWithClient(t *testing.T) {
 				whiteBlackList:    w,
 			},
 			args: args{
-				client: clientDynamic,
+				ocpClient:     ocpClient,
+				clusterClient: clusterClient,
 			},
 			want: nil,
 		},
@@ -397,7 +388,7 @@ func TestBuilder_buildManagedClusterCollectorWithClient(t *testing.T) {
 				enabledCollectors: tt.fields.enabledCollectors,
 				whiteBlackList:    tt.fields.whiteBlackList,
 			}
-			got := b.buildManagedClusterInfoCollectorWithClient(tt.args.client)
+			got := b.buildManagedClusterInfoCollectorWithClient(tt.args.ocpClient, tt.args.clusterClient)
 			if got == nil {
 				t.Errorf("Builder.buildManagedClusterCollectorWithClient() = %v, want %v", got, tt.want)
 			}

@@ -8,20 +8,15 @@ import (
 	"strconv"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/client-go/dynamic"
 	"k8s.io/kube-state-metrics/pkg/metric"
 
+	clusterclient "github.com/open-cluster-management/api/client/cluster/clientset/versioned"
 	mcv1 "github.com/open-cluster-management/api/cluster/v1"
 	mciv1beta1 "github.com/open-cluster-management/multicloud-operators-foundation/pkg/apis/internal.open-cluster-management.io/v1beta1"
 	"k8s.io/klog/v2"
 )
 
 const (
-	workerLabel = "node-role.kubernetes.io/worker"
-
 	resourceCoreWorker   mcv1.ResourceName = "core_worker"
 	resourceSocketWorker mcv1.ResourceName = "socket_worker"
 )
@@ -50,107 +45,58 @@ var (
 		"created_via",
 		"core_worker",
 		"socket_worker"}
-
-	cvGVR = schema.GroupVersionResource{
-		Group:    "config.openshift.io",
-		Version:  "v1",
-		Resource: "clusterversions",
-	}
-
-	mciGVR = schema.GroupVersionResource{
-		Group:    "internal.open-cluster-management.io",
-		Version:  "v1beta1",
-		Resource: "managedclusterinfos",
-	}
-
-	mcGVR = schema.GroupVersionResource{
-		Group:    "cluster.open-cluster-management.io",
-		Version:  "v1",
-		Resource: "managedclusters",
-	}
 )
 
-func getManagedClusterInfoMetricFamilies(hubClusterID string, client dynamic.Interface) []metric.FamilyGenerator {
+func getManagedClusterInfoMetricFamilies(hubClusterID string, clusterclient *clusterclient.Clientset) []metric.FamilyGenerator {
 	return []metric.FamilyGenerator{
 		{
 			Name: descClusterInfoName,
 			Type: metric.Gauge,
 			Help: descClusterInfoHelp,
-			GenerateFunc: wrapManagedClusterInfoFunc(func(obj *unstructured.Unstructured) metric.Family {
+			GenerateFunc: wrapManagedClusterInfoFunc(func(obj *mcv1.ManagedCluster) metric.Family {
 				klog.Infof("Wrap %s", obj.GetName())
-				mciU, errMCI := client.Resource(mciGVR).Namespace(obj.GetName()).Get(context.TODO(), obj.GetName(), metav1.GetOptions{})
-				if errMCI != nil {
-					klog.Errorf("Error: %v", errMCI)
-					return metric.Family{Metrics: []*metric.Metric{}}
-				}
-				mci := &mciv1beta1.ManagedClusterInfo{}
-				err := runtime.DefaultUnstructuredConverter.FromUnstructured(mciU.UnstructuredContent(), &mci)
+				mc, err := clusterclient.ClusterV1().ManagedClusters().Get(context.Background(), obj.GetName(), metav1.GetOptions{})
 				if err != nil {
 					klog.Errorf("Error: %v", err)
 					return metric.Family{Metrics: []*metric.Metric{}}
 				}
-				mcU, errMC := client.Resource(mcGVR).Get(context.TODO(), mci.GetName(), metav1.GetOptions{})
-				if errMC != nil {
-					klog.Errorf("Error: %v", errMC)
-					return metric.Family{Metrics: []*metric.Metric{}}
-				}
-				klog.Infof("mcU: %v", mcU)
-				mc := &mcv1.ManagedCluster{}
-				err = runtime.DefaultUnstructuredConverter.FromUnstructured(mcU.UnstructuredContent(), &mc)
-				if err != nil {
-					klog.Errorf("Error: %v", err)
-					return metric.Family{Metrics: []*metric.Metric{}}
-				}
-				available := getAvailableStatus(mc)
 				// klog.Infof("mc: %v", mc)
+				kubeVendor := mc.ObjectMeta.Labels[mciv1beta1.LabelKubeVendor]
+				cloudVendor := mc.ObjectMeta.Labels[mciv1beta1.LabelCloudVendor]
+
+				clusterID := getClusterID(mc)
+				version := getVersion(mc)
 				createdVia := getCreatedVia(mc)
-				clusterID := mci.Status.ClusterID
-				//Cluster ID is not available on non-OCP thus use the name
-				if clusterID == "" &&
-					mci.Status.KubeVendor != mciv1beta1.KubeVendorOpenShift {
-					clusterID = mci.GetName()
-				}
-
-				//ClusterID is not available on OCP 3.x thus use the name
-				if clusterID == "" &&
-					mci.Status.KubeVendor == mciv1beta1.KubeVendorOpenShift && mci.Status.DistributionInfo.OCP.Version == "3" {
-					clusterID = mci.GetName()
-				}
-
-				version := getVersion(mci)
+				available := getAvailableStatus(mc)
 				core_worker, socket_worker := getCapacity(mc)
 
-				nodeListLength := len(mci.Status.NodeList)
-
 				if clusterID == "" ||
-					mci.Status.KubeVendor == "" ||
-					mci.Status.CloudVendor == "" ||
+					kubeVendor == "" ||
+					cloudVendor == "" ||
 					version == "" ||
-					nodeListLength == 0 ||
-					((core_worker == 0 || socket_worker == 0) && hasWorker(mci)) {
-					klog.Infof("Not enough information available for %s", mci.GetName())
+					core_worker == 0 ||
+					socket_worker == 0 {
+					klog.Infof("Not enough information available for %s", obj.GetName())
 					klog.Infof(`\tClusterID=%s,
 KubeVendor=%s,
 CloudVendor=%s,
 Version=%s,
 available=%s,
-NodeList length=%d,
 core_worker=%d,
 socket_worker=%d`,
 						clusterID,
-						mci.Status.KubeVendor,
-						mci.Status.CloudVendor,
+						kubeVendor,
+						cloudVendor,
 						version,
 						available,
-						nodeListLength,
 						core_worker,
 						socket_worker)
 					return metric.Family{Metrics: []*metric.Metric{}}
 				}
 				labelsValues := []string{hubClusterID,
 					clusterID,
-					string(mci.Status.KubeVendor),
-					string(mci.Status.CloudVendor),
+					kubeVendor,
+					cloudVendor,
 					version,
 					available,
 					createdVia,
@@ -172,26 +118,42 @@ socket_worker=%d`,
 	}
 }
 
-func getVersion(mci *mciv1beta1.ManagedClusterInfo) string {
-	if mci.Status.KubeVendor == "" {
-		return ""
+func getClusterID(mc *mcv1.ManagedCluster) string {
+	kubeVendor := mc.ObjectMeta.Labels[mciv1beta1.LabelKubeVendor]
+	clusterID := mc.ObjectMeta.Labels[mciv1beta1.LabelClusterID]
+
+	//Cluster ID is not available on non-OCP thus use the name
+	if clusterID == "" && (kubeVendor != string(mciv1beta1.KubeVendorOpenShift)) {
+		clusterID = mc.GetName()
 	}
-	switch mci.Status.KubeVendor {
-	case mciv1beta1.KubeVendorOpenShift:
-		return mci.Status.DistributionInfo.OCP.Version
-	default:
-		return mci.Status.Version
+	//ClusterID is not available on OCP 3.x thus use the name
+	if clusterID == "" && (kubeVendor == string(mciv1beta1.KubeVendorOpenShift)) && mc.ObjectMeta.Labels[mciv1beta1.OCPVersion] == "3" {
+		clusterID = mc.GetName()
 	}
 
+	return clusterID
 }
 
-func hasWorker(mci *mciv1beta1.ManagedClusterInfo) bool {
-	for _, n := range mci.Status.NodeList {
-		if _, ok := n.Labels[workerLabel]; ok {
-			return true
+func getVersion(mc *mcv1.ManagedCluster) string {
+	kubeVendor := mc.ObjectMeta.Labels[mciv1beta1.LabelKubeVendor]
+	version := ""
+
+	if kubeVendor == "" {
+		return version
+	}
+
+	switch kubeVendor {
+	case string(mciv1beta1.KubeVendorOpenShift):
+		version = mc.ObjectMeta.Labels[mciv1beta1.OCPVersion]
+	default:
+		for _, c := range mc.Status.ClusterClaims {
+			if c.Name == "kubeversion.open-cluster-management.io" {
+				version = c.Value
+			}
 		}
 	}
-	return false
+
+	return version
 }
 
 func getCapacity(mc *mcv1.ManagedCluster) (core_worker, socket_worker int64) {
@@ -218,9 +180,9 @@ func getAvailableStatus(mc *mcv1.ManagedCluster) string {
 	return string(status)
 }
 
-func wrapManagedClusterInfoFunc(f func(*unstructured.Unstructured) metric.Family) func(interface{}) *metric.Family {
+func wrapManagedClusterInfoFunc(f func(obj *mcv1.ManagedCluster) metric.Family) func(interface{}) *metric.Family {
 	return func(obj interface{}) *metric.Family {
-		Cluster := obj.(*unstructured.Unstructured)
+		Cluster := obj.(*mcv1.ManagedCluster)
 
 		metricFamily := f(Cluster)
 

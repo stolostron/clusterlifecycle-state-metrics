@@ -9,11 +9,12 @@ import (
 	"sort"
 	"strings"
 
+	mcv1 "github.com/open-cluster-management/api/cluster/v1"
 	metricsstore "k8s.io/kube-state-metrics/pkg/metrics_store"
 )
 
 type generateMetricsTestCase struct {
-	Obj         interface{}
+	Obj         *mcv1.ManagedCluster
 	MetricNames []string
 	Want        string
 	Func        func(interface{}) []metricsstore.FamilyByteSlicer

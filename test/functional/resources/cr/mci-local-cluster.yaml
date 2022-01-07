@@ -1,7 +1,0 @@
-# Copyright Contributors to the Open Cluster Management project
-
-apiVersion: internal.open-cluster-management.io/v1beta1
-kind: ManagedClusterInfo
-metadata:
-  name: local-cluster
-  namespace: local-cluster
