@@ -4,8 +4,8 @@
 package collectors
 
 import (
-	clusterclient "github.com/open-cluster-management/api/client/cluster/clientset/versioned"
-	clusterinformers "github.com/open-cluster-management/api/client/cluster/informers/externalversions"
+	clusterclient "open-cluster-management.io/api/client/cluster/clientset/versioned"
+	clusterinformers "open-cluster-management.io/api/client/cluster/informers/externalversions"
 
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/clientcmd"

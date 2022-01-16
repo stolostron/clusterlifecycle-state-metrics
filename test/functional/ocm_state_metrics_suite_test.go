@@ -13,15 +13,15 @@ import (
 	. "github.com/onsi/gomega"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	libgoclient "github.com/open-cluster-management/library-go/pkg/client"
-	"github.com/open-cluster-management/library-go/pkg/templateprocessor"
+	libgoclient "github.com/stolostron/library-go/pkg/client"
+	"github.com/stolostron/library-go/pkg/templateprocessor"
 
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/klog"
 
-	libgoapplier "github.com/open-cluster-management/applier/pkg/applier"
+	libgoapplier "github.com/stolostron/applier/pkg/applier"
 )
 
 const (

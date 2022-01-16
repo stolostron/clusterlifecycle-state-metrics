@@ -8,7 +8,6 @@ import (
 	"reflect"
 	"testing"
 
-	clusterclient "github.com/open-cluster-management/api/client/cluster/clientset/versioned"
 	ocinfrav1 "github.com/openshift/api/config/v1"
 	ocpclient "github.com/openshift/client-go/config/clientset/versioned"
 	"golang.org/x/net/context"
@@ -16,6 +15,7 @@ import (
 	metricsstore "k8s.io/kube-state-metrics/pkg/metrics_store"
 	koptions "k8s.io/kube-state-metrics/pkg/options"
 	"k8s.io/kube-state-metrics/pkg/whiteblacklist"
+	clusterclient "open-cluster-management.io/api/client/cluster/clientset/versioned"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 )
 
