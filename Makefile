@@ -35,7 +35,8 @@ export RELEASE_MAIN_BRANCH ?= main
 
 ## WARNING: OPERATOR-SDK - IMAGE_DESCRIPTION & DOCKER_BUILD_OPTS MUST NOT CONTAIN ANY SPACES
 export IMAGE_DESCRIPTION ?= RCM_Controller
-export DOCKER_FILE        = $(BUILD_DIR)/Dockerfile
+export DOCKER_FILE        = $(BUILD_DIR)/Dockerfile.prow
+export DOCKER_FILE_COVERAGE = $(BUILD_DIR)/Dockerfile.coverage.prow
 export DOCKER_REGISTRY   ?= quay.io
 export DOCKER_NAMESPACE  ?= open-cluster-management
 export DOCKER_IMAGE      ?= $(COMPONENT_NAME)
@@ -43,19 +44,11 @@ export DOCKER_IMAGE_COVERAGE_POSTFIX ?= -coverage
 export DOCKER_IMAGE_COVERAGE      ?= $(DOCKER_IMAGE)$(DOCKER_IMAGE_COVERAGE_POSTFIX)
 export DOCKER_BUILD_TAG  ?= latest
 export DOCKER_TAG        ?= $(shell whoami)
+export DOCKER_BUILDER    ?= docker
 
 export KUBECONFIG ?= ${HOME}/.kube/config
 
 BEFORE_SCRIPT := $(shell build/before-make.sh)
-
-USE_VENDORIZED_BUILD_HARNESS ?= true
-
-ifndef USE_VENDORIZED_BUILD_HARNESS
-# -include $(shell curl -s -H 'Authorization: token ${GITHUB_TOKEN}' -H 'Accept: application/vnd.github.v4.raw' -L https://api.github.com/repos/itdove/build-harness-extensions/contents/templates/Makefile.build-harness-bootstrap?branch=code_coverage -o .build-harness-bootstrap; echo .build-harness-bootstrap)
--include $(shell curl -s -H 'Authorization: token ${GITHUB_TOKEN}' -H 'Accept: application/vnd.github.v4.raw' -L https://api.github.com/repos/open-cluster-management/build-harness-extensions/contents/templates/Makefile.build-harness-bootstrap -o .build-harness-bootstrap; echo .build-harness-bootstrap)
-else
--include vbh/.build-harness-vendorized
-endif
 
 export DOCKER_BUILD_OPTS  = --build-arg VCS_REF=$(VCS_REF) \
 	--build-arg VCS_URL=$(GIT_REMOTE_URL) \
@@ -64,7 +57,6 @@ export DOCKER_BUILD_OPTS  = --build-arg VCS_REF=$(VCS_REF) \
 	--build-arg ARCH_TYPE=$(ARCH_TYPE) \
 	--build-arg REMOTE_SOURCE=. \
 	--build-arg REMOTE_SOURCE_DIR=/remote-source \
-	--build-arg BUILD_HARNESS_EXTENSIONS_PROJECT=${BUILD_HARNESS_EXTENSIONS_PROJECT} \
 	--build-arg GITHUB_TOKEN=$(GITHUB_TOKEN)
 
 # Only use git commands if it exists
@@ -74,9 +66,9 @@ GIT_REMOTE_URL  = $(shell git config --get remote.origin.url)
 VCS_REF     = $(if $(shell git status --porcelain),$(GIT_COMMIT)-$(BUILD_DATE),$(GIT_COMMIT))
 endif
 
-.PHONY: deps
-## Download all project dependencies
-deps: init component/init
+.PHONY: dependencies
+dependencies:
+	@build/install-dependencies.sh
 
 .PHONY: check
 ## Runs a set of required checks
@@ -84,15 +76,18 @@ check: copyright-check
 
 .PHONY: test
 ## Runs go unit tests
-test: component/test/unit
+test: dependencies
+	@build/run-unit-tests.sh
 
-.PHONY: build
+.PHONY: build-image
 ## Builds controller binary inside of an image
-build: component/build
+build-image: 
+	$(DOCKER_BUILDER) build -f $(DOCKER_FILE) . -t $(DOCKER_IMAGE)
 
-.PHONY: build-coverage
-build-coverage:
-	$(SELF) component/build-coverage
+.PHONY: build-image-coverage
+## Builds controller binary inside of an image
+build-image-coverage: build-image
+	$(DOCKER_BUILDER) build -f $(DOCKER_FILE_COVERAGE) . -t $(DOCKER_IMAGE_COVERAGE)
 
 .PHONY: copyright-check
 copyright-check:
@@ -120,12 +115,6 @@ run-coverage:
 lint:
 	@echo "Running linting tool ..."
 	@GOGC=25 golangci-lint run --timeout 5m
-
-.PHONY: helpz
-helpz:
-ifndef build-harness
-	$(eval MAKEFILE_LIST := Makefile build-harness/modules/go/Makefile)
-endif
 
 ############################################################
 # deploy section

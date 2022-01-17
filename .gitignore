@@ -7,7 +7,6 @@
 clusterlifecycle-state-metrics
 !cmd/clusterlifecycle-state-metrics
 clusterlifecycle-state-metrics-coverage
-.build-harness-bootstrap
 test/unit/coverage
 test/out
 test/functional/tmp
@@ -22,8 +21,3 @@ kind_kubeconfig.yaml
 
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
-
-# Dependency directories (remove the comment below to include it)
-# vendor/
-./build-harness
-./build-harness-extensions
