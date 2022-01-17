@@ -8,4 +8,4 @@ spec:
     spec:
       containers:
       - name: clusterlifecycle-state-metrics
-        image: quay.io/open-cluster-management/clusterlifecycle-state-metrics:REPLACE_IMAGE
+        image: quay.io/stolostron/clusterlifecycle-state-metrics:REPLACE_IMAGE

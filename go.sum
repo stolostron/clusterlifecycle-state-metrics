@@ -1187,13 +1187,6 @@ github.com/onsi/gomega v1.8.1/go.mod h1:Ho0h+IUsWyvy1OpqCwxlQ/21gkhVunqlU8fDGcoT
 github.com/onsi/gomega v1.9.0/go.mod h1:Ho0h+IUsWyvy1OpqCwxlQ/21gkhVunqlU8fDGcoTdcA=
 github.com/onsi/gomega v1.10.1 h1:o0+MgICZLuZ7xjH7Vx6zS/zcu93/BEp1VwkIW1mEXCE=
 github.com/onsi/gomega v1.10.1/go.mod h1:iN09h71vgCQne3DLsj+A5owkum+a2tYe+TOCB1ybHNo=
-github.com/open-cluster-management/api v0.0.0-20200923021655-f9a64b7328eb/go.mod h1:F1hDJHtWuV7BAUtfL4XRS9GZjUpksleLgEcisNXvQEw=
-github.com/open-cluster-management/api v0.0.0-20201007180356-41d07eee4294 h1:Ek/KLp95G0ThcfUQ5vFj7VAySJvOXbXBD4vJzHrkgJg=
-github.com/open-cluster-management/api v0.0.0-20201007180356-41d07eee4294/go.mod h1:F1hDJHtWuV7BAUtfL4XRS9GZjUpksleLgEcisNXvQEw=
-github.com/open-cluster-management/library-go v0.0.0-20200828173847-299c21e6c3fc h1:IGLt58sdIVMG0cdcZtxhzoxZod78fhbnIAmDCQ1v1H0=
-github.com/open-cluster-management/library-go v0.0.0-20200828173847-299c21e6c3fc/go.mod h1:X9KdKajEnrx6+LQSjo+61gLdk4Ntmwp+YEYD0CIJT7I=
-github.com/open-cluster-management/multicloud-operators-foundation v0.0.0-20201112041030-60ef45157161 h1:awibOZ0oMhQgQvEBgPyUDNTazxICWZLSMtTyADtfZQU=
-github.com/open-cluster-management/multicloud-operators-foundation v0.0.0-20201112041030-60ef45157161/go.mod h1:rBqybyIf8keV2w0YYA4dFeJ1NMWEj66UQScE/jDJ758=
 github.com/opencontainers/go-digest v0.0.0-20170106003457-a6d0ee40d420/go.mod h1:cMLVZDEM3+U2I4VmLI6N8jQYUd2OVphdqWwCJHrFt2s=
 github.com/opencontainers/go-digest v0.0.0-20180430190053-c9281466c8b2/go.mod h1:cMLVZDEM3+U2I4VmLI6N8jQYUd2OVphdqWwCJHrFt2s=
 github.com/opencontainers/go-digest v1.0.0-rc1/go.mod h1:cMLVZDEM3+U2I4VmLI6N8jQYUd2OVphdqWwCJHrFt2s=
@@ -1488,6 +1481,12 @@ github.com/spf13/viper v1.6.1/go.mod h1:t3iDnF5Jlj76alVNuyFBk5oUMCvsrkbvZK0WQdfD
 github.com/stoewer/go-strcase v1.0.2/go.mod h1:eLfe5bL3qbL7ep/KafHzthxejrOF5J3xmt03uL5tzek=
 github.com/stoewer/go-strcase v1.1.0/go.mod h1:G7YglbHPK5jX3JcWljxVXRXPh90/dtxfy6xWqxu5b90=
 github.com/stoewer/go-strcase v1.2.0/go.mod h1:IBiWB2sKIp3wVVQ3Y035++gc+knqhUQag1KpM8ahLw8=
+github.com/stolostron/api v0.0.0-20201007180356-41d07eee4294 h1:6oHP4EsPnKlz383v4/mQneWLxTD7QwfLKIfhd12KpYs=
+github.com/stolostron/api v0.0.0-20201007180356-41d07eee4294/go.mod h1:F1hDJHtWuV7BAUtfL4XRS9GZjUpksleLgEcisNXvQEw=
+github.com/stolostron/library-go v0.0.0-20200828173847-299c21e6c3fc h1:WMNDkwedlEDOYXPInIZvdEZ0zyw3ynEIWcv890rNcTQ=
+github.com/stolostron/library-go v0.0.0-20200828173847-299c21e6c3fc/go.mod h1:X9KdKajEnrx6+LQSjo+61gLdk4Ntmwp+YEYD0CIJT7I=
+github.com/stolostron/multicloud-operators-foundation v0.0.0-20201112041030-60ef45157161 h1:71vChHn9TkIrGhaMW26jsV5/+debXQnJq/Uv0NJZp/c=
+github.com/stolostron/multicloud-operators-foundation v0.0.0-20201112041030-60ef45157161/go.mod h1:rBqybyIf8keV2w0YYA4dFeJ1NMWEj66UQScE/jDJ758=
 github.com/streadway/amqp v0.0.0-20190404075320-75d898a42a94/go.mod h1:AZpEONHx3DKn8O/DFsRAY58/XVQiIPMTMB1SddzLXVw=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
 github.com/stretchr/objx v0.1.1/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
