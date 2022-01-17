@@ -38,7 +38,7 @@ export IMAGE_DESCRIPTION ?= RCM_Controller
 export DOCKER_FILE        = $(BUILD_DIR)/Dockerfile.prow
 export DOCKER_FILE_COVERAGE = $(BUILD_DIR)/Dockerfile.coverage.prow
 export DOCKER_REGISTRY   ?= quay.io
-export DOCKER_NAMESPACE  ?= open-cluster-management
+export DOCKER_NAMESPACE  ?= stolostron
 export DOCKER_IMAGE      ?= $(COMPONENT_NAME)
 export DOCKER_IMAGE_COVERAGE_POSTFIX ?= -coverage
 export DOCKER_IMAGE_COVERAGE      ?= $(DOCKER_IMAGE)$(DOCKER_IMAGE_COVERAGE_POSTFIX)
@@ -107,8 +107,8 @@ run:
 .PHONY: run-coverage
 ## Run the operator against the kubeconfig targeted cluster
 run-coverage:
-	#go test -v -covermode=atomic -coverpkg=github.com/open-cluster-management/clusterlifecycle-state-metrics/pkg/... -c -tags testrunmain ./cmd/clusterlifecycle-state-metrics -o clusterlifecycle-state-metrics-coverage
-	go test -v -covermode=atomic -coverpkg=github.com/open-cluster-management/clusterlifecycle-state-metrics/pkg/... -tags testrunmain ./cmd/clusterlifecycle-state-metrics -args --http-port=8080 --http-telemetry-port=8081 --kubeconfig=${KUBECONFIG}
+	#go test -v -covermode=atomic -coverpkg=github.com/stolostron/clusterlifecycle-state-metrics/pkg/... -c -tags testrunmain ./cmd/clusterlifecycle-state-metrics -o clusterlifecycle-state-metrics-coverage
+	go test -v -covermode=atomic -coverpkg=github.com/stolostron/clusterlifecycle-state-metrics/pkg/... -tags testrunmain ./cmd/clusterlifecycle-state-metrics -args --http-port=8080 --http-telemetry-port=8081 --kubeconfig=${KUBECONFIG}
 	# -args -port 8080 -telemetry-port 8081 -kubeconfig ${KUBECONFIG}
 .PHONY: lint
 ## Runs linter against go files

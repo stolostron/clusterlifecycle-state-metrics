@@ -13,6 +13,9 @@ replace (
 	github.com/Azure/go-autorest/autorest/azure/auth => github.com/tombuildsstuff/go-autorest/autorest/azure/auth v0.4.3-0.20200416184303-d4e299a3c04a
 	github.com/metal3-io/baremetal-operator => github.com/openshift/baremetal-operator v0.0.0-20200715132148-0f91f62a41fe
 	github.com/metal3-io/cluster-api-provider-baremetal => github.com/openshift/cluster-api-provider-baremetal v0.0.0-20190821174549-a2a477909c1d
+	github.com/open-cluster-management/api => github.com/stolostron/api v0.0.0-20201007180356-41d07eee4294
+	github.com/open-cluster-management/library-go => github.com/stolostron/library-go v0.0.0-20200828173847-299c21e6c3fc
+	github.com/open-cluster-management/multicloud-operators-foundation => github.com/stolostron/multicloud-operators-foundation v0.0.0-20201112041030-60ef45157161
 	github.com/openshift/library-go => github.com/openshift/library-go v0.0.0-20200918101923-1e4c94603efe
 	github.com/terraform-providers/terraform-provider-aws => github.com/openshift/terraform-provider-aws v1.60.1-0.20200630224953-76d1fb4e5699
 	github.com/terraform-providers/terraform-provider-azurerm => github.com/openshift/terraform-provider-azurerm v1.40.1-0.20200707062554-97ea089cc12a
