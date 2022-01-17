@@ -10,10 +10,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/kube-state-metrics/pkg/metric"
 
-	clusterclient "github.com/open-cluster-management/api/client/cluster/clientset/versioned"
-	mcv1 "github.com/open-cluster-management/api/cluster/v1"
-	mciv1beta1 "github.com/open-cluster-management/multicloud-operators-foundation/pkg/apis/internal.open-cluster-management.io/v1beta1"
+	mciv1beta1 "github.com/stolostron/multicloud-operators-foundation/pkg/apis/internal.open-cluster-management.io/v1beta1"
 	"k8s.io/klog/v2"
+	clusterclient "open-cluster-management.io/api/client/cluster/clientset/versioned"
+	mcv1 "open-cluster-management.io/api/cluster/v1"
 )
 
 const (

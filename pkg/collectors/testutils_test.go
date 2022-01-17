@@ -9,8 +9,8 @@ import (
 	"sort"
 	"strings"
 
-	mcv1 "github.com/open-cluster-management/api/cluster/v1"
 	metricsstore "k8s.io/kube-state-metrics/pkg/metrics_store"
+	mcv1 "open-cluster-management.io/api/cluster/v1"
 )
 
 type generateMetricsTestCase struct {

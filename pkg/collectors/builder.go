@@ -7,8 +7,8 @@ import (
 	"sort"
 	"strings"
 
-	clusterclient "github.com/open-cluster-management/api/client/cluster/clientset/versioned"
 	ocpclient "github.com/openshift/client-go/config/clientset/versioned"
+	clusterclient "open-cluster-management.io/api/client/cluster/clientset/versioned"
 
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/kube-state-metrics/pkg/metric"

@@ -28,10 +28,10 @@ import (
 	koptions "k8s.io/kube-state-metrics/pkg/options"
 	"k8s.io/kube-state-metrics/pkg/whiteblacklist"
 
-	ocollectors "github.com/open-cluster-management/clusterlifecycle-state-metrics/pkg/collectors"
-	"github.com/open-cluster-management/clusterlifecycle-state-metrics/pkg/options"
-	"github.com/open-cluster-management/clusterlifecycle-state-metrics/pkg/version"
 	"github.com/operator-framework/operator-sdk/pkg/leader"
+	ocollectors "github.com/stolostron/clusterlifecycle-state-metrics/pkg/collectors"
+	"github.com/stolostron/clusterlifecycle-state-metrics/pkg/options"
+	"github.com/stolostron/clusterlifecycle-state-metrics/pkg/version"
 )
 
 const (
