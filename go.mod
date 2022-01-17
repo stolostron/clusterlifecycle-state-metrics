@@ -8,6 +8,7 @@ replace (
 	github.com/metal3-io/cluster-api-provider-baremetal => github.com/openshift/cluster-api-provider-baremetal v0.0.0-20190821174549-a2a477909c1d
 	github.com/openshift/hive/apis => github.com/openshift/hive/apis v0.0.0-20210506000647-1d9c87a6ff2b
 	github.com/terraform-providers/terraform-provider-ignition/v2 => github.com/community-terraform-providers/terraform-provider-ignition/v2 v2.1.0
+	golang.org/x/crypto => golang.org/x/crypto v0.0.0-20211202192323-5770296d904e // CVE-2021-43565
 	k8s.io/api => k8s.io/api v0.22.1
 	k8s.io/client-go => k8s.io/client-go v0.22.1
 	kubevirt.io/client-go => kubevirt.io/client-go v0.29.0
@@ -27,7 +28,7 @@ require (
 	github.com/stolostron/applier v0.0.0-20220112154420-0e11c63188ab
 	github.com/stolostron/library-go v0.0.0-20220112062416-536980fdb526
 	github.com/stolostron/multicloud-operators-foundation v1.0.0-2021-10-26-20-16-14.0.20220110023249-172fb944faa9
-	golang.org/x/net v0.0.0-20210520170846-37e1c6afe023
+	golang.org/x/net v0.0.0-20211112202133-69e39bad7dc2
 	k8s.io/apimachinery v0.22.1
 	k8s.io/client-go v12.0.0+incompatible
 	k8s.io/klog v1.0.0
