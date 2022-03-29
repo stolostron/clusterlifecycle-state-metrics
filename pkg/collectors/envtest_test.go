@@ -7,8 +7,6 @@ import (
 	"path/filepath"
 	"testing"
 
-	"k8s.io/client-go/tools/clientcmd"
-	"k8s.io/kubernetes/cmd/kubeadm/app/util/kubeconfig"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 )
 
@@ -27,74 +25,37 @@ func TestMain(m *testing.M) {
 	os.Exit(exitCode)
 }
 
-func setupEnvTest(t *testing.T) (envTest *envtest.Environment,
-	kubeConfigBasic string,
-	kubeConfigToken string,
-	kubeConfigCerts string) {
+func setupEnvTest(t *testing.T) (envTest *envtest.Environment) {
 	return setupEnvTestByName(t.Name())
 }
 
-func setupEnvTestByName(name string) (envTest *envtest.Environment,
-	kubeConfigBasic string,
-	kubeConfigToken string,
-	kubeConfigCerts string) {
-	kubeConfigNameExtension := "-" + name + ".yaml"
+func setupEnvTestByName(name string) (envTest *envtest.Environment) {
 	if envTests == nil {
 		envTests = make(map[string]*envtest.Environment)
 	}
 	if e, ok := envTests[name]; ok {
-		return e,
-			filepath.Clean(kubeConfigFileBasic + kubeConfigNameExtension),
-			filepath.Clean(kubeConfigFileT + kubeConfigNameExtension),
-			filepath.Clean(kubeConfigFileCerts + kubeConfigNameExtension)
+		return e
 	}
 	//Create an envTest
 	envTest = &envtest.Environment{
-		CRDDirectoryPaths: []string{filepath.Join("..", "..", "test", "functional", "resources", "crds", "managedclusters_crd.yaml")},
+		CRDDirectoryPaths: []string{
+			filepath.Join(
+				"..",
+				"..",
+				"test",
+				"functional",
+				"resources",
+				"crds",
+				"managedclusters_crd.yaml",
+			),
+		},
 	}
 	envTests[name] = envTest
-	envConfig, err := envTest.Start()
+	_, err := envTest.Start()
 	if err != nil {
 		panic(err)
 	}
-	serverTest := envTest.ControlPlane.APIURL().String()
-	//Create basic kubeConfig
-	kubeConfigBasic = kubeConfigFileBasic + kubeConfigNameExtension
-	apiConfigBasic := kubeconfig.CreateBasic(serverTest,
-		"test",
-		envConfig.Username,
-		envConfig.CAData)
-	err = clientcmd.WriteToFile(*apiConfigBasic, kubeConfigBasic)
-	if err != nil {
-		panic(err)
-	}
-
-	//Create basic kubeConfig
-	kubeConfigToken = kubeConfigFileT + kubeConfigNameExtension
-	apiConfigToken := kubeconfig.CreateWithToken(serverTest,
-		"test",
-		envConfig.Username,
-		envConfig.CAData,
-		envConfig.BearerToken)
-	err = clientcmd.WriteToFile(*apiConfigToken, kubeConfigToken)
-	if err != nil {
-		panic(err)
-	}
-
-	//Create basic kubeConfig
-	kubeConfigCerts = kubeConfigFileCerts + kubeConfigNameExtension
-	apiConfigCerts := kubeconfig.CreateWithCerts(serverTest,
-		"test",
-		envConfig.Username,
-		envConfig.CAData,
-		envConfig.KeyData,
-		envConfig.CertData)
-	err = clientcmd.WriteToFile(*apiConfigCerts, kubeConfigCerts)
-	if err != nil {
-		panic(err)
-	}
-	return envTest, kubeConfigBasic, kubeConfigToken, kubeConfigCerts
-
+	return envTest
 }
 
 func tearDownEnvTests() {

@@ -14,7 +14,7 @@ import (
 )
 
 func Test_getHubClusterID(t *testing.T) {
-	envTest, _, _, _ := setupEnvTest(t)
+	envTest := setupEnvTest(t)
 	_, err := envtest.InstallCRDs(envTest.Config, envtest.CRDInstallOptions{
 		Paths: []string{"../../test/unit/resources/crds"},
 	})
@@ -28,7 +28,9 @@ func Test_getHubClusterID(t *testing.T) {
 			ClusterID: "mycluster_id",
 		},
 	}
-	_, err = ocpClient.ConfigV1().ClusterVersions().Create(context.TODO(), version, metav1.CreateOptions{})
+	_, err = ocpClient.ConfigV1().
+		ClusterVersions().
+		Create(context.TODO(), version, metav1.CreateOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}

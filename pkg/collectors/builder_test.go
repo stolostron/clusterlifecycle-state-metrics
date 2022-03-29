@@ -314,7 +314,7 @@ func TestBuilder_buildManagedClusterCollectorWithClient(t *testing.T) {
 	const headers = `# HELP acm_managed_cluster_info Managed cluster information
 # TYPE acm_managed_cluster_info gauge
 `
-	envTest, kubeconfig, _, _ := setupEnvTest(t)
+	envTest := setupEnvTest(t)
 	_, err := envtest.InstallCRDs(envTest.Config, envtest.CRDInstallOptions{
 		Paths: []string{"../../test/unit/resources/crds"},
 	})
@@ -337,7 +337,9 @@ func TestBuilder_buildManagedClusterCollectorWithClient(t *testing.T) {
 		},
 	}
 
-	_, err = ocpClient.ConfigV1().ClusterVersions().Create(context.TODO(), version, metav1.CreateOptions{})
+	_, err = ocpClient.ConfigV1().
+		ClusterVersions().
+		Create(context.TODO(), version, metav1.CreateOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -364,8 +366,8 @@ func TestBuilder_buildManagedClusterCollectorWithClient(t *testing.T) {
 		{
 			name: "buildManagedClusterCollectorWithClient",
 			fields: fields{
-				apiserver:         envTest.ControlPlane.APIURL().String(),
-				kubeconfig:        kubeconfig,
+				apiserver:         envTest.ControlPlane.APIServer.SecureServing.ListenAddr.HostPort(),
+				kubeconfig:        "",
 				namespaces:        koptions.NamespaceList{},
 				ctx:               ctx,
 				enabledCollectors: []string{"managedclusterinfos"},
@@ -388,9 +390,16 @@ func TestBuilder_buildManagedClusterCollectorWithClient(t *testing.T) {
 				enabledCollectors: tt.fields.enabledCollectors,
 				whiteBlackList:    tt.fields.whiteBlackList,
 			}
-			got := b.buildManagedClusterInfoCollectorWithClient(tt.args.ocpClient, tt.args.clusterClient)
+			got := b.buildManagedClusterInfoCollectorWithClient(
+				tt.args.ocpClient,
+				tt.args.clusterClient,
+			)
 			if got == nil {
-				t.Errorf("Builder.buildManagedClusterCollectorWithClient() = %v, want %v", got, tt.want)
+				t.Errorf(
+					"Builder.buildManagedClusterCollectorWithClient() = %v, want %v",
+					got,
+					tt.want,
+				)
 			}
 			buf := new(bytes.Buffer)
 			got.WriteAll(buf)
