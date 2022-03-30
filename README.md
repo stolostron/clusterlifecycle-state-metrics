@@ -13,7 +13,7 @@ This project generates a number of metrics used for business analysis.
 1. `make run`
 2. `curl http://localhost:8080/metrics`
 
-## Generated metrics:
+## Generated metrics
 
 ```
 curl http://localhost:8080/metrics
