@@ -113,7 +113,7 @@ func Test_getManagedClusterMetricFamilies(t *testing.T) {
 		},
 	}
 
-	envTest, _, _, _ := setupEnvTest(t)
+	envTest := setupEnvTest(t)
 	clusterClient, err := clusterclient.NewForConfig(envTest.Config)
 	if err != nil {
 		t.Errorf("Failed to create clusterclient: %s", err)
@@ -142,19 +142,27 @@ func Test_getManagedClusterMetricFamilies(t *testing.T) {
 		},
 	}
 	for i, c := range tests {
-		mc, err := clusterClient.ClusterV1().ManagedClusters().Create(context.Background(), c.Obj, metav1.CreateOptions{})
+		mc, err := clusterClient.ClusterV1().
+			ManagedClusters().
+			Create(context.Background(), c.Obj, metav1.CreateOptions{})
 		if err != nil {
 			t.Errorf("failed to generate managedcluster CR: %s\ns", err)
 		}
 		mc.Status = c.Obj.DeepCopy().Status
-		_, err = clusterClient.ClusterV1().ManagedClusters().UpdateStatus(context.Background(), mc, metav1.UpdateOptions{})
+		_, err = clusterClient.ClusterV1().
+			ManagedClusters().
+			UpdateStatus(context.Background(), mc, metav1.UpdateOptions{})
 		if err != nil {
 			t.Errorf("failed to update managedcluster statue: %s\ns", err)
 		}
-		c.Func = metric.ComposeMetricGenFuncs(getManagedClusterInfoMetricFamilies("mycluster_id", clusterClient))
+		c.Func = metric.ComposeMetricGenFuncs(
+			getManagedClusterInfoMetricFamilies("mycluster_id", clusterClient),
+		)
 		if err := c.run(); err != nil {
 			t.Errorf("unexpected collecting result in %v run:\n%s", i, err)
 		}
-		clusterClient.ClusterV1().ManagedClusters().Delete(context.Background(), c.Obj.Name, metav1.DeleteOptions{})
+		clusterClient.ClusterV1().
+			ManagedClusters().
+			Delete(context.Background(), c.Obj.Name, metav1.DeleteOptions{})
 	}
 }
