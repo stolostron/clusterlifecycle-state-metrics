@@ -113,6 +113,34 @@ func Test_getManagedClusterMetricFamilies(t *testing.T) {
 		},
 	}
 
+	mcZeroInfo := &mcv1.ManagedCluster{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "hive-cluster-3",
+			Annotations: map[string]string{
+				"open-cluster-management/created-via": "hive",
+			},
+			Labels: map[string]string{
+				mciv1beta1.OCPVersion:       "4.3.1",
+				mciv1beta1.LabelKubeVendor:  string(mciv1beta1.KubeVendorOpenShift),
+				mciv1beta1.LabelCloudVendor: string(mciv1beta1.CloudVendorAWS),
+				mciv1beta1.LabelClusterID:   "managed_cluster_id",
+			},
+		},
+		Status: mcv1.ManagedClusterStatus{
+			Capacity: mcv1.ResourceList{
+				resourceCoreWorker:   *resource.NewQuantity(0, resource.DecimalSI),
+				resourceSocketWorker: *resource.NewQuantity(0, resource.DecimalSI),
+			},
+			ClusterClaims: []mcv1.ManagedClusterClaim{
+				{
+					Name:  "kubeversion.open-cluster-management.io",
+					Value: "v1.16.2",
+				},
+			},
+			Conditions: []metav1.Condition{},
+		},
+	}
+
 	envTest := setupEnvTest(t)
 	clusterClient, err := clusterclient.NewForConfig(envTest.Config)
 	if err != nil {
@@ -134,6 +162,11 @@ func Test_getManagedClusterMetricFamilies(t *testing.T) {
 			Obj:         mcMissingInfo,
 			MetricNames: []string{"acm_managed_cluster_info"},
 			Want:        "",
+		},
+		{
+			Obj:         mcZeroInfo,
+			MetricNames: []string{"acm_managed_cluster_info"},
+			Want:        `acm_managed_cluster_info{cloud="Amazon",core_worker="0",managed_cluster_id="managed_cluster_id",created_via="Hive",hub_cluster_id="mycluster_id",socket_worker="0",available="Unknown",vendor="OpenShift",version="4.3.1"} 1`,
 		},
 		{
 			Obj:         mcOther,

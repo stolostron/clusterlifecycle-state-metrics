@@ -73,9 +73,7 @@ func getManagedClusterInfoMetricFamilies(hubClusterID string, clusterclient *clu
 				if clusterID == "" ||
 					kubeVendor == "" ||
 					cloudVendor == "" ||
-					version == "" ||
-					core_worker == 0 ||
-					socket_worker == 0 {
+					version == "" {
 					klog.Infof("Not enough information available for %s", obj.GetName())
 					klog.Infof(`\tClusterID=%s,
 KubeVendor=%s,

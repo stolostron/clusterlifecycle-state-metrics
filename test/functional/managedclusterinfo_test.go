@@ -17,18 +17,22 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	mcv1 "open-cluster-management.io/api/cluster/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/klog"
+	mcv1 "open-cluster-management.io/api/cluster/v1"
 )
 
 const (
 	clusterDeploymentResponse = `# HELP acm_managed_cluster_info Managed cluster information
 # TYPE acm_managed_cluster_info gauge
+acm_managed_cluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="hive_cluster_id",vendor="OpenShift",cloud="Amazon",version="4.3.1",available="Unknown",created_via="Hive",core_worker="0",socket_worker="0"} 1
+acm_managed_cluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="import_cluster_id",vendor="OpenShift",cloud="Amazon",version="4.3.1",available="Unknown",created_via="Other",core_worker="0",socket_worker="0"} 1
+acm_managed_cluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="local_cluster_id",vendor="OpenShift",cloud="Amazon",version="4.3.1",available="Unknown",created_via="Other",core_worker="0",socket_worker="0"} 1
 `
 	managedClusterResponse = `# HELP acm_managed_cluster_info Managed cluster information
 # TYPE acm_managed_cluster_info gauge
+acm_managed_cluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="hive_cluster_id",vendor="OpenShift",cloud="Amazon",version="4.3.1",available="Unknown",created_via="Hive",core_worker="0",socket_worker="0"} 1
 acm_managed_cluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="import_cluster_id",vendor="OpenShift",cloud="Amazon",version="4.3.1",available="Unknown",created_via="Other",core_worker="2",socket_worker="1"} 1
 acm_managed_cluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="local_cluster_id",vendor="OpenShift",cloud="Amazon",version="4.3.1",available="Unknown",created_via="Other",core_worker="2",socket_worker="1"} 1
 `
@@ -36,6 +40,8 @@ acm_managed_cluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",m
 	managedClusterHiveResponse = `# HELP acm_managed_cluster_info Managed cluster information
 # TYPE acm_managed_cluster_info gauge
 acm_managed_cluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="hive_cluster_id",vendor="OpenShift",cloud="Amazon",version="4.3.1",available="Unknown",created_via="Hive",core_worker="2",socket_worker="1"} 1
+acm_managed_cluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="import_cluster_id",vendor="OpenShift",cloud="Amazon",version="4.3.1",available="Unknown",created_via="Other",core_worker="0",socket_worker="0"} 1
+acm_managed_cluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="local_cluster_id",vendor="OpenShift",cloud="Amazon",version="4.3.1",available="Unknown",created_via="Other",core_worker="0",socket_worker="0"} 1
 `
 )
 
@@ -214,7 +220,8 @@ func getMetrics() (resp *http.Response, bodyString string, err error) {
 }
 
 func updateMCStatus(name string, status mcv1.ManagedClusterStatus) error {
-	mcU, err := clientDynamic.Resource(gvrManagedcluster).Get(context.TODO(), name, metav1.GetOptions{})
+	mcU, err := clientDynamic.Resource(gvrManagedcluster).
+		Get(context.TODO(), name, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
