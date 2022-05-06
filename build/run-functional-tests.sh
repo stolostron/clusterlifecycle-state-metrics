@@ -21,7 +21,7 @@ if ! which kubectl > /dev/null; then
 fi
 if ! which kind > /dev/null; then
     echo "installing kind"
-    curl -Lo ./kind https://github.com/kubernetes-sigs/kind/releases/download/v0.9.0/kind-$(uname)-amd64
+    curl -Lo ./kind https://github.com/kubernetes-sigs/kind/releases/download/v0.12.0/kind-$(uname)-amd64
     chmod +x ./kind
     sudo mv ./kind /usr/local/bin/kind
 fi
@@ -82,7 +82,7 @@ echo "cluster configuration:"
 cat ${FUNCT_TEST_TMPDIR}/kind-config/kind-config.yaml
 
 echo "creating cluster"
-kind create cluster --name $CLUSTER_NAME --config "${FUNCT_TEST_TMPDIR}/kind-config/kind-config.yaml"
+kind create cluster --image=kindest/node:v1.21.10 --name $CLUSTER_NAME --config "${FUNCT_TEST_TMPDIR}/kind-config/kind-config.yaml"
 
 # setup kubeconfig
 kind get kubeconfig --name $CLUSTER_NAME > ${KIND_KUBECONFIG}
