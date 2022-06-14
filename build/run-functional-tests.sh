@@ -28,14 +28,14 @@ fi
 if ! which ginkgo > /dev/null; then
     echo "Installing ginkgo ..."
     pushd $(mktemp -d)
-    GOSUMDB=off go get github.com/onsi/ginkgo/ginkgo
-    GOSUMDB=off go get github.com/onsi/gomega/...
+    GOSUMDB=off go get -u github.com/onsi/ginkgo/ginkgo
+    GOSUMDB=off go get -u github.com/onsi/gomega/...
     popd
 fi
 if ! which gocovmerge > /dev/null; then
     echo "Installing gocovmerge..."
     pushd $(mktemp -d)
-    GOSUMDB=off go install github.com/wadey/gocovmerge@latest
+    GOSUMDB=off go get -u github.com/wadey/gocovmerge
     popd
 fi
 
