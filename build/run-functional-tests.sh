@@ -28,14 +28,15 @@ fi
 if ! which ginkgo > /dev/null; then
     echo "Installing ginkgo ..."
     pushd $(mktemp -d)
-    GOSUMDB=off go get github.com/onsi/ginkgo/ginkgo
-    GOSUMDB=off go get github.com/onsi/gomega/...
+    go install github.com/onsi/ginkgo/ginkgo@latest
+    echo "installing gomega ..."
+    GO111MODULE=off go get github.com/onsi/gomega/...
     popd
 fi
 if ! which gocovmerge > /dev/null; then
     echo "Installing gocovmerge..."
     pushd $(mktemp -d)
-    GOSUMDB=off go get -u github.com/wadey/gocovmerge
+    go install github.com/wadey/gocovmerge@latest
     popd
 fi
 
@@ -102,11 +103,11 @@ for dir in overlays/test/* ; do
 
   echo "Create ingress for functional test"
   kubectl apply -f test/functional/resources/ingress.yaml
-  
+
   # patch image
   echo "Wait rollout"
   kubectl rollout status -n open-cluster-management deployment clusterlifecycle-state-metrics --timeout=180s
-  
+
   # exit 1
 
   echo "run functional test..."

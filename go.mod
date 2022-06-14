@@ -1,6 +1,6 @@
 module github.com/stolostron/clusterlifecycle-state-metrics
 
-go 1.17
+go 1.18
 
 replace (
 	github.com/kubevirt/terraform-provider-kubevirt => github.com/nirarg/terraform-provider-kubevirt v0.0.0-20201222125919-101cee051ed3
