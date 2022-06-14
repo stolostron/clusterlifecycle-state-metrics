@@ -10,8 +10,8 @@ _OS=$(go env GOOS)
 _ARCH=$(go env GOARCH)
 KubeBuilderVersion="2.3.0"
 
-if ! which patter > /dev/null; then      echo "Installing patter ..."; go install github.com/apg/patter@latest; fi
-if ! which gocovmerge > /dev/null; then  echo "Installing gocovmerge..."; go install github.com/wadey/gocovmerge@latest; fi
+if ! which patter > /dev/null; then      echo "Installing patter ..."; go get -u github.com/apg/patter@latest; fi
+if ! which gocovmerge > /dev/null; then  echo "Installing gocovmerge..."; go get -u github.com/wadey/gocovmerge@latest; fi
 if ! which golangci-lint > /dev/null; then
    curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.23.6
 fi
