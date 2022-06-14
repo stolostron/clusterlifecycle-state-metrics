@@ -30,7 +30,7 @@ if ! which ginkgo > /dev/null; then
     pushd $(mktemp -d)
     go install github.com/onsi/ginkgo/ginkgo@latest
     echo "installing gomega ..."
-    GOSUMDB=off go get github.com/onsi/gomega/...
+    GO111MODULE=off go get github.com/onsi/gomega/...
     popd
 fi
 if ! which gocovmerge > /dev/null; then
