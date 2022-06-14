@@ -29,7 +29,7 @@ if ! which ginkgo > /dev/null; then
     echo "Installing ginkgo ..."
     pushd $(mktemp -d)
     go install github.com/onsi/ginkgo/ginkgo@latest
-    go install github.com/onsi/gomega@latest
+    go get github.com/onsi/gomega/...
     popd
 fi
 if ! which gocovmerge > /dev/null; then
