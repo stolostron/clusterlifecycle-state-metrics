@@ -8,7 +8,7 @@ metadata:
   annotations:
     nginx.ingress.kubernetes.io/rewrite-target: /$2
   name: clusterlifecycle-state-metrics
-  namespace: open-cluster-management
+  namespace: multicluster-engine
 spec:
   ingressClassName: nginx
   rules:

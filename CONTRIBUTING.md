@@ -48,7 +48,8 @@ make check
 make test
 make functional-test-full
 ```
-
+PS: the file [kustomization.yaml](./deploy/kustomization.yaml#L6) must have the namespace set to `multicluster-engine`.
+Same for [servicemonitor.yaml](./overlays/deploy/servicemonitor.yaml#L26) and [clusterrole_binding.yaml](./deploy/clusterrole_binding.yaml#L15)
 ## Build images
 
 Make sure your code build passed.
@@ -66,7 +67,7 @@ Now, you can follow the [getting started guide](./README.md#getting-started) to 
 2. Update the [pkg/collectors/builder.go](pkg/collectors/builder.go) `availableCollectors` variable with your new metric name and create similar methods than `buildManagedClusterInfoCollector`
 3. Clone the [pkg/collectors/managedclusterinfo.go](pkg/collectors/managedclusterinfo.go) to implement your metric and adapt it for your new metric.
 4. Create unit tests.
-5. Create functianal tests.
+5. Create functional tests.
 
 ## Create a new project metrics
 

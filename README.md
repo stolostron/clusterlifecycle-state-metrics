@@ -30,7 +30,8 @@ Each steps can be run separatly:
 
 1. `oc login` your hub RHACM cluster.
 2. Set in the [kustomization.yaml](./deploy/kustomization.yaml#L6) the namespace where you want the collector to be deployed.
-3. Set the following `IMG` environment variable, this is the name of the image and where it will be pushed.
+3. Same for [servicemonitor.yaml](./overlays/deploy/servicemonitor.yaml#L26) and [clusterrole_binding.yaml](./deploy/clusterrole_binding.yaml#L15)
+4. Set the following `IMG` environment variable, this is the name of the image and where it will be pushed.
 
 ```bash
 export QUAY_USER=<your_user>

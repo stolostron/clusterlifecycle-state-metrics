@@ -10,3 +10,11 @@ spec:
       containers:
       - name: clusterlifecycle-state-metrics
         image: clusterlifecycle-state-metrics:latest
+        volumeMounts:
+          - mountPath: "/var/run/clusterlifecycle-state-metrics"
+            name: certs
+            readOnly: true
+      volumes:
+      - name: certs
+        secret:
+          secretName: clusterlifecycle-state-metrics-certs

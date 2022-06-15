@@ -5,7 +5,7 @@ apiVersion: apps/v1
 metadata:
   name: clusterlifecycle-state-metrics
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: clusterlifecycle-state-metrics
@@ -42,11 +42,3 @@ spec:
             port: 8081
           initialDelaySeconds: 15
           periodSeconds: 5
-        volumeMounts:
-          - mountPath: "/var/run/clusterlifecycle-state-metrics"
-            name: certs
-            readOnly: true
-      volumes:
-      - name: certs
-        secret:
-          secretName: clusterlifecycle-state-metrics-certs
