@@ -6,6 +6,7 @@ metadata:
   name: cluster-hive
   annotations: 
     "open-cluster-management/created-via": "hive"
+    "open-cluster-management/service-name": "compute"
   labels:
     "openshiftVersion": "4.3.1"
     "vendor": "OpenShift"

@@ -28,7 +28,7 @@ fi
 if ! which ginkgo > /dev/null; then
     echo "Installing ginkgo ..."
     pushd $(mktemp -d)
-    go install github.com/onsi/ginkgo/ginkgo@latest
+    go install github.com/onsi/ginkgo/v2/ginkgo@latest
     echo "installing gomega ..."
     GO111MODULE=off go get github.com/onsi/gomega/...
     popd

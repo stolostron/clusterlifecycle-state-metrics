@@ -6,6 +6,7 @@ metadata:
   name: cluster-import
   annotations: 
     "open-cluster-management/created-via": "other"
+    "open-cluster-management/service-name": "other"
   labels:
     "openshiftVersion": "4.3.1"
     "vendor": "OpenShift"

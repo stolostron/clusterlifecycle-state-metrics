@@ -22,4 +22,5 @@ spec:
       ocm-app: clusterlifecycle-state-metrics
   namespaceSelector:
     matchNames:
-      - open-cluster-management
+      # - open-cluster-management
+      - multicluster-engine
