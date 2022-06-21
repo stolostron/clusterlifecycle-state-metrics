@@ -10,7 +10,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/kube-state-metrics/pkg/metric"
 
-	mciv1beta1 "github.com/stolostron/multicloud-operators-foundation/pkg/apis/internal.open-cluster-management.io/v1beta1"
+	mciv1beta1 "github.com/stolostron/cluster-lifecycle-api/clusterinfo/v1beta1"
 	"k8s.io/klog/v2"
 	clusterclient "open-cluster-management.io/api/client/cluster/clientset/versioned"
 	mcv1 "open-cluster-management.io/api/cluster/v1"
@@ -120,11 +120,11 @@ func getClusterID(mc *mcv1.ManagedCluster) string {
 	kubeVendor := mc.ObjectMeta.Labels[mciv1beta1.LabelKubeVendor]
 	clusterID := mc.ObjectMeta.Labels[mciv1beta1.LabelClusterID]
 
-	//Cluster ID is not available on non-OCP thus use the name
+	// Cluster ID is not available on non-OCP thus use the name
 	if clusterID == "" && (kubeVendor != string(mciv1beta1.KubeVendorOpenShift)) {
 		clusterID = mc.GetName()
 	}
-	//ClusterID is not available on OCP 3.x thus use the name
+	// ClusterID is not available on OCP 3.x thus use the name
 	if clusterID == "" && (kubeVendor == string(mciv1beta1.KubeVendorOpenShift)) && mc.ObjectMeta.Labels[mciv1beta1.OCPVersion] == "3" {
 		clusterID = mc.GetName()
 	}
