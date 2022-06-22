@@ -2,7 +2,9 @@
 
 bases:
 - ../../../deploy
+- servicemonitor.yaml
 
 patchesStrategicMerge:
 - deployment.yaml
 - service.yaml
+

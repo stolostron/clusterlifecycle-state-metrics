@@ -2,7 +2,8 @@
 
 
 # Adds namespace to all resources.
-#namespace: open-cluster-management
+# namespace: open-cluster-management
+namespace: multicluster-engine
 
 # Value of this field is prepended to the
 # names of all resources, e.g. a deployment named
@@ -32,5 +33,4 @@ resources:
 - ./clusterrole_binding_prom.yaml
 - ./clusterrole.yaml
 - ./service.yaml
-- ./servicemonitor.yaml
 - ./deployment.yaml

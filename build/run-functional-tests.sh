@@ -28,7 +28,7 @@ fi
 if ! which ginkgo > /dev/null; then
     echo "Installing ginkgo ..."
     pushd $(mktemp -d)
-    go install github.com/onsi/ginkgo/ginkgo@latest
+    go install github.com/onsi/ginkgo/v2/ginkgo@latest
     echo "installing gomega ..."
     GO111MODULE=off go get github.com/onsi/gomega/...
     popd
@@ -106,7 +106,7 @@ for dir in overlays/test/* ; do
 
   # patch image
   echo "Wait rollout"
-  kubectl rollout status -n open-cluster-management deployment clusterlifecycle-state-metrics --timeout=180s
+  kubectl rollout status -n multicluster-engine deployment clusterlifecycle-state-metrics --timeout=180s
 
   # exit 1
 
@@ -115,10 +115,10 @@ for dir in overlays/test/* ; do
   make functional-test
   ERR=$?
   if [ $ERR != 0 ]; then
-    POD_NAMES=`kubectl get pods -n open-cluster-management -oname | grep clusterlifecycle-state-metrics`
+    POD_NAMES=`kubectl get pods -n multicluster-engine -oname | grep clusterlifecycle-state-metrics`
     for p in $POD_NAMES; do
       echo "-----------------------${p}------------------------------"
-      echo "$p" | xargs -L 1 kubectl logs -n open-cluster-management
+      echo "$p" | xargs -L 1 kubectl logs -n multicluster-engine
     done;
     echo "Error: $ERR"
     exit $ERR

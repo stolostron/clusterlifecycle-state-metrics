@@ -22,16 +22,42 @@ curl http://localhost:8080/metrics
 acm_managed_cluster_info{hub_cluster_id="faddba46-201e-4d5d-bf52-9918517a9e6a",managed_cluster_id="faddba46-201e-4d5d-bf52-9918517a9e6a",vendor="OpenShift",cloud="Amazon",version="v1.16.2",created_via="Other",vcpu="4"} 1
 ```
 
-## Deploy on RHACM
+## Build/Push/Deploy on RHACM
 
-This method is for test only as it deploys some parameters are hard-coded such as the `openshift-monitoring` and `open-cluster-management` namespaces. You can use the rcm-chart to have more control.
+Each steps can be run separatly:
 
-It also creates an ingress which allows to retrieve the infomration from outside of the cluster.
+### Prereqs
 
 1. `oc login` your hub RHACM cluster.
-2. Set the image you want to deploy in [deployment.yaml](overlays/deploy/deployment.yaml)
-3. run `make deploy`
-4. Open Prometheus console and check for metrics "acm_managed_cluster_info"
+2. Set in the [kustomization.yaml](./deploy/kustomization.yaml#L6) the namespace where you want the collector to be deployed.
+3. Same for [servicemonitor.yaml](./overlays/deploy/servicemonitor.yaml#L26) and [clusterrole_binding.yaml](./deploy/clusterrole_binding.yaml#L15)
+4. Set the following `IMG` environment variable, this is the name of the image and where it will be pushed.
+
+```bash
+export QUAY_USER=<your_user>
+export IMG_TAG=<tag_you_want_to_use>
+export IMG=quay.io/${QUAY_USER}/clusterlifecycle-state-metrics:${IMG_TAG}
+make docker-build docker-push deploy
+```
+### build
+
+```bash
+make docker-build
+```
+
+### push
+
+```bash
+make docker-push
+```
+
+### Deploy
+
+```bash
+make deploy
+```
+
+It also creates an ingress which allows to retrieve the infomration from outside of the cluster.
 
 The metrics then will appear on prometheus.
 

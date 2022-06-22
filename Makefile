@@ -94,10 +94,42 @@ lint:
 # deploy section
 ############################################################
 
+.PHONY: kustomize
+kustomize: ## Download kustomize locally if necessary.
+ifeq (, $(shell which kustomize))
+	@{ \
+	set -e ;\
+	KUSTOMIZE_GEN_TMP_DIR=$$(mktemp -d) ;\
+	cd $$KUSTOMIZE_GEN_TMP_DIR ;\
+	go mod init tmp ;\
+	go get sigs.k8s.io/kustomize/kustomize/v3@v3.8.7 ;\
+	rm -rf $$KUSTOMIZE_GEN_TMP_DIR ;\
+	}
+KUSTOMIZE=$(GOBIN)/kustomize
+else
+KUSTOMIZE=$(shell which kustomize)
+endif
+
+# Build the docker image
+.PHONY: docker-build
+docker-build: test
+	docker build . -f build/Dockerfile.prow -t ${IMG}
+
+# Push the docker image
+.PHONY: docker-push
+docker-push:
+	docker push ${IMG}
+
+# Deploy controller in the configured Kubernetes cluster in ~/.kube/config
 .PHONY: deploy
-deploy:
-	cd overlays/deploy
-	kustomize build overlays/deploy | kubectl apply -f -
+deploy: kustomize
+	cp overlays/deploy/kustomization.yaml overlays/deploy/kustomization.yaml.tmp
+	cd overlays/deploy && kustomize edit set image clusterlifecycle-state-metrics=${IMG}
+	$(KUSTOMIZE) build overlays/deploy | kubectl apply -f -
+	mv overlays/deploy/kustomization.yaml.tmp overlays/deploy/kustomization.yaml
+
+# cd overlays/deploy
+# kustomize build overlays/deploy | kubectl apply -f -
 
 .PHONY: undeploy
 undeploy:
@@ -133,9 +165,13 @@ kind-cluster-setup: install-fake-crds
 .PHONY: functional-test
 functional-test:
 	@echo executing test
-	ginkgo -tags functional -v --slowSpecThreshold=30 test/functional -- -v=5
+	ginkgo -tags functional -v --slow-spec-threshold=30s test/functional -- -v=5
 
 .PHONY: functional-test-full
 # functional-test-full: 
 functional-test-full: build-image-coverage
 	@build/run-functional-tests.sh ${DOCKER_IMAGE_COVERAGE}:latest
+
+.PHONY: functional-test-full-clean
+functional-test-full-clean:
+	@build/run-functional-tests-clean.sh 

@@ -22,9 +22,16 @@ const (
 )
 
 const (
-	createdViaAnnotation      = "open-cluster-management/created-via"
-	createdViaAnnotationOther = "Other"
+	createdViaAnnotation       = "open-cluster-management/created-via"
+	createdViaAnnotationOther  = "Other"
+	serviceNameAnnotation      = "open-cluster-management/service-name"
+	serviceNameAnnotationOther = "Other"
 )
+
+var serviceNameMapping map[string]string = map[string]string{
+	"compute": "Compute",
+	"other":   "Other",
+}
 
 var createdViaMapping map[string]string = map[string]string{
 	"discovery":          "Discovery",
@@ -40,6 +47,7 @@ var (
 		"managed_cluster_id",
 		"vendor",
 		"cloud",
+		"service_name",
 		"version",
 		"available",
 		"created_via",
@@ -67,6 +75,7 @@ func getManagedClusterInfoMetricFamilies(hubClusterID string, clusterclient *clu
 				clusterID := getClusterID(mc)
 				version := getVersion(mc)
 				createdVia := getCreatedVia(mc)
+				serviceName := getServiceName(mc)
 				available := getAvailableStatus(mc)
 				core_worker, socket_worker := getCapacity(mc)
 
@@ -78,6 +87,7 @@ func getManagedClusterInfoMetricFamilies(hubClusterID string, clusterclient *clu
 					klog.Infof(`\tClusterID=%s,
 KubeVendor=%s,
 CloudVendor=%s,
+ServiceName=%s,
 Version=%s,
 available=%s,
 core_worker=%d,
@@ -85,6 +95,7 @@ socket_worker=%d`,
 						clusterID,
 						kubeVendor,
 						cloudVendor,
+						serviceName,
 						version,
 						available,
 						core_worker,
@@ -95,6 +106,7 @@ socket_worker=%d`,
 					clusterID,
 					kubeVendor,
 					cloudVendor,
+					serviceName,
 					version,
 					available,
 					createdVia,
@@ -201,4 +213,14 @@ func getCreatedVia(mc *mcv1.ManagedCluster) string {
 		return createdViaMapping[a]
 	}
 	return createdViaAnnotationOther
+}
+
+func getServiceName(mc *mcv1.ManagedCluster) string {
+	if mc.GetAnnotations() == nil {
+		return serviceNameAnnotationOther
+	}
+	if a, ok := mc.GetAnnotations()[serviceNameAnnotation]; ok {
+		return serviceNameMapping[a]
+	}
+	return serviceNameAnnotationOther
 }
