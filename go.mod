@@ -13,7 +13,7 @@ require (
 	github.com/operator-framework/operator-sdk v0.17.0
 	github.com/prometheus/client_golang v1.12.1
 	github.com/stolostron/applier v0.0.0-20220328110401-26b0ea4f8e1e
-	github.com/stolostron/cluster-lifecycle-api v0.0.0-20220613134606-21433f336d36
+	github.com/stolostron/cluster-lifecycle-api v0.0.0-20220621134646-8b67f2e6afed
 	github.com/stolostron/library-go v0.0.0-20220328023725-63d77a3ad428
 	golang.org/x/net v0.0.0-20220325170049-de3da57026de
 	k8s.io/apimachinery v0.24.1
