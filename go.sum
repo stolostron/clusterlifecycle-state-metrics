@@ -995,8 +995,8 @@ github.com/spf13/viper v1.8.1/go.mod h1:o0Pch8wJ9BVSWGQMbra6iw0oQ5oktSIBaujf1rJH
 github.com/stoewer/go-strcase v1.2.0/go.mod h1:IBiWB2sKIp3wVVQ3Y035++gc+knqhUQag1KpM8ahLw8=
 github.com/stolostron/applier v0.0.0-20220328110401-26b0ea4f8e1e h1:x6ATB/nV2upGmZyC5XOQh75UbB9sA8ywUG+cfQPmPPU=
 github.com/stolostron/applier v0.0.0-20220328110401-26b0ea4f8e1e/go.mod h1:yQFmn8ZrtaobaHXM8aO/8v95OdXIcgjjvzWBn9L/XXg=
-github.com/stolostron/cluster-lifecycle-api v0.0.0-20220613134606-21433f336d36 h1:aopmulNmw1ukV5EocjmWeFmT52TDKPdU1Eu6jSrWWqA=
-github.com/stolostron/cluster-lifecycle-api v0.0.0-20220613134606-21433f336d36/go.mod h1:zaKmW31uEu/wE8ahk78yQemdr+yJJICTUxB00uTzbqw=
+github.com/stolostron/cluster-lifecycle-api v0.0.0-20220621134646-8b67f2e6afed h1:55dbs/sGUjvd7xya3fEMbtolxQySxQ6chya4xEAmwAg=
+github.com/stolostron/cluster-lifecycle-api v0.0.0-20220621134646-8b67f2e6afed/go.mod h1:pNeVzujoHsTHDloNHVfp1QPYlQy8MkXMuuZme96/x8M=
 github.com/stolostron/library-go v0.0.0-20220328023725-63d77a3ad428 h1:gvH8HA4cfsusfUFA2PqnkeZ24NZWYtucONDP+sbgSZM=
 github.com/stolostron/library-go v0.0.0-20220328023725-63d77a3ad428/go.mod h1:4Pgr/LeGllf2N4FIlwJmKToxDyNwsfAK7x4xtdc+J7M=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
