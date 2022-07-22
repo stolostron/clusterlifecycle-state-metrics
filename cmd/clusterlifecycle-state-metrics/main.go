@@ -6,6 +6,7 @@ package main
 import (
 	"compress/gzip"
 	"context"
+	"flag"
 	"fmt"
 	"io"
 	"log"
@@ -16,8 +17,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/operator-framework/operator-sdk/pkg/log/zap"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -28,7 +29,7 @@ import (
 	koptions "k8s.io/kube-state-metrics/pkg/options"
 	"k8s.io/kube-state-metrics/pkg/whiteblacklist"
 
-	"github.com/operator-framework/operator-sdk/pkg/leader"
+	"github.com/operator-framework/operator-lib/leader"
 	ocollectors "github.com/stolostron/clusterlifecycle-state-metrics/pkg/collectors"
 	"github.com/stolostron/clusterlifecycle-state-metrics/pkg/options"
 	"github.com/stolostron/clusterlifecycle-state-metrics/pkg/version"
@@ -46,8 +47,14 @@ var opts *options.Options
 type promLogger struct{}
 
 func init() {
-	//Used by the operator-framework as this code use the leader.Become function.
-	logf.SetLogger(zap.Logger())
+	// Add the zap logger flag set to the CLI. The flag set must
+	// be added before calling flag.Parse().
+	zapopts := zap.Options{}
+	zapopts.BindFlags(flag.CommandLine)
+
+	logger := zap.New(zap.UseFlagOptions(&zapopts))
+	logf.SetLogger(logger)
+
 	opts = options.NewOptions()
 	opts.AddFlags()
 }
