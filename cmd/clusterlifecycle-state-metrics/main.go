@@ -6,6 +6,7 @@ package main
 import (
 	"compress/gzip"
 	"context"
+	"crypto/tls"
 	"flag"
 	"fmt"
 	"io"
@@ -174,19 +175,28 @@ func telemetryServer(
 	if tlsCrtFile != "" && tlsKeyFile != "" {
 		// Address to listen on for web interface and telemetry
 		listenAddress := net.JoinHostPort(host, strconv.Itoa(httpsPort))
+		s := &http.Server{
+			Addr:      listenAddress,
+			Handler:   mux,
+			TLSConfig: &tls.Config{MinVersion: tls.VersionTLS12},
+		}
 
 		klog.Infof("Starting clusterlifecycle-state-metrics self metrics server: %s", listenAddress)
 		klog.Infof("Listening https: %s", listenAddress)
-		go func() { log.Fatal(http.ListenAndServeTLS(listenAddress, tlsCrtFile, tlsKeyFile, mux)) }()
+		go func() { log.Fatal(s.ListenAndServeTLS(tlsCrtFile, tlsKeyFile)) }()
 	}
 	// Address to listen on for web interface and telemetry
 	listenAddress := net.JoinHostPort(host, strconv.Itoa(httpPort))
+	s := &http.Server{
+		Addr:    listenAddress,
+		Handler: mux,
+	}
 
 	klog.Infof("Starting clusterlifecycle-state-metrics self metrics server: %s", listenAddress)
 
 	klog.Infof("Listening http: %s", listenAddress)
 
-	log.Fatal(http.ListenAndServe(listenAddress, mux))
+	log.Fatal(s.ListenAndServe())
 }
 
 func serveMetrics(collectors []*metricsstore.MetricsStore,
@@ -233,18 +243,27 @@ func serveMetrics(collectors []*metricsstore.MetricsStore,
 	if tlsCrtFile != "" && tlsKeyFile != "" {
 		// Address to listen on for web interface and telemetry
 		listenAddress := net.JoinHostPort(host, strconv.Itoa(httpsPort))
+		s := &http.Server{
+			Addr:      listenAddress,
+			Handler:   mux,
+			TLSConfig: &tls.Config{MinVersion: tls.VersionTLS12},
+		}
 
 		klog.Infof("Starting metrics server: %s", listenAddress)
 		klog.Infof("Listening https: %s", listenAddress)
-		go func() { log.Fatal(http.ListenAndServeTLS(listenAddress, tlsCrtFile, tlsKeyFile, mux)) }()
+		go func() { log.Fatal(s.ListenAndServeTLS(tlsCrtFile, tlsKeyFile)) }()
 	}
 	// Address to listen on for web interface and telemetry
 	listenAddress := net.JoinHostPort(host, strconv.Itoa(httpPort))
+	s := &http.Server{
+		Addr:    listenAddress,
+		Handler: mux,
+	}
 
 	klog.Infof("Starting metrics server: %s", listenAddress)
 
 	klog.Infof("Listening http: %s", listenAddress)
-	log.Fatal(http.ListenAndServe(listenAddress, mux))
+	log.Fatal(s.ListenAndServe())
 }
 
 type metricHandler struct {
