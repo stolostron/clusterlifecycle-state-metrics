@@ -102,15 +102,13 @@ func Test_getManagedClusterMetricFamilies(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "hive-cluster-2",
 			Labels: map[string]string{
-				mciv1beta1.LabelKubeVendor:  string(mciv1beta1.KubeVendorOther),
-				mciv1beta1.LabelCloudVendor: string(mciv1beta1.CloudVendorAWS),
-				mciv1beta1.LabelClusterID:   "managed_cluster_id",
+				mciv1beta1.LabelClusterID: "managed_cluster_id",
 			},
 		},
 		Status: mcv1.ManagedClusterStatus{
 			Capacity: mcv1.ResourceList{
-				resourceCoreWorker:   *resource.NewQuantity(4, resource.DecimalSI),
-				resourceSocketWorker: *resource.NewQuantity(3, resource.DecimalSI),
+				resourceCoreWorker:   *resource.NewQuantity(0, resource.DecimalSI),
+				resourceSocketWorker: *resource.NewQuantity(0, resource.DecimalSI),
 			},
 			Conditions: []metav1.Condition{},
 		},
@@ -164,7 +162,7 @@ func Test_getManagedClusterMetricFamilies(t *testing.T) {
 		{
 			Obj:         mcMissingInfo,
 			MetricNames: []string{"acm_managed_cluster_info"},
-			Want:        "",
+			Want:        `acm_managed_cluster_info{cloud="",core_worker="0",managed_cluster_id="managed_cluster_id",service_name="Other",created_via="Other",hub_cluster_id="mycluster_id",socket_worker="0",available="Unknown",vendor="",version=""} 1`,
 		},
 		{
 			Obj:         mcZeroInfo,
