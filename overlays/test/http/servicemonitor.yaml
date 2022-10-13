@@ -5,17 +5,14 @@ kind: ServiceMonitor
 metadata:
   labels:
     name: clusterlifecycle-state-metrics
+    release: prometheus
   name: clusterlifecycle-state-metrics
   namespace: openshift-monitoring
 spec:
   endpoints:
   - interval: 30s
-    port: https
-    scheme: https
-    scrapeTimeout: 20s
-    bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
-    tlsConfig:
-      insecureSkipVerify: true
+    port: http
+    honorLabels: true
   jobLabel: ocm-app
   selector:
     matchLabels:

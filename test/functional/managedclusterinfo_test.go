@@ -9,8 +9,10 @@ package functional
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
+	"reflect"
 	"sort"
 	"strings"
 	"time"
@@ -28,12 +30,14 @@ const (
 # TYPE acm_managed_cluster_info gauge
 acm_managed_cluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="hive_cluster_id",vendor="OpenShift",cloud="Amazon",service_name="Compute",version="4.3.1",available="Unknown",created_via="Hive",core_worker="0",socket_worker="0"} 1
 acm_managed_cluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="import_cluster_id",vendor="OpenShift",cloud="Amazon",service_name="Other",version="4.3.1",available="Unknown",created_via="Other",core_worker="0",socket_worker="0"} 1
+acm_managed_cluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="empty-cluster",vendor="",cloud="",service_name="Other",version="",available="Unknown",created_via="Other",core_worker="0",socket_worker="0"} 1
 acm_managed_cluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="local_cluster_id",vendor="OpenShift",cloud="Amazon",service_name="Other",version="4.3.1",available="Unknown",created_via="Other",core_worker="0",socket_worker="0"} 1
 `
 	managedClusterResponse = `# HELP acm_managed_cluster_info Managed cluster information
 # TYPE acm_managed_cluster_info gauge
 acm_managed_cluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="hive_cluster_id",vendor="OpenShift",cloud="Amazon",service_name="Compute",version="4.3.1",available="Unknown",created_via="Hive",core_worker="0",socket_worker="0"} 1
 acm_managed_cluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="import_cluster_id",vendor="OpenShift",cloud="Amazon",service_name="Other",version="4.3.1",available="Unknown",created_via="Other",core_worker="2",socket_worker="1"} 1
+acm_managed_cluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="empty-cluster",vendor="",cloud="",service_name="Other",version="",available="Unknown",created_via="Other",core_worker="0",socket_worker="0"} 1
 acm_managed_cluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="local_cluster_id",vendor="OpenShift",cloud="Amazon",service_name="Other",version="4.3.1",available="Unknown",created_via="Other",core_worker="2",socket_worker="1"} 1
 `
 
@@ -41,6 +45,7 @@ acm_managed_cluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",m
 # TYPE acm_managed_cluster_info gauge
 acm_managed_cluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="hive_cluster_id",vendor="OpenShift",cloud="Amazon",service_name="Compute",version="4.3.1",available="Unknown",created_via="Hive",core_worker="2",socket_worker="1"} 1
 acm_managed_cluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="import_cluster_id",vendor="OpenShift",cloud="Amazon",service_name="Other",version="4.3.1",available="Unknown",created_via="Other",core_worker="0",socket_worker="0"} 1
+acm_managed_cluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="empty-cluster",vendor="",cloud="",service_name="Other",version="",available="Unknown",created_via="Other",core_worker="0",socket_worker="0"} 1
 acm_managed_cluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="local_cluster_id",vendor="OpenShift",cloud="Amazon",service_name="Other",version="4.3.1",available="Unknown",created_via="Other",core_worker="0",socket_worker="0"} 1
 `
 )
@@ -55,6 +60,35 @@ const (
 	resourceSocketWorker mcv1.ResourceName = "socket_worker"
 	resourceCPUWorker    mcv1.ResourceName = "cpu_worker"
 )
+
+type QueryResult struct {
+	Status string `json:"status"`
+	Data   struct {
+		ResultType string `json:"resultType"`
+		Result     []struct {
+			Metric struct {
+				Name             string `json:"__name__"`
+				Available        string `json:"available"`
+				Cloud            string `json:"cloud"`
+				CoreWorker       string `json:"core_worker"`
+				CreatedVia       string `json:"created_via"`
+				Endpoint         string `json:"endpoint"`
+				HubClusterID     string `json:"hub_cluster_id"`
+				Instance         string `json:"instance"`
+				Job              string `json:"job"`
+				ManagedClusterID string `json:"managed_cluster_id"`
+				Namespace        string `json:"namespace"`
+				Pod              string `json:"pod"`
+				Service          string `json:"service"`
+				ServiceName      string `json:"service_name"`
+				SocketWorker     string `json:"socket_worker"`
+				Vendor           string `json:"vendor"`
+				Version          string `json:"version"`
+			} `json:"metric,omitempty"`
+			Value []interface{} `json:"value"`
+		} `json:"result"`
+	} `json:"data"`
+}
 
 var _ = Describe("Metrics", func() {
 	BeforeEach(func() {
@@ -94,6 +128,94 @@ var _ = Describe("Metrics", func() {
 					},
 				},
 			})).Should(BeNil())
+		})
+	})
+
+	AfterEach(func() {
+		By("Query metrics by sum(acm_managed_cluster_info) by (hub_cluster_id)", func() {
+			Eventually(func() error {
+				resp, b, err := queryMetrics("sum(acm_managed_cluster_info)+by+(hub_cluster_id)")
+				klog.Infof("Get Empty Metrics response: %v", b)
+				if err != nil || resp.StatusCode != http.StatusOK {
+					return fmt.Errorf("Failed to query metrics %v: %v", resp.StatusCode, err)
+				}
+
+				queryResult := QueryResult{}
+				if err := json.Unmarshal([]byte(b), &queryResult); err != nil {
+					return err
+				}
+
+				expectResult := map[string]string{"787e5a35-c911-4341-a2e7-65c415147aeb": "4"}
+				actualResult := map[string]string{}
+				for _, r := range queryResult.Data.Result {
+					actualResult[r.Metric.HubClusterID] = r.Value[1].(string)
+				}
+
+				klog.Infof("expect result %v", expectResult)
+				klog.Infof("actual result %v", actualResult)
+				if !reflect.DeepEqual(expectResult, actualResult) {
+					return fmt.Errorf("Unexpect queryResult %v", queryResult)
+				}
+
+				return nil
+			}).Should(BeNil())
+		})
+		By("Query metrics by sum(acm_managed_cluster_info) by (version)", func() {
+			Eventually(func() error {
+				resp, b, err := queryMetrics("sum(acm_managed_cluster_info)+by+(version)")
+				klog.Infof("Get Empty Metrics response: %v", b)
+				if err != nil || resp.StatusCode != http.StatusOK {
+					return fmt.Errorf("Failed to query metrics %v: %v", resp.StatusCode, err)
+				}
+
+				queryResult := QueryResult{}
+				if err := json.Unmarshal([]byte(b), &queryResult); err != nil {
+					return err
+				}
+
+				expectResult := map[string]string{"4.3.1": "3", "": "1"}
+				actualResult := map[string]string{}
+				for _, r := range queryResult.Data.Result {
+					actualResult[r.Metric.Version] = r.Value[1].(string)
+				}
+
+				klog.Infof("expect result %v", expectResult)
+				klog.Infof("actual result %v", actualResult)
+				if !reflect.DeepEqual(expectResult, actualResult) {
+					return fmt.Errorf("Unexpect queryResult %v", queryResult)
+				}
+
+				return nil
+			}).Should(BeNil())
+		})
+		By("Query metrics by sum(acm_managed_cluster_info) by (cloud,created_via,vendor)", func() {
+			Eventually(func() error {
+				resp, b, err := queryMetrics("sum(acm_managed_cluster_info)+by+(cloud,created_via,vendor)")
+				klog.Infof("Get Empty Metrics response: %v", b)
+				if err != nil || resp.StatusCode != http.StatusOK {
+					return fmt.Errorf("Failed to query metrics %v: %v", resp.StatusCode, err)
+				}
+
+				queryResult := QueryResult{}
+				if err := json.Unmarshal([]byte(b), &queryResult); err != nil {
+					return err
+				}
+
+				expectResult := map[string]string{"AmazonOtherOpenShift": "2", "AmazonHiveOpenShift": "1", "Other": "1"}
+				actualResult := map[string]string{}
+				for _, r := range queryResult.Data.Result {
+					key := r.Metric.Cloud + r.Metric.CreatedVia + r.Metric.Vendor
+					actualResult[key] = r.Value[1].(string)
+				}
+
+				klog.Infof("expect result %v", expectResult)
+				klog.Infof("actual result %v", actualResult)
+				if !reflect.DeepEqual(expectResult, actualResult) {
+					return fmt.Errorf("Unexpect queryResult %v", queryResult)
+				}
+
+				return nil
+			}).Should(BeNil())
 		})
 	})
 
@@ -208,6 +330,21 @@ var _ = Describe("Metrics", func() {
 
 func getMetrics() (resp *http.Response, bodyString string, err error) {
 	resp, err = http.Get("http://localhost/clusterlifecycle-state-metrics/metrics")
+	defer resp.Body.Close()
+	if resp.StatusCode == http.StatusOK {
+		bodyBytes, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			klog.Fatal(err)
+		}
+		bodyString = string(bodyBytes)
+	}
+	return
+}
+
+func queryMetrics(promQL string) (resp *http.Response, bodyString string, err error) {
+	promURL := "http://localhost/prometheus-k8s/api/v1/query?query=" + promQL
+	klog.Infof("queryMetrics: %s", promURL)
+	resp, err = http.Get(promURL)
 	defer resp.Body.Close()
 	if resp.StatusCode == http.StatusOK {
 		bodyBytes, err := ioutil.ReadAll(resp.Body)

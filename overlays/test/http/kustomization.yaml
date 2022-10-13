@@ -7,4 +7,5 @@ bases:
 patchesStrategicMerge:
 - deployment.yaml
 - service.yaml
+- clusterrole_binding_prom.yaml
 

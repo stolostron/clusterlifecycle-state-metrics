@@ -39,6 +39,13 @@ if ! which gocovmerge > /dev/null; then
     go install github.com/wadey/gocovmerge@latest
     popd
 fi
+if ! which helm > /dev/null; then
+    echo "Installing helm..."
+    curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+    chmod 700 get_helm.sh
+    ./get_helm.sh
+    rm get_helm.sh
+fi
 
 echo "setting up test tmp folder"
 [ -d "$FUNCT_TEST_TMPDIR" ] && rm -r "$FUNCT_TEST_TMPDIR"
@@ -100,6 +107,13 @@ for dir in overlays/test/* ; do
   # install clusterlifecycle-state-metrics
   echo "install managedcluster-import-controller"
   kubectl apply -k "$dir" --dry-run=client -o yaml | sed "s|REPLACE_IMAGE|${DOCKER_IMAGE_AND_TAG}|g" | kubectl apply -f -
+
+  echo "install prometheus"
+  helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+  helm repo add stable https://charts.helm.sh/stable
+  helm repo update
+  helm install prometheus prometheus-community/kube-prometheus-stack --namespace openshift-monitoring
+  kubectl apply -f test/functional/resources/ingress_prometheus.yaml
 
   echo "Create ingress for functional test"
   kubectl apply -f test/functional/resources/ingress.yaml

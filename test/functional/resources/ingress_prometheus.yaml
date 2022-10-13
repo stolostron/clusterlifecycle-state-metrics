@@ -1,0 +1,22 @@
+# Copyright Contributors to the Open Cluster Management project
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  labels:
+    app: prometheus-k8s
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+  name: prometheus-k8s
+  namespace: openshift-monitoring
+spec:
+  rules:
+  - http:
+      paths:
+      - path: /prometheus-k8s(/|$)(.*)
+        pathType: Prefix
+        backend:
+          service:
+            name: prometheus-kube-prometheus-prometheus
+            port:
+              number: 9090
