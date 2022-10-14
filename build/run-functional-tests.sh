@@ -21,14 +21,14 @@ if ! which kubectl > /dev/null; then
 fi
 if ! which kind > /dev/null; then
     echo "installing kind"
-    curl -Lo ./kind https://github.com/kubernetes-sigs/kind/releases/download/v0.9.0/kind-$(uname)-amd64
+    curl -Lo ./kind https://github.com/kubernetes-sigs/kind/releases/download/v0.16.0/kind-$(uname)-amd64
     chmod +x ./kind
     sudo mv ./kind /usr/local/bin/kind
 fi
 if ! which ginkgo > /dev/null; then
     echo "Installing ginkgo ..."
     pushd $(mktemp -d)
-    go install github.com/onsi/ginkgo/v2/ginkgo@latest
+    go install github.com/onsi/ginkgo/v2/ginkgo@v2.3.1
     echo "installing gomega ..."
     GO111MODULE=off go get github.com/onsi/gomega/...
     popd
