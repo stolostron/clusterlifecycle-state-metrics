@@ -7,8 +7,8 @@ replace k8s.io/client-go => k8s.io/client-go v0.24.3
 replace github.com/prometheus/prometheus => github.com/prometheus/prometheus v0.37.0
 
 require (
-	github.com/onsi/ginkgo/v2 v2.1.4
-	github.com/onsi/gomega v1.20.0
+	github.com/onsi/ginkgo/v2 v2.3.1
+	github.com/onsi/gomega v1.22.0
 	github.com/openshift/api v3.9.1-0.20191111211345-a27ff30ebf09+incompatible
 	github.com/openshift/build-machinery-go v0.0.0-20220720161851-9b4f0386f6b0
 	github.com/openshift/client-go v0.0.0-20210916133943-9acee1a0fb83
@@ -17,7 +17,7 @@ require (
 	github.com/stolostron/applier v0.0.0-20220328110401-26b0ea4f8e1e
 	github.com/stolostron/cluster-lifecycle-api v0.0.0-20220714081119-eae2fe1f05fd
 	github.com/stolostron/library-go v0.0.0-20220328023725-63d77a3ad428
-	golang.org/x/net v0.0.0-20220708220712-1185a9018129
+	golang.org/x/net v0.0.0-20220722155237-a158d28d115b
 	k8s.io/apimachinery v0.24.3
 	k8s.io/client-go v12.0.0+incompatible
 	k8s.io/klog v1.0.0
@@ -81,7 +81,7 @@ require (
 	go.uber.org/zap v1.19.1 // indirect
 	golang.org/x/crypto v0.0.0-20220511200225-c6db032c6c88 // indirect
 	golang.org/x/oauth2 v0.0.0-20220628200809-02e64fa58f26 // indirect
-	golang.org/x/sys v0.0.0-20220627191245-f75cf1eec38b // indirect
+	golang.org/x/sys v0.0.0-20220722155257-8c9f86f7a55f // indirect
 	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/time v0.0.0-20220609170525-579cf78fd858 // indirect
