@@ -158,7 +158,7 @@ var _ = Describe("Metrics", func() {
 				}
 
 				return nil
-			}).Should(BeNil())
+			}).WithTimeout(30 * time.Second).Should(BeNil())
 		})
 		By("Query metrics by sum(acm_managed_cluster_info) by (version)", func() {
 			Eventually(func() error {

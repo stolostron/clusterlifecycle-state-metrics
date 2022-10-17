@@ -44,6 +44,11 @@ func compareOutput(a, b string) error {
 	if a == "" && b == "" {
 		return nil
 	}
+
+	if (a == "" && b != "") || (a != "" && b == "") {
+		return fmt.Errorf("expected a to equal b but got:\n%v\nand:\n%v", a, b)
+	}
+
 	entities := []string{a, b}
 
 	// Align a and b

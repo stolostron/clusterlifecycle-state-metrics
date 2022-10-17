@@ -5,6 +5,8 @@ package collectors
 
 import (
 	"bytes"
+	"io/ioutil"
+	"os"
 	"reflect"
 	"testing"
 
@@ -12,6 +14,9 @@ import (
 	ocpclient "github.com/openshift/client-go/config/clientset/versioned"
 	"golang.org/x/net/context"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
+	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	metricsstore "k8s.io/kube-state-metrics/pkg/metrics_store"
 	koptions "k8s.io/kube-state-metrics/pkg/options"
 	"k8s.io/kube-state-metrics/pkg/whiteblacklist"
@@ -408,4 +413,132 @@ func TestBuilder_buildManagedClusterCollectorWithClient(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestBuilder_Build(t *testing.T) {
+	const headers = `# HELP acm_managed_cluster_info Managed cluster information
+# TYPE acm_managed_cluster_info gauge
+`
+	envTest := setupEnvTest(t)
+	_, err := envtest.InstallCRDs(envTest.Config, envtest.CRDInstallOptions{
+		Paths: []string{"../../test/unit/resources/crds"},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, _, err = envTest.ControlPlane.KubeCtl().Run("create", "ns", "imported-cluster")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	kubeconfigFile, err := ioutil.TempFile("", "ut-kubeconfig-")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(kubeconfigFile.Name())
+
+	err = writeKubeconfigFile(envTest.Config, kubeconfigFile.Name())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	ocpClient, _ := ocpclient.NewForConfig(envTest.Config)
+
+	version := &ocinfrav1.ClusterVersion{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "version",
+		},
+		Spec: ocinfrav1.ClusterVersionSpec{
+			ClusterID: "mycluster_id",
+		},
+	}
+
+	_, err = ocpClient.ConfigV1().
+		ClusterVersions().
+		Create(context.TODO(), version, metav1.CreateOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	w, _ := whiteblacklist.New(map[string]struct{}{}, map[string]struct{}{})
+	type fields struct {
+		kubeconfig        string
+		namespaces        koptions.NamespaceList
+		ctx               context.Context
+		enabledCollectors []string
+		whiteBlackList    whiteBlackLister
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		want   []string
+	}{
+		{
+			name: "no collector enabled",
+			fields: fields{
+				kubeconfig:     kubeconfigFile.Name(),
+				namespaces:     koptions.NamespaceList{},
+				ctx:            ctx,
+				whiteBlackList: w,
+			},
+		},
+		{
+			name: "managedclusterinfos enabled",
+			fields: fields{
+				kubeconfig:        kubeconfigFile.Name(),
+				namespaces:        koptions.NamespaceList{},
+				ctx:               ctx,
+				enabledCollectors: []string{"managedclusterinfos"},
+				whiteBlackList:    w,
+			},
+			want: []string{headers},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			b := NewBuilder(tt.fields.ctx)
+			b.kubeconfig = tt.fields.kubeconfig
+			b.namespaces = tt.fields.namespaces
+			b.enabledCollectors = tt.fields.enabledCollectors
+			b.whiteBlackList = tt.fields.whiteBlackList
+
+			stores := b.Build()
+			if len(stores) != len(tt.want) {
+				t.Errorf(
+					"number of MetricsStores = %v, want %v",
+					len(stores),
+					len(tt.want),
+				)
+			}
+			for index, got := range stores {
+				buf := new(bytes.Buffer)
+				got.WriteAll(buf)
+				if buf.String() != tt.want[index] {
+					t.Errorf("Expected headers \n%s\ngot\n%s", tt.want[index], buf.String())
+				}
+			}
+		})
+	}
+}
+
+func writeKubeconfigFile(restConfig *rest.Config, kubeconfigFileName string) error {
+	kubeconfig := clientcmdapi.Config{
+		Clusters: map[string]*clientcmdapi.Cluster{"default-cluster": {
+			Server:                   restConfig.Host,
+			InsecureSkipTLSVerify:    false,
+			CertificateAuthorityData: restConfig.CAData,
+		}},
+		AuthInfos: map[string]*clientcmdapi.AuthInfo{"default-auth": {
+			ClientCertificateData: restConfig.CertData,
+			ClientKeyData:         restConfig.KeyData,
+		}},
+		Contexts: map[string]*clientcmdapi.Context{"default-context": {
+			Cluster:   "default-cluster",
+			AuthInfo:  "default-auth",
+			Namespace: "default",
+		}},
+		CurrentContext: "default-context",
+	}
+
+	return clientcmd.WriteToFile(kubeconfig, kubeconfigFileName)
 }
