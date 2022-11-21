@@ -1,7 +1,6 @@
 // Copyright (c) 2020 Red Hat, Inc.
 // Copyright Contributors to the Open Cluster Management project
 
-
 package options
 
 import (
@@ -18,6 +17,7 @@ func init() {
 var (
 	DefaultNamespaces = koptions.NamespaceList{metav1.NamespaceAll}
 	DefaultCollectors = koptions.CollectorSet{
-		"managedclusterinfos": struct{}{},
+		"managedclusterinfos":  struct{}{},
+		"managedclusterlabels": struct{}{},
 	}
 )
