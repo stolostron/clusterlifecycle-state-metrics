@@ -1,3 +1,6 @@
+// Copyright (c) 2022 Red Hat, Inc.
+// Copyright Contributors to the Open Cluster Management project
+
 package collectors
 
 import (
@@ -13,7 +16,7 @@ import (
 )
 
 var (
-	descManagedClusterLabelInfoName     = "managed_cluster_labels"
+	descManagedClusterLabelInfoName     = "acm_managed_cluster_labels"
 	descManagedClusterLabelInfoHelp     = "Managed cluster labels"
 	descManagedClusterLabelDefaultLabel = []string{
 		"hub_cluster_id",
@@ -21,7 +24,8 @@ var (
 	}
 )
 
-func getManagedClusterLabelMetricFamilies(hubClusterID string, clusterclient *clusterclient.Clientset) []metric.FamilyGenerator {
+func getManagedClusterLabelMetricFamilies(hubClusterID string,
+	clusterclient clusterclient.Interface) []metric.FamilyGenerator {
 	return []metric.FamilyGenerator{
 		{
 			Name: descManagedClusterLabelInfoName,
