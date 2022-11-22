@@ -520,6 +520,10 @@ func TestBuilder_Build(t *testing.T) {
 	const headers = `# HELP acm_managed_cluster_info Managed cluster information
 # TYPE acm_managed_cluster_info gauge
 `
+	const headers2 = `# HELP acm_managed_cluster_labels Managed cluster labels
+# TYPE acm_managed_cluster_labels gauge	
+`
+
 	envTest := setupEnvTest(t)
 	_, err := envtest.InstallCRDs(envTest.Config, envtest.CRDInstallOptions{
 		Paths: []string{"../../test/unit/resources/crds"},
@@ -603,7 +607,7 @@ func TestBuilder_Build(t *testing.T) {
 				enabledCollectors: []string{"managedclusterlabels"},
 				whiteBlackList:    w,
 			},
-			want: []string{headers},
+			want: []string{headers2},
 		},
 	}
 	for _, tt := range tests {
