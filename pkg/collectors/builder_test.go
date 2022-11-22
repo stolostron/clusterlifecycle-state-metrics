@@ -594,6 +594,17 @@ func TestBuilder_Build(t *testing.T) {
 			},
 			want: []string{headers},
 		},
+		{
+			name: "managedclusterlabels enabled",
+			fields: fields{
+				kubeconfig:        kubeconfigFile.Name(),
+				namespaces:        koptions.NamespaceList{},
+				ctx:               ctx,
+				enabledCollectors: []string{"managedclusterlabels"},
+				whiteBlackList:    w,
+			},
+			want: []string{headers},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
