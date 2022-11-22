@@ -156,8 +156,8 @@ func (b *Builder) buildManagedClusterInfoCollectorWithClient(ocpclient *ocpclien
 	return store
 }
 
-func (b *Builder) buildManagedClusterLabelCollectorWithClient(ocpclient *ocpclient.Clientset,
-	clusterclient *clusterclient.Clientset) *metricsstore.MetricsStore {
+func (b *Builder) buildManagedClusterLabelCollectorWithClient(ocpclient ocpclient.Interface,
+	clusterclient clusterclient.Interface) *metricsstore.MetricsStore {
 	hubClusterID := getHubClusterID(ocpclient)
 	filteredMetricFamilies := metric.FilterMetricFamilies(b.whiteBlackList,
 		getManagedClusterLabelMetricFamilies(hubClusterID, clusterclient))

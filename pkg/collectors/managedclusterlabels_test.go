@@ -78,5 +78,9 @@ func Test_getManagedClusterLabelMetricFamilies(t *testing.T) {
 		if e != nil {
 			t.Errorf("failed to delete cluster %v: %v", c.Obj.Name, e)
 		}
+
+		if err = c.run(); err == nil {
+			t.Errorf("failed to trigger error response for cluster %v: %v", c.Obj.Name, err)
+		}
 	}
 }
