@@ -520,9 +520,6 @@ func TestBuilder_Build(t *testing.T) {
 	const headers = `# HELP acm_managed_cluster_info Managed cluster information
 # TYPE acm_managed_cluster_info gauge
 `
-	const headers2 = `# HELP acm_managed_cluster_labels Managed cluster labels
-# TYPE acm_managed_cluster_labels gauge	
-`
 
 	envTest := setupEnvTest(t)
 	_, err := envtest.InstallCRDs(envTest.Config, envtest.CRDInstallOptions{
@@ -597,17 +594,6 @@ func TestBuilder_Build(t *testing.T) {
 				whiteBlackList:    w,
 			},
 			want: []string{headers},
-		},
-		{
-			name: "managedclusterlabels enabled",
-			fields: fields{
-				kubeconfig:        kubeconfigFile.Name(),
-				namespaces:        koptions.NamespaceList{},
-				ctx:               ctx,
-				enabledCollectors: []string{"managedclusterlabels"},
-				whiteBlackList:    w,
-			},
-			want: []string{headers2},
 		},
 	}
 	for _, tt := range tests {

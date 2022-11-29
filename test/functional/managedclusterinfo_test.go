@@ -32,6 +32,12 @@ acm_managed_cluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",m
 acm_managed_cluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="import_cluster_id",vendor="OpenShift",cloud="Amazon",service_name="Other",version="4.3.1",available="Unknown",created_via="Other",core_worker="0",socket_worker="0"} 1
 acm_managed_cluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="empty-cluster",vendor="",cloud="",service_name="Other",version="",available="Unknown",created_via="Other",core_worker="0",socket_worker="0"} 1
 acm_managed_cluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="local_cluster_id",vendor="OpenShift",cloud="Amazon",service_name="Other",version="4.3.1",available="Unknown",created_via="Other",core_worker="0",socket_worker="0"} 1
+# HELP acm_managed_cluster_labels Managed cluster labels
+# TYPE acm_managed_cluster_labels gauge
+acm_managed_cluster_labels{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="hive_cluster_id",cloud="Amazon",openshiftVersion="4.3.1",vendor="OpenShift"} 1
+acm_managed_cluster_labels{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="import_cluster_id",cloud="Amazon",openshiftVersion="4.3.1",vendor="OpenShift"} 1
+acm_managed_cluster_labels{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="empty-cluster"} 1
+acm_managed_cluster_labels{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="local_cluster_id",cloud="Amazon",openshiftVersion="4.3.1",vendor="OpenShift"} 1
 `
 	managedClusterResponse = `# HELP acm_managed_cluster_info Managed cluster information
 # TYPE acm_managed_cluster_info gauge
@@ -39,6 +45,12 @@ acm_managed_cluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",m
 acm_managed_cluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="import_cluster_id",vendor="OpenShift",cloud="Amazon",service_name="Other",version="4.3.1",available="Unknown",created_via="Other",core_worker="2",socket_worker="1"} 1
 acm_managed_cluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="empty-cluster",vendor="",cloud="",service_name="Other",version="",available="Unknown",created_via="Other",core_worker="0",socket_worker="0"} 1
 acm_managed_cluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="local_cluster_id",vendor="OpenShift",cloud="Amazon",service_name="Other",version="4.3.1",available="Unknown",created_via="Other",core_worker="2",socket_worker="1"} 1
+# HELP acm_managed_cluster_labels Managed cluster labels
+# TYPE acm_managed_cluster_labels gauge
+acm_managed_cluster_labels{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="hive_cluster_id",cloud="Amazon",openshiftVersion="4.3.1",vendor="OpenShift"} 1
+acm_managed_cluster_labels{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="import_cluster_id",cloud="Amazon",openshiftVersion="4.3.1",vendor="OpenShift"} 1
+acm_managed_cluster_labels{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="empty-cluster"} 1
+acm_managed_cluster_labels{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="local_cluster_id",cloud="Amazon",openshiftVersion="4.3.1",vendor="OpenShift"} 1
 `
 
 	managedClusterHiveResponse = `# HELP acm_managed_cluster_info Managed cluster information
@@ -47,6 +59,12 @@ acm_managed_cluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",m
 acm_managed_cluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="import_cluster_id",vendor="OpenShift",cloud="Amazon",service_name="Other",version="4.3.1",available="Unknown",created_via="Other",core_worker="0",socket_worker="0"} 1
 acm_managed_cluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="empty-cluster",vendor="",cloud="",service_name="Other",version="",available="Unknown",created_via="Other",core_worker="0",socket_worker="0"} 1
 acm_managed_cluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="local_cluster_id",vendor="OpenShift",cloud="Amazon",service_name="Other",version="4.3.1",available="Unknown",created_via="Other",core_worker="0",socket_worker="0"} 1
+# HELP acm_managed_cluster_labels Managed cluster labels
+# TYPE acm_managed_cluster_labels gauge
+acm_managed_cluster_labels{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="hive_cluster_id",cloud="Amazon",openshiftVersion="4.3.1",vendor="OpenShift"} 1
+acm_managed_cluster_labels{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="import_cluster_id",cloud="Amazon",openshiftVersion="4.3.1",vendor="OpenShift"} 1
+acm_managed_cluster_labels{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="empty-cluster"} 1
+acm_managed_cluster_labels{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="local_cluster_id",cloud="Amazon",openshiftVersion="4.3.1",vendor="OpenShift"} 1
 `
 )
 
@@ -217,18 +235,76 @@ var _ = Describe("Metrics", func() {
 				return nil
 			}).Should(BeNil())
 		})
+		By("Query metrics by sum(acm_managed_cluster_labels) by (cloud)", func() {
+			Eventually(func() error {
+				resp, b, err := queryMetrics("sum(acm_managed_cluster_labels)+by+(cloud)")
+				klog.Infof("Get Empty Metrics response: %v", b)
+				if err != nil || resp.StatusCode != http.StatusOK {
+					return fmt.Errorf("Failed to query metrics %v: %v", resp.StatusCode, err)
+				}
+
+				queryResult := QueryResult{}
+				if err := json.Unmarshal([]byte(b), &queryResult); err != nil {
+					return err
+				}
+
+				expectResult := map[string]string{"Amazon": "3", "": "1"}
+				actualResult := map[string]string{}
+				for _, r := range queryResult.Data.Result {
+					key := r.Metric.Cloud + r.Metric.CreatedVia + r.Metric.Vendor
+					actualResult[key] = r.Value[1].(string)
+				}
+
+				klog.Infof("expect result %v", expectResult)
+				klog.Infof("actual result %v", actualResult)
+				if !reflect.DeepEqual(expectResult, actualResult) {
+					return fmt.Errorf("Unexpect queryResult %v", queryResult)
+				}
+
+				return nil
+			}).Should(BeNil())
+		})
+		By("Query metrics by sum(acm_managed_cluster_labels) by (hub_cluster_id)", func() {
+			Eventually(func() error {
+				resp, b, err := queryMetrics("sum(acm_managed_cluster_labels)+by+(hub_cluster_id)")
+				klog.Infof("Get Empty Metrics response: %v", b)
+				if err != nil || resp.StatusCode != http.StatusOK {
+					return fmt.Errorf("Failed to query metrics %v: %v", resp.StatusCode, err)
+				}
+
+				queryResult := QueryResult{}
+				if err := json.Unmarshal([]byte(b), &queryResult); err != nil {
+					return err
+				}
+
+				expectResult := map[string]string{"": "4"}
+				actualResult := map[string]string{}
+				for _, r := range queryResult.Data.Result {
+					key := r.Metric.Cloud + r.Metric.CreatedVia + r.Metric.Vendor
+					actualResult[key] = r.Value[1].(string)
+				}
+
+				klog.Infof("expect result %v", expectResult)
+				klog.Infof("actual result %v", actualResult)
+				if !reflect.DeepEqual(expectResult, actualResult) {
+					return fmt.Errorf("Unexpect queryResult %v", queryResult)
+				}
+
+				return nil
+			}).Should(BeNil())
+		})
 	})
 
 	It("Get Empty Metrics", func() {
 		By("Getting metrics", func() {
-			Eventually(func() string {
+			Eventually(func() int {
 				resp, b, err := getMetrics()
 				klog.Infof("Get Empty Metrics response: %s", b)
 				if err != nil || resp.StatusCode != http.StatusOK {
-					return ""
+					return 0
 				}
-				return sortLines(b)
-			}).Should(Equal(sortLines(clusterDeploymentResponse)))
+				return len(b)
+			}).Should(Equal(len(clusterDeploymentResponse)))
 		})
 	})
 
@@ -281,14 +357,14 @@ var _ = Describe("Metrics", func() {
 		})
 		// Skip("Skip have to fix")
 		By("Getting metrics", func() {
-			Eventually(func() string {
+			Eventually(func() int {
 				resp, b, err := getMetrics()
 				klog.Infof("Get Metrics response: %s", b)
 				if err != nil || resp.StatusCode != http.StatusOK {
-					return ""
+					return 0
 				}
-				return sortLines(b)
-			}).Should(Equal(sortLines(managedClusterResponse)))
+				return len(b)
+			}).Should(Equal(len(managedClusterResponse)))
 		})
 	})
 
@@ -316,14 +392,14 @@ var _ = Describe("Metrics", func() {
 			})).Should(BeNil())
 		})
 		By("Getting metrics", func() {
-			Eventually(func() string {
+			Eventually(func() int {
 				resp, b, err := getMetrics()
 				klog.Infof("Get created cluster-hive Metrics response: %s", b)
 				if err != nil || resp.StatusCode != http.StatusOK {
-					return ""
+					return 0
 				}
-				return sortLines(b)
-			}).Should(Equal(sortLines(managedClusterHiveResponse)))
+				return len(b)
+			}).Should(Equal(len(managedClusterHiveResponse)))
 		})
 	})
 })
