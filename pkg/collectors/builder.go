@@ -36,9 +36,7 @@ type Builder struct {
 }
 
 // NewBuilder returns a new builder.
-func NewBuilder(
-	ctx context.Context,
-) *Builder {
+func NewBuilder(ctx context.Context) *Builder {
 	return &Builder{
 		ctx: ctx,
 	}
@@ -57,10 +55,7 @@ func (b *Builder) WithKubeConfig(kubeconfig string) *Builder {
 // WithEnabledCollectors sets the enabledCollectors property of a Builder.
 func (b *Builder) WithEnabledCollectors(c []string) *Builder {
 	copy := []string{}
-	for _, s := range c {
-		copy = append(copy, s)
-	}
-
+	copy = append(copy, c...)
 	sort.Strings(copy)
 
 	b.enabledCollectors = copy
@@ -107,7 +102,8 @@ func (b *Builder) Build() []*metricsstore.MetricsStore {
 }
 
 var availableCollectors = map[string]func(f *Builder) *metricsstore.MetricsStore{
-	"managedclusterinfos": func(b *Builder) *metricsstore.MetricsStore { return b.buildManagedClusterInfoCollector() },
+	"managedclusterinfos":  func(b *Builder) *metricsstore.MetricsStore { return b.buildManagedClusterInfoCollector() },
+	"managedclusterlabels": func(b *Builder) *metricsstore.MetricsStore { return b.buildManagedClusterLabelCollector() },
 }
 
 func (b *Builder) buildManagedClusterInfoCollector() *metricsstore.MetricsStore {
@@ -126,6 +122,22 @@ func (b *Builder) buildManagedClusterInfoCollector() *metricsstore.MetricsStore 
 	return b.buildManagedClusterInfoCollectorWithClient(ocpclient, clusterclient)
 }
 
+func (b *Builder) buildManagedClusterLabelCollector() *metricsstore.MetricsStore {
+	config, err := clientcmd.BuildConfigFromFlags(b.apiserver, b.kubeconfig)
+	if err != nil {
+		klog.Fatalf("cannot create config: %v", err)
+	}
+	clusterclient, err := clusterclient.NewForConfig(config)
+	if err != nil {
+		klog.Fatalf("cannot create clusterclient: %v", err)
+	}
+	ocpclient, err := ocpclient.NewForConfig(config)
+	if err != nil {
+		klog.Fatalf("cannot create ocpclient: %v", err)
+	}
+	return b.buildManagedClusterLabelCollectorWithClient(ocpclient, clusterclient)
+}
+
 func (b *Builder) buildManagedClusterInfoCollectorWithClient(ocpclient *ocpclient.Clientset, clusterclient *clusterclient.Clientset) *metricsstore.MetricsStore {
 	hubClusterID := getHubClusterID(ocpclient)
 	filteredMetricFamilies := metric.FilterMetricFamilies(b.whiteBlackList,
@@ -141,5 +153,23 @@ func (b *Builder) buildManagedClusterInfoCollectorWithClient(ocpclient *ocpclien
 
 	createManagedClusterInformer(b.apiserver, b.kubeconfig, store)
 
+	return store
+}
+
+func (b *Builder) buildManagedClusterLabelCollectorWithClient(ocpclient ocpclient.Interface,
+	clusterclient clusterclient.Interface) *metricsstore.MetricsStore {
+	hubClusterID := getHubClusterID(ocpclient)
+	filteredMetricFamilies := metric.FilterMetricFamilies(b.whiteBlackList,
+		getManagedClusterLabelMetricFamilies(hubClusterID, clusterclient))
+	composedMetricGenFuncs := metric.ComposeMetricGenFuncs(filteredMetricFamilies)
+
+	familyHeaders := metric.ExtractMetricFamilyHeaders(filteredMetricFamilies)
+
+	store := metricsstore.NewMetricsStore(
+		familyHeaders,
+		composedMetricGenFuncs,
+	)
+
+	createManagedClusterInformer(b.apiserver, b.kubeconfig, store)
 	return store
 }

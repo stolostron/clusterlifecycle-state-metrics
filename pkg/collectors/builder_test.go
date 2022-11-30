@@ -12,6 +12,8 @@ import (
 
 	ocinfrav1 "github.com/openshift/api/config/v1"
 	ocpclient "github.com/openshift/client-go/config/clientset/versioned"
+	fakeocpclient "github.com/openshift/client-go/config/clientset/versioned/fake"
+	mciv1beta1 "github.com/stolostron/cluster-lifecycle-api/clusterinfo/v1beta1"
 	"golang.org/x/net/context"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
@@ -21,6 +23,8 @@ import (
 	koptions "k8s.io/kube-state-metrics/pkg/options"
 	"k8s.io/kube-state-metrics/pkg/whiteblacklist"
 	clusterclient "open-cluster-management.io/api/client/cluster/clientset/versioned"
+	fakeclusterclient "open-cluster-management.io/api/client/cluster/clientset/versioned/fake"
+	mcv1 "open-cluster-management.io/api/cluster/v1"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 )
 
@@ -414,11 +418,109 @@ func TestBuilder_buildManagedClusterCollectorWithClient(t *testing.T) {
 		})
 	}
 }
+func TestBuilder_buildManagedClusterLabelCollectorWithClient(t *testing.T) {
+	const headers = `# HELP acm_managed_cluster_labels Managed cluster labels
+# TYPE acm_managed_cluster_labels gauge
+`
+	clusterClient := fakeclusterclient.NewSimpleClientset()
+	ocpClient := fakeocpclient.NewSimpleClientset()
+
+	version := &ocinfrav1.ClusterVersion{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "version",
+		},
+		Spec: ocinfrav1.ClusterVersionSpec{
+			ClusterID: "mycluster_id",
+		},
+	}
+
+	_, err := ocpClient.ConfigV1().ClusterVersions().Create(context.TODO(), version, metav1.CreateOptions{})
+	if err != nil {
+		t.Errorf("failed to create cluster version: %v", err)
+	}
+
+	mc := &mcv1.ManagedCluster{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "test-cluster",
+			Labels: map[string]string{
+				mciv1beta1.LabelClusterID:   "managed_cluster_id",
+				mciv1beta1.LabelCloudVendor: string(mciv1beta1.CloudVendorAWS),
+				mciv1beta1.LabelKubeVendor:  string(mciv1beta1.KubeVendorAKS),
+			},
+		},
+		Status: mcv1.ManagedClusterStatus{
+			Capacity:      mcv1.ResourceList{},
+			ClusterClaims: []mcv1.ManagedClusterClaim{},
+			Conditions:    []metav1.Condition{},
+		},
+	}
+
+	_, err = clusterClient.ClusterV1().ManagedClusters().Create(context.Background(), mc, metav1.CreateOptions{})
+	if err != nil {
+		t.Errorf("failed to generate managedcluster CR: %s\ns", err)
+	}
+
+	w, _ := whiteblacklist.New(map[string]struct{}{}, map[string]struct{}{})
+	type fields struct {
+		apiserver         string
+		kubeconfig        string
+		namespaces        koptions.NamespaceList
+		ctx               context.Context
+		enabledCollectors []string
+		whiteBlackList    whiteBlackLister
+	}
+
+	tests := []struct {
+		name   string
+		fields fields
+		want   *metricsstore.MetricsStore
+	}{
+		{
+			name: "buildManagedClusterLabelCollectorWithClient",
+			fields: fields{
+				apiserver:         "apiserver",
+				kubeconfig:        "",
+				namespaces:        koptions.NamespaceList{},
+				ctx:               ctx,
+				enabledCollectors: []string{"managedclusterinfos"},
+				whiteBlackList:    w,
+			},
+			want: nil,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			b := &Builder{
+				apiserver:         tt.fields.apiserver,
+				kubeconfig:        tt.fields.kubeconfig,
+				namespaces:        tt.fields.namespaces,
+				ctx:               tt.fields.ctx,
+				enabledCollectors: tt.fields.enabledCollectors,
+				whiteBlackList:    tt.fields.whiteBlackList,
+			}
+			got := b.buildManagedClusterLabelCollectorWithClient(ocpClient, clusterClient)
+			if got == nil {
+				t.Errorf(
+					"Builder.buildManagedClusterCollectorWithClient() = %v, want %v",
+					got,
+					tt.want,
+				)
+			}
+
+			buf := new(bytes.Buffer)
+			got.WriteAll(buf)
+			if buf.String() != headers {
+				t.Errorf("Expected headers \n%s\ngot\n%s", headers, buf.String())
+			}
+		})
+	}
+}
 
 func TestBuilder_Build(t *testing.T) {
 	const headers = `# HELP acm_managed_cluster_info Managed cluster information
 # TYPE acm_managed_cluster_info gauge
 `
+
 	envTest := setupEnvTest(t)
 	_, err := envtest.InstallCRDs(envTest.Config, envtest.CRDInstallOptions{
 		Paths: []string{"../../test/unit/resources/crds"},

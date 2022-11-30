@@ -30,7 +30,7 @@ var (
 	)
 )
 
-func getHubClusterID(ocpclient *ocpclient.Clientset) string {
+func getHubClusterID(ocpclient ocpclient.Interface) string {
 	cv, err := ocpclient.ConfigV1().ClusterVersions().Get(context.TODO(), "version", metav1.GetOptions{})
 	if err != nil {
 		klog.Fatalf("Error getting cluster version %v \n", err)

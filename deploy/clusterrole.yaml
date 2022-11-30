@@ -37,3 +37,6 @@ rules:
   verbs: ["create"]
 - nonResourceURLs: ["/metrics"]
   verbs: ["get"]
+- apiGroups: [""]
+  resources: ["nodes"]
+  verbs: ["get"]
