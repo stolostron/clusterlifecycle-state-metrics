@@ -30,7 +30,6 @@ import (
 	koptions "k8s.io/kube-state-metrics/pkg/options"
 	"k8s.io/kube-state-metrics/pkg/whiteblacklist"
 
-	"github.com/operator-framework/operator-lib/leader"
 	ocollectors "github.com/stolostron/clusterlifecycle-state-metrics/pkg/collectors"
 	"github.com/stolostron/clusterlifecycle-state-metrics/pkg/options"
 	"github.com/stolostron/clusterlifecycle-state-metrics/pkg/version"
@@ -124,14 +123,6 @@ func start(opts *options.Options) {
 		panic(err)
 	}
 	go telemetryServer(ocmMetricsRegistry, opts.TelemetryHost, opts.HTTPTelemetryPort, opts.HTTPSTelemetryPort, opts.TLSCrtFile, opts.TLSKeyFile)
-
-	ctx := context.TODO()
-	// Become the leader before proceeding
-	err = leader.Become(ctx, leaderConfigMapName)
-	if err != nil {
-		klog.Error(err, "")
-		os.Exit(1)
-	}
 
 	collectors := collectorBuilder.Build()
 

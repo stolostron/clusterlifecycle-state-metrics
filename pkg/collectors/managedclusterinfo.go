@@ -4,7 +4,6 @@
 package collectors
 
 import (
-	"context"
 	"strconv"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -12,7 +11,6 @@ import (
 
 	mciv1beta1 "github.com/stolostron/cluster-lifecycle-api/clusterinfo/v1beta1"
 	"k8s.io/klog/v2"
-	clusterclient "open-cluster-management.io/api/client/cluster/clientset/versioned"
 	mcv1 "open-cluster-management.io/api/cluster/v1"
 )
 
@@ -55,33 +53,26 @@ var (
 		"socket_worker"}
 )
 
-func getManagedClusterInfoMetricFamilies(hubClusterID string, clusterclient *clusterclient.Clientset) []metric.FamilyGenerator {
-	return []metric.FamilyGenerator{
-		{
-			Name: descClusterInfoName,
-			Type: metric.Gauge,
-			Help: descClusterInfoHelp,
-			GenerateFunc: wrapManagedClusterInfoFunc(func(obj *mcv1.ManagedCluster) metric.Family {
-				klog.Infof("Wrap %s", obj.GetName())
-				mc, err := clusterclient.ClusterV1().ManagedClusters().Get(context.Background(), obj.GetName(), metav1.GetOptions{})
-				if err != nil {
-					klog.Errorf("Error: %v", err)
-					return metric.Family{Metrics: []*metric.Metric{}}
-				}
-				// klog.Infof("mc: %v", mc)
-				kubeVendor := mc.ObjectMeta.Labels[mciv1beta1.LabelKubeVendor]
-				cloudVendor := mc.ObjectMeta.Labels[mciv1beta1.LabelCloudVendor]
+func getManagedClusterInfoMetricFamilies(hubClusterID string) metric.FamilyGenerator {
+	return metric.FamilyGenerator{
+		Name: descClusterInfoName,
+		Type: metric.Gauge,
+		Help: descClusterInfoHelp,
+		GenerateFunc: wrapManagedClusterInfoFunc(func(mc *mcv1.ManagedCluster) metric.Family {
+			klog.Infof("Wrap %s", mc.GetName())
+			kubeVendor := mc.ObjectMeta.Labels[mciv1beta1.LabelKubeVendor]
+			cloudVendor := mc.ObjectMeta.Labels[mciv1beta1.LabelCloudVendor]
 
-				clusterID := getClusterID(mc)
-				version := getVersion(mc)
-				createdVia := getCreatedVia(mc)
-				serviceName := getServiceName(mc)
-				available := getAvailableStatus(mc)
-				core_worker, socket_worker := getCapacity(mc)
+			clusterID := getClusterID(mc)
+			version := getVersion(mc)
+			createdVia := getCreatedVia(mc)
+			serviceName := getServiceName(mc)
+			available := getAvailableStatus(mc)
+			core_worker, socket_worker := getCapacity(mc)
 
-				if clusterID == "" {
-					klog.Infof("Not enough information available for %s", obj.GetName())
-					klog.Infof(`\tClusterID=%s,
+			if clusterID == "" {
+				klog.Infof("Not enough information available for %s", mc.GetName())
+				klog.Infof(`\tClusterID=%s,
 KubeVendor=%s,
 CloudVendor=%s,
 ServiceName=%s,
@@ -89,39 +80,38 @@ Version=%s,
 available=%s,
 core_worker=%d,
 socket_worker=%d`,
-						clusterID,
-						kubeVendor,
-						cloudVendor,
-						serviceName,
-						version,
-						available,
-						core_worker,
-						socket_worker)
-					return metric.Family{Metrics: []*metric.Metric{}}
-				}
-				labelsValues := []string{hubClusterID,
 					clusterID,
 					kubeVendor,
 					cloudVendor,
 					serviceName,
 					version,
 					available,
-					createdVia,
-					strconv.FormatInt(core_worker, 10),
-					strconv.FormatInt(socket_worker, 10),
-				}
+					core_worker,
+					socket_worker)
+				return metric.Family{Metrics: []*metric.Metric{}}
+			}
+			labelsValues := []string{hubClusterID,
+				clusterID,
+				kubeVendor,
+				cloudVendor,
+				serviceName,
+				version,
+				available,
+				createdVia,
+				strconv.FormatInt(core_worker, 10),
+				strconv.FormatInt(socket_worker, 10),
+			}
 
-				f := metric.Family{Metrics: []*metric.Metric{
-					{
-						LabelKeys:   descClusterInfoDefaultLabels,
-						LabelValues: labelsValues,
-						Value:       1,
-					},
-				}}
-				klog.Infof("Returning %v", string(f.ByteSlice()))
-				return f
-			}),
-		},
+			f := metric.Family{Metrics: []*metric.Metric{
+				{
+					LabelKeys:   descClusterInfoDefaultLabels,
+					LabelValues: labelsValues,
+					Value:       1,
+				},
+			}}
+			klog.Infof("Returning %v", string(f.ByteSlice()))
+			return f
+		}),
 	}
 }
 

@@ -4,8 +4,9 @@ patchesStrategicMerge:
 - deployment.yaml
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-resources:
+bases:
 - ../../deploy
+resources:
 - servicemonitor.yaml
 images:
 - name: clusterlifecycle-state-metrics

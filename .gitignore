@@ -18,6 +18,7 @@ test/e2e/resources/clusters
 test/e2e/resources/hub/kube
 kind_kubeconfig.yaml
 .DS_Store
+.idea/
 
 # Test binary, built with `go test -c`
 *.test

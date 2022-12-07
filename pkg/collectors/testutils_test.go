@@ -14,6 +14,7 @@ import (
 )
 
 type generateMetricsTestCase struct {
+	Name        string
 	Obj         *mcv1.ManagedCluster
 	MetricNames []string
 	Want        string

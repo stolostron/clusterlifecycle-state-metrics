@@ -7,11 +7,9 @@ import (
 	"testing"
 
 	mciv1beta1 "github.com/stolostron/cluster-lifecycle-api/clusterinfo/v1beta1"
-	"golang.org/x/net/context"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/kube-state-metrics/pkg/metric"
-	clusterclient "open-cluster-management.io/api/client/cluster/clientset/versioned"
 	mcv1 "open-cluster-management.io/api/cluster/v1"
 )
 
@@ -169,65 +167,49 @@ func Test_getManagedClusterMetricFamilies(t *testing.T) {
 		},
 	}
 
-	envTest := setupEnvTest(t)
-	clusterClient, err := clusterclient.NewForConfig(envTest.Config)
-	if err != nil {
-		t.Errorf("Failed to create clusterclient: %s", err)
-	}
-
 	tests := []generateMetricsTestCase{
 		{
+			Name:        "cluster info",
 			Obj:         mc,
 			MetricNames: []string{"acm_managed_cluster_info"},
 			Want:        `acm_managed_cluster_info{cloud="Amazon",core_worker="4",managed_cluster_id="managed_cluster_id",service_name="Other",created_via="Hive",hub_cluster_id="mycluster_id",socket_worker="2",available="Unknown",vendor="OpenShift",version="4.3.1"} 1`,
 		},
 		{
+			Name:        "cluster info discovery",
 			Obj:         mcDiscovery,
 			MetricNames: []string{"acm_managed_cluster_info"},
 			Want:        `acm_managed_cluster_info{cloud="Amazon",core_worker="4",managed_cluster_id="managed_cluster_id",service_name="Other",created_via="Discovery",hub_cluster_id="mycluster_id",socket_worker="2",available="Unknown",vendor="OpenShift",version="4.3.1"} 1`,
 		},
 		{
+			Name:        "no cluster id",
 			Obj:         mcWithoutClusterId,
 			MetricNames: []string{"acm_managed_cluster_info"},
 		},
 		{
+			Name:        "missing info",
 			Obj:         mcMissingInfo,
 			MetricNames: []string{"acm_managed_cluster_info"},
 			Want:        `acm_managed_cluster_info{cloud="",core_worker="0",managed_cluster_id="managed_cluster_id",service_name="Other",created_via="Other",hub_cluster_id="mycluster_id",socket_worker="0",available="Unknown",vendor="",version=""} 1`,
 		},
 		{
+			Name:        "zero resource",
 			Obj:         mcZeroInfo,
 			MetricNames: []string{"acm_managed_cluster_info"},
 			Want:        `acm_managed_cluster_info{cloud="Amazon",core_worker="0",managed_cluster_id="managed_cluster_id",service_name="Other",created_via="Hive",hub_cluster_id="mycluster_id",socket_worker="0",available="Unknown",vendor="OpenShift",version="4.3.1"} 1`,
 		},
 		{
+			Name:        "others resource",
 			Obj:         mcOther,
 			MetricNames: []string{"acm_managed_cluster_info"},
 			Want:        `acm_managed_cluster_info{cloud="Amazon",core_worker="4",managed_cluster_id="cluster-other",service_name="Compute",created_via="Other",hub_cluster_id="mycluster_id",socket_worker="2",available="Unknown",vendor="Other",version="v1.16.2"} 1`,
 		},
 	}
 	for i, c := range tests {
-		mc, err := clusterClient.ClusterV1().
-			ManagedClusters().
-			Create(context.Background(), c.Obj, metav1.CreateOptions{})
-		if err != nil {
-			t.Errorf("failed to generate managedcluster CR: %s\ns", err)
-		}
-		mc.Status = c.Obj.DeepCopy().Status
-		_, err = clusterClient.ClusterV1().
-			ManagedClusters().
-			UpdateStatus(context.Background(), mc, metav1.UpdateOptions{})
-		if err != nil {
-			t.Errorf("failed to update managedcluster statue: %s\ns", err)
-		}
 		c.Func = metric.ComposeMetricGenFuncs(
-			getManagedClusterInfoMetricFamilies("mycluster_id", clusterClient),
+			[]metric.FamilyGenerator{getManagedClusterInfoMetricFamilies("mycluster_id")},
 		)
 		if err := c.run(); err != nil {
 			t.Errorf("unexpected collecting result in %v run:\n%s", i, err)
 		}
-		clusterClient.ClusterV1().
-			ManagedClusters().
-			Delete(context.Background(), c.Obj.Name, metav1.DeleteOptions{})
 	}
 }
