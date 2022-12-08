@@ -7,10 +7,8 @@ import (
 	"testing"
 
 	mciv1beta1 "github.com/stolostron/cluster-lifecycle-api/clusterinfo/v1beta1"
-	"golang.org/x/net/context"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/kube-state-metrics/pkg/metric"
-	clusterclient "open-cluster-management.io/api/client/cluster/clientset/versioned/fake"
 	mcv1 "open-cluster-management.io/api/cluster/v1"
 )
 
@@ -47,14 +45,15 @@ func Test_getManagedClusterLabelMetricFamilies(t *testing.T) {
 		},
 	}
 
-	clusterClient := clusterclient.NewSimpleClientset()
 	tests := []generateMetricsTestCase{
 		{
+			Name:        "test cluster label",
 			Obj:         mc,
 			MetricNames: []string{"acm_managed_cluster_labels"},
 			Want:        `acm_managed_cluster_labels{cloud="Amazon",managed_cluster_id="managed_cluster_id",hub_cluster_id="hub_cluster_id",vendor="AKS"} 1`,
 		},
 		{
+			Name:        "test cluster2 label",
 			Obj:         mc2,
 			MetricNames: []string{"acm_managed_cluster_labels"},
 			Want:        `acm_managed_cluster_labels{cloud="Amazon",managed_cluster_id="managed_cluster_id",hub_cluster_id="hub_cluster_id",vendor="OpenShift"} 1`,
@@ -62,25 +61,13 @@ func Test_getManagedClusterLabelMetricFamilies(t *testing.T) {
 	}
 
 	for i, c := range tests {
-		_, err := clusterClient.ClusterV1().ManagedClusters().Create(context.Background(), c.Obj, metav1.CreateOptions{})
-		if err != nil {
-			t.Errorf("failed to generate managedcluster CR: %s\ns", err)
-		}
-
-		c.Func = metric.ComposeMetricGenFuncs(
-			getManagedClusterLabelMetricFamilies("hub_cluster_id", clusterClient),
-		)
-		if err := c.run(); err != nil {
-			t.Errorf("unexpected collecting result in %v run:\n%s", i, err)
-		}
-
-		e := clusterClient.ClusterV1().ManagedClusters().Delete(context.Background(), c.Obj.Name, metav1.DeleteOptions{})
-		if e != nil {
-			t.Errorf("failed to delete cluster %v: %v", c.Obj.Name, e)
-		}
-
-		if err = c.run(); err == nil {
-			t.Errorf("failed to trigger error response for cluster %v: %v", c.Obj.Name, err)
-		}
+		t.Run(c.Name, func(t *testing.T) {
+			c.Func = metric.ComposeMetricGenFuncs(
+				[]metric.FamilyGenerator{getManagedClusterLabelMetricFamilies("hub_cluster_id")},
+			)
+			if err := c.run(); err != nil {
+				t.Errorf("unexpected collecting result in %v run:\n%s", i, err)
+			}
+		})
 	}
 }

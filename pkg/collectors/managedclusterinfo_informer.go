@@ -4,46 +4,21 @@
 package collectors
 
 import (
+	"context"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/fields"
 	clusterclient "open-cluster-management.io/api/client/cluster/clientset/versioned"
-	clusterinformers "open-cluster-management.io/api/client/cluster/informers/externalversions"
+	"time"
 
 	"k8s.io/client-go/tools/cache"
-	"k8s.io/client-go/tools/clientcmd"
-	"k8s.io/klog/v2"
 	metricsstore "k8s.io/kube-state-metrics/pkg/metrics_store"
+	mcv1 "open-cluster-management.io/api/cluster/v1"
 )
 
 // Create ManagedCluster informer, watch and update metrics
-func createManagedClusterInformer(apiserver string, kubeconfig string, store *metricsstore.MetricsStore) {
-	config, err := clientcmd.BuildConfigFromFlags(apiserver, kubeconfig)
-	if err != nil {
-		klog.Fatalf("cannot create config: %v", err)
-	}
+func createManagedClusterInformer(ctx context.Context, clusterClient clusterclient.Interface, store *metricsstore.MetricsStore) {
+	lw := cache.NewListWatchFromClient(clusterClient.ClusterV1().RESTClient(), "managedclusters", metav1.NamespaceAll, fields.Everything())
+	reflector := cache.NewReflector(lw, &mcv1.ManagedCluster{}, store, 60*time.Minute)
 
-	clusterclient, err := clusterclient.NewForConfig(config)
-	if err != nil {
-		klog.Fatalf("cannot create clusterclient: %v", err)
-	}
-
-	clusterinformers := clusterinformers.NewSharedInformerFactory(clusterclient, 0)
-	informer := clusterinformers.Cluster().V1().ManagedClusters()
-
-	stopCh := make(chan struct{})
-	go startWatchingManagedCluster(stopCh, informer.Informer(), store)
-}
-
-func startWatchingManagedCluster(stopCh <-chan struct{}, s cache.SharedIndexInformer, store *metricsstore.MetricsStore) {
-	handlers := cache.ResourceEventHandlerFuncs{
-		AddFunc: func(obj interface{}) {
-			store.Add(obj)
-		},
-		UpdateFunc: func(oldObj, obj interface{}) {
-			store.Update(obj)
-		},
-		DeleteFunc: func(obj interface{}) {
-			store.Delete(obj)
-		},
-	}
-	s.AddEventHandler(handlers)
-	s.Run(stopCh)
+	go reflector.Run(ctx.Done())
 }

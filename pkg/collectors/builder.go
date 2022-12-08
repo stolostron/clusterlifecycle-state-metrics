@@ -4,12 +4,11 @@
 package collectors
 
 import (
+	clusterclient "open-cluster-management.io/api/client/cluster/clientset/versioned"
 	"sort"
 	"strings"
 
 	ocpclient "github.com/openshift/client-go/config/clientset/versioned"
-	clusterclient "open-cluster-management.io/api/client/cluster/clientset/versioned"
-
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/kube-state-metrics/pkg/metric"
 	metricsstore "k8s.io/kube-state-metrics/pkg/metrics_store"
@@ -102,46 +101,35 @@ func (b *Builder) Build() []*metricsstore.MetricsStore {
 }
 
 var availableCollectors = map[string]func(f *Builder) *metricsstore.MetricsStore{
-	"managedclusterinfos":  func(b *Builder) *metricsstore.MetricsStore { return b.buildManagedClusterInfoCollector() },
-	"managedclusterlabels": func(b *Builder) *metricsstore.MetricsStore { return b.buildManagedClusterLabelCollector() },
+	"managedclusters": func(b *Builder) *metricsstore.MetricsStore { return b.buildManagedClusterCollector() },
 }
 
-func (b *Builder) buildManagedClusterInfoCollector() *metricsstore.MetricsStore {
+func (b *Builder) buildManagedClusterCollector() *metricsstore.MetricsStore {
 	config, err := clientcmd.BuildConfigFromFlags(b.apiserver, b.kubeconfig)
 	if err != nil {
 		klog.Fatalf("cannot create config: %v", err)
 	}
-	clusterclient, err := clusterclient.NewForConfig(config)
-	if err != nil {
-		klog.Fatalf("cannot create clusterclient: %v", err)
-	}
-	ocpclient, err := ocpclient.NewForConfig(config)
+
+	ocpClient, err := ocpclient.NewForConfig(config)
 	if err != nil {
 		klog.Fatalf("cannot create ocpclient: %v", err)
 	}
-	return b.buildManagedClusterInfoCollectorWithClient(ocpclient, clusterclient)
-}
 
-func (b *Builder) buildManagedClusterLabelCollector() *metricsstore.MetricsStore {
-	config, err := clientcmd.BuildConfigFromFlags(b.apiserver, b.kubeconfig)
-	if err != nil {
-		klog.Fatalf("cannot create config: %v", err)
-	}
-	clusterclient, err := clusterclient.NewForConfig(config)
+	clusterClient, err := clusterclient.NewForConfig(config)
 	if err != nil {
 		klog.Fatalf("cannot create clusterclient: %v", err)
 	}
-	ocpclient, err := ocpclient.NewForConfig(config)
-	if err != nil {
-		klog.Fatalf("cannot create ocpclient: %v", err)
-	}
-	return b.buildManagedClusterLabelCollectorWithClient(ocpclient, clusterclient)
+
+	return b.buildManagedClusterCollectorWithClient(ocpClient, clusterClient)
 }
 
-func (b *Builder) buildManagedClusterInfoCollectorWithClient(ocpclient *ocpclient.Clientset, clusterclient *clusterclient.Clientset) *metricsstore.MetricsStore {
-	hubClusterID := getHubClusterID(ocpclient)
+func (b *Builder) buildManagedClusterCollectorWithClient(ocpClient ocpclient.Interface, clusterClient clusterclient.Interface) *metricsstore.MetricsStore {
+	hubClusterID := getHubClusterID(ocpClient)
 	filteredMetricFamilies := metric.FilterMetricFamilies(b.whiteBlackList,
-		getManagedClusterInfoMetricFamilies(hubClusterID, clusterclient))
+		[]metric.FamilyGenerator{
+			getManagedClusterInfoMetricFamilies(hubClusterID),
+			getManagedClusterLabelMetricFamilies(hubClusterID),
+		})
 	composedMetricGenFuncs := metric.ComposeMetricGenFuncs(filteredMetricFamilies)
 
 	familyHeaders := metric.ExtractMetricFamilyHeaders(filteredMetricFamilies)
@@ -151,25 +139,7 @@ func (b *Builder) buildManagedClusterInfoCollectorWithClient(ocpclient *ocpclien
 		composedMetricGenFuncs,
 	)
 
-	createManagedClusterInformer(b.apiserver, b.kubeconfig, store)
+	createManagedClusterInformer(b.ctx, clusterClient, store)
 
-	return store
-}
-
-func (b *Builder) buildManagedClusterLabelCollectorWithClient(ocpclient ocpclient.Interface,
-	clusterclient clusterclient.Interface) *metricsstore.MetricsStore {
-	hubClusterID := getHubClusterID(ocpclient)
-	filteredMetricFamilies := metric.FilterMetricFamilies(b.whiteBlackList,
-		getManagedClusterLabelMetricFamilies(hubClusterID, clusterclient))
-	composedMetricGenFuncs := metric.ComposeMetricGenFuncs(filteredMetricFamilies)
-
-	familyHeaders := metric.ExtractMetricFamilyHeaders(filteredMetricFamilies)
-
-	store := metricsstore.NewMetricsStore(
-		familyHeaders,
-		composedMetricGenFuncs,
-	)
-
-	createManagedClusterInformer(b.apiserver, b.kubeconfig, store)
 	return store
 }
