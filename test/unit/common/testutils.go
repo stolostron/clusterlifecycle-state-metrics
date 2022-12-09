@@ -1,7 +1,7 @@
 // Copyright (c) 2020 Red Hat, Inc.
 // Copyright Contributors to the Open Cluster Management project
 
-package collectors
+package common
 
 import (
 	"fmt"
@@ -9,19 +9,19 @@ import (
 	"sort"
 	"strings"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	metricsstore "k8s.io/kube-state-metrics/pkg/metrics_store"
-	mcv1 "open-cluster-management.io/api/cluster/v1"
 )
 
-type generateMetricsTestCase struct {
+type GenerateMetricsTestCase struct {
 	Name        string
-	Obj         *mcv1.ManagedCluster
+	Obj         interface{}
 	MetricNames []string
 	Want        string
 	Func        func(interface{}) []metricsstore.FamilyByteSlicer
 }
 
-func (testCase *generateMetricsTestCase) run() error {
+func (testCase *GenerateMetricsTestCase) Run() error {
 	metricFamilies := testCase.Func(testCase.Obj)
 	metricFamilyStrings := []string{}
 	for _, f := range metricFamilies {
@@ -70,6 +70,10 @@ func compareOutput(a, b string) error {
 // Prometheus exposition format does not force ordering of labels. Hence a test
 // should not fail due to different metric orders.
 func sortLabels(s string) string {
+	// do nothing if the metric has no label
+	if !strings.Contains(s, "{") {
+		return s
+	}
 	sorted := []string{}
 
 	for _, line := range strings.Split(s, "\n") {
@@ -141,4 +145,11 @@ func removeUnusedWhitespace(s string) string {
 	}
 
 	return strings.Join(trimmedLines, "\n")
+}
+
+func NewCondition(conditonType string, status metav1.ConditionStatus) metav1.Condition {
+	return metav1.Condition{
+		Type:   conditonType,
+		Status: status,
+	}
 }

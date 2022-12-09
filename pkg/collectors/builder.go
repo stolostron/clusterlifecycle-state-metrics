@@ -4,11 +4,22 @@
 package collectors
 
 import (
-	clusterclient "open-cluster-management.io/api/client/cluster/clientset/versioned"
 	"sort"
 	"strings"
+	"time"
+
+	addonv1alpha1 "open-cluster-management.io/api/addon/v1alpha1"
+	addonclient "open-cluster-management.io/api/client/addon/clientset/versioned"
+	clusterclient "open-cluster-management.io/api/client/cluster/clientset/versioned"
+	workclient "open-cluster-management.io/api/client/work/clientset/versioned"
+	mcv1 "open-cluster-management.io/api/cluster/v1"
+	workv1 "open-cluster-management.io/api/work/v1"
 
 	ocpclient "github.com/openshift/client-go/config/clientset/versioned"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/fields"
+	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/kube-state-metrics/pkg/metric"
 	metricsstore "k8s.io/kube-state-metrics/pkg/metrics_store"
@@ -16,7 +27,13 @@ import (
 
 	"golang.org/x/net/context"
 	"k8s.io/klog/v2"
+
+	"github.com/stolostron/clusterlifecycle-state-metrics/pkg/generators/addon"
+	"github.com/stolostron/clusterlifecycle-state-metrics/pkg/generators/cluster"
+	"github.com/stolostron/clusterlifecycle-state-metrics/pkg/generators/work"
 )
+
+var ResyncPeriod = 60 * time.Minute
 
 type whiteBlackLister interface {
 	IsIncluded(string) bool
@@ -32,12 +49,23 @@ type Builder struct {
 	ctx               context.Context
 	enabledCollectors []string
 	whiteBlackList    whiteBlackLister
+	restConfig        *rest.Config
+
+	clusterIdCache            *clusterIdCache
+	composedClusterStore      *composedStore
+	composedAddOnStore        *composedStore
+	composedManifestWorkStore *composedStore
 }
 
 // NewBuilder returns a new builder.
 func NewBuilder(ctx context.Context) *Builder {
+	clusterIdCache := newClusterIdCache()
 	return &Builder{
-		ctx: ctx,
+		ctx:                       ctx,
+		clusterIdCache:            clusterIdCache,
+		composedClusterStore:      newComposedStore(clusterIdCache),
+		composedAddOnStore:        newComposedStore(),
+		composedManifestWorkStore: newComposedStore(),
 	}
 }
 
@@ -75,12 +103,18 @@ func (b *Builder) WithWhiteBlackList(l whiteBlackLister) *Builder {
 }
 
 // Build initializes and registers all enabled collectors.
-func (b *Builder) Build() []*metricsstore.MetricsStore {
+func (b *Builder) Build() []MetricsCollector {
 	if b.whiteBlackList == nil {
 		panic("whiteBlackList should not be nil")
 	}
 
-	collectors := []*metricsstore.MetricsStore{}
+	config, err := clientcmd.BuildConfigFromFlags(b.apiserver, b.kubeconfig)
+	if err != nil {
+		klog.Fatalf("cannot create config: %v", err)
+	}
+	b.restConfig = config
+
+	collectors := []MetricsCollector{}
 	activeCollectorNames := []string{}
 
 	for _, c := range b.enabledCollectors {
@@ -97,49 +131,183 @@ func (b *Builder) Build() []*metricsstore.MetricsStore {
 
 	klog.Infof("Active collectors: %s", strings.Join(activeCollectorNames, ","))
 
+	// start watching resources
+	b.startWatchingManagedClusters()
+	b.startWatchingManagedClusterAddOns()
+	b.startWatchingManifestWorks()
+
 	return collectors
 }
 
-var availableCollectors = map[string]func(f *Builder) *metricsstore.MetricsStore{
-	"managedclusters": func(b *Builder) *metricsstore.MetricsStore { return b.buildManagedClusterCollector() },
+var availableCollectors = map[string]func(f *Builder) MetricsCollector{
+	"managedclusters":      func(b *Builder) MetricsCollector { return b.buildManagedClusterCollector() },
+	"managedclusteraddons": func(b *Builder) MetricsCollector { return b.buildManagedClusterAddOnCollector() },
+	"manifestworks":        func(b *Builder) MetricsCollector { return b.buildManifestWorkCollector() },
 }
 
-func (b *Builder) buildManagedClusterCollector() *metricsstore.MetricsStore {
-	config, err := clientcmd.BuildConfigFromFlags(b.apiserver, b.kubeconfig)
-	if err != nil {
-		klog.Fatalf("cannot create config: %v", err)
-	}
-
-	ocpClient, err := ocpclient.NewForConfig(config)
+func (b *Builder) buildManagedClusterCollector() MetricsCollector {
+	// build metrics store
+	ocpClient, err := ocpclient.NewForConfig(b.restConfig)
 	if err != nil {
 		klog.Fatalf("cannot create ocpclient: %v", err)
 	}
-
-	clusterClient, err := clusterclient.NewForConfig(config)
-	if err != nil {
-		klog.Fatalf("cannot create clusterclient: %v", err)
-	}
-
-	return b.buildManagedClusterCollectorWithClient(ocpClient, clusterClient)
-}
-
-func (b *Builder) buildManagedClusterCollectorWithClient(ocpClient ocpclient.Interface, clusterClient clusterclient.Interface) *metricsstore.MetricsStore {
 	hubClusterID := getHubClusterID(ocpClient)
+
 	filteredMetricFamilies := metric.FilterMetricFamilies(b.whiteBlackList,
 		[]metric.FamilyGenerator{
-			getManagedClusterInfoMetricFamilies(hubClusterID),
-			getManagedClusterLabelMetricFamilies(hubClusterID),
+			cluster.GetManagedClusterInfoMetricFamilies(hubClusterID),
+			cluster.GetManagedClusterLabelMetricFamilies(hubClusterID),
+			cluster.GetManagedClusterStatusMetricFamilies(),
 		})
 	composedMetricGenFuncs := metric.ComposeMetricGenFuncs(filteredMetricFamilies)
-
 	familyHeaders := metric.ExtractMetricFamilyHeaders(filteredMetricFamilies)
-
-	store := metricsstore.NewMetricsStore(
+	metricsStore := metricsstore.NewMetricsStore(
 		familyHeaders,
 		composedMetricGenFuncs,
 	)
 
-	createManagedClusterInformer(b.ctx, clusterClient, store)
+	// register to the composed cluster store
+	b.composedClusterStore.AddStore(metricsStore)
 
-	return store
+	// build counter metrics store
+	filteredMetricFamilies = metric.FilterMetricFamilies(b.whiteBlackList,
+		[]metric.FamilyGenerator{
+			cluster.GetManagedClusterCountMetricFamilies(),
+		})
+	composedMetricGenFuncs = metric.ComposeMetricGenFuncs(filteredMetricFamilies)
+	familyHeaders = metric.ExtractMetricFamilyHeaders(filteredMetricFamilies)
+	counterMetricsStore := newCounterMetricsStore(familyHeaders, composedMetricGenFuncs)
+
+	// register to the composed cluster store
+	b.composedClusterStore.AddStore(counterMetricsStore)
+
+	// return a composed collector
+	return newComposedMetricsCollector(metricsStore, counterMetricsStore)
+}
+
+func (b *Builder) buildManagedClusterAddOnCollector() MetricsCollector {
+	filteredMetricFamilies := metric.FilterMetricFamilies(b.whiteBlackList,
+		[]metric.FamilyGenerator{
+			addon.GetManagedClusterAddOnStatusMetricFamilies(b.clusterIdCache.GetClusterId),
+		})
+	composedMetricGenFuncs := metric.ComposeMetricGenFuncs(filteredMetricFamilies)
+	familyHeaders := metric.ExtractMetricFamilyHeaders(filteredMetricFamilies)
+	metricsStore := metricsstore.NewMetricsStore(
+		familyHeaders,
+		composedMetricGenFuncs,
+	)
+
+	// register to the composed addon store
+	b.composedAddOnStore.AddStore(metricsStore)
+
+	return metricsStore
+}
+
+func (b *Builder) buildManifestWorkCollector() MetricsCollector {
+	// build metrics store
+	filteredMetricFamilies := metric.FilterMetricFamilies(b.whiteBlackList,
+		[]metric.FamilyGenerator{
+			work.GetManifestWorkStatusMetricFamilies(b.clusterIdCache.GetClusterId),
+		})
+	composedMetricGenFuncs := metric.ComposeMetricGenFuncs(filteredMetricFamilies)
+	familyHeaders := metric.ExtractMetricFamilyHeaders(filteredMetricFamilies)
+	metricsStore := metricsstore.NewMetricsStore(
+		familyHeaders,
+		composedMetricGenFuncs,
+	)
+
+	// register to the composed manifestwork store
+	b.composedManifestWorkStore.AddStore(metricsStore)
+
+	// build counter metrics store
+	filteredMetricFamilies = metric.FilterMetricFamilies(b.whiteBlackList,
+		[]metric.FamilyGenerator{
+			work.GetManifestWorkCountMetricFamilies(),
+		})
+	composedMetricGenFuncs = metric.ComposeMetricGenFuncs(filteredMetricFamilies)
+	familyHeaders = metric.ExtractMetricFamilyHeaders(filteredMetricFamilies)
+	counterMetricsStore := newCounterMetricsStore(familyHeaders, composedMetricGenFuncs)
+
+	// register to the composed manifestwork store
+	b.composedManifestWorkStore.AddStore(counterMetricsStore)
+
+	// return a composed collector
+	return newComposedMetricsCollector(metricsStore, counterMetricsStore)
+}
+
+func (b *Builder) startWatchingManagedClusters() {
+	clusterClient, err := clusterclient.NewForConfig(b.restConfig)
+	if err != nil {
+		klog.Fatalf("cannot create clusterclient: %v", err)
+	}
+
+	// initialize clusterID cache
+	clusterList, err := clusterClient.ClusterV1().ManagedClusters().List(b.ctx, metav1.ListOptions{})
+	if err != nil {
+		klog.Fatalf("cannot list managed clusters: %v", err)
+	}
+
+	clusters := []interface{}{}
+	for index := range clusterList.Items {
+		clusters = append(clusters, &clusterList.Items[index])
+	}
+	if err := b.clusterIdCache.Replace(clusters, ""); err != nil {
+		klog.Fatalf("cannot initialize clusterID cache: %v", err)
+	}
+	klog.Infof("cluster ID cached for %d managed clusters", len(clusters))
+
+	// start watching managed clusters
+	lw := cache.NewListWatchFromClient(clusterClient.ClusterV1().RESTClient(), "managedclusters", metav1.NamespaceAll, fields.Everything())
+	reflector := cache.NewReflector(lw, &mcv1.ManagedCluster{}, b.composedClusterStore, ResyncPeriod)
+
+	klog.Infof("Start watching ManagedClusters")
+	go reflector.Run(b.ctx.Done())
+}
+
+func (b *Builder) startWatchingManagedClusterAddOns() {
+	if b.composedAddOnStore.Size() == 0 {
+		return
+	}
+
+	addOnClient, err := addonclient.NewForConfig(b.restConfig)
+	if err != nil {
+		klog.Fatalf("cannot create addonclient: %v", err)
+	}
+
+	// only watch the "work-manager" add-ons
+	lw := cache.NewListWatchFromClient(
+		addOnClient.AddonV1alpha1().RESTClient(),
+		"managedclusteraddons",
+		metav1.NamespaceAll,
+		fields.OneTermEqualSelector("metadata.name", "work-manager"),
+	)
+	reflector := cache.NewReflector(lw, &addonv1alpha1.ManagedClusterAddOn{}, b.composedAddOnStore, ResyncPeriod)
+
+	klog.Infof("Start watching ManagedClusterAddOns")
+	go reflector.Run(b.ctx.Done())
+}
+
+func (b *Builder) startWatchingManifestWorks() {
+	if b.composedManifestWorkStore.Size() == 0 {
+		return
+	}
+
+	workClient, err := workclient.NewForConfig(b.restConfig)
+	if err != nil {
+		klog.Fatalf("cannot create workclient: %v", err)
+	}
+
+	lw := cache.NewListWatchFromClient(workClient.WorkV1().RESTClient(), "manifestworks", metav1.NamespaceAll, fields.Everything())
+	reflector := cache.NewReflector(lw, &workv1.ManifestWork{}, b.composedManifestWorkStore, ResyncPeriod)
+
+	klog.Infof("Start watching ManifestWorks")
+	go reflector.Run(b.ctx.Done())
+}
+
+func getHubClusterID(ocpclient ocpclient.Interface) string {
+	cv, err := ocpclient.ConfigV1().ClusterVersions().Get(context.TODO(), "version", metav1.GetOptions{})
+	if err != nil {
+		klog.Fatalf("Error getting cluster version %v \n", err)
+	}
+	return string(cv.Spec.ClusterID)
 }

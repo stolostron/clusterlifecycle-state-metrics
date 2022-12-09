@@ -146,6 +146,8 @@ install-fake-crds:
 	kubectl apply -f test/functional/resources/crds/certificates_crd.yaml
 	kubectl apply -f test/functional/resources/crds/issuers_crd.yaml
 	kubectl apply -f test/functional/resources/crds/managedclusters_crd.yaml
+	kubectl apply -f test/functional/resources/crds/managedclusteraddons_crd.yaml
+	kubectl apply -f test/functional/resources/crds/manifestworks_crd.yaml
 	kubectl apply -f test/functional/resources/crds/clusterversions_crd.yaml
 	kubectl apply -f test/functional/resources/crds/servicemonitor_crd.yaml
 	@sleep 10 

@@ -26,10 +26,10 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"k8s.io/klog/v2"
 
-	metricsstore "k8s.io/kube-state-metrics/pkg/metrics_store"
 	koptions "k8s.io/kube-state-metrics/pkg/options"
 	"k8s.io/kube-state-metrics/pkg/whiteblacklist"
 
+	"github.com/stolostron/clusterlifecycle-state-metrics/pkg/collectors"
 	ocollectors "github.com/stolostron/clusterlifecycle-state-metrics/pkg/collectors"
 	"github.com/stolostron/clusterlifecycle-state-metrics/pkg/options"
 	"github.com/stolostron/clusterlifecycle-state-metrics/pkg/version"
@@ -102,6 +102,9 @@ func start(opts *options.Options) {
 
 	whiteBlackList, err := whiteblacklist.New(opts.MetricWhitelist, opts.MetricBlacklist)
 	if err != nil {
+		klog.Fatal(err)
+	}
+	if err := whiteBlackList.Parse(); err != nil {
 		klog.Fatal(err)
 	}
 
@@ -190,7 +193,7 @@ func telemetryServer(
 	log.Fatal(s.ListenAndServe())
 }
 
-func serveMetrics(collectors []*metricsstore.MetricsStore,
+func serveMetrics(collectors []collectors.MetricsCollector,
 	host string,
 	httpPort int,
 	httpsPort int,
@@ -258,7 +261,7 @@ func serveMetrics(collectors []*metricsstore.MetricsStore,
 }
 
 type metricHandler struct {
-	collectors         []*metricsstore.MetricsStore
+	collectors         []collectors.MetricsCollector
 	enableGZIPEncoding bool
 }
 

@@ -4,12 +4,9 @@
 package collectors
 
 import (
-	"context"
+	"io"
 
-	ocpclient "github.com/openshift/client-go/config/clientset/versioned"
 	"github.com/prometheus/client_golang/prometheus"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/klog/v2"
 )
 
 var (
@@ -30,10 +27,24 @@ var (
 	)
 )
 
-func getHubClusterID(ocpclient ocpclient.Interface) string {
-	cv, err := ocpclient.ConfigV1().ClusterVersions().Get(context.TODO(), "version", metav1.GetOptions{})
-	if err != nil {
-		klog.Fatalf("Error getting cluster version %v \n", err)
+type MetricsCollector interface {
+	WriteAll(w io.Writer)
+}
+
+// composedMetricsCollector is a collector that composes multiple
+// MetricsCollectors into a single one.
+type composedMetricsCollector struct {
+	collectors []MetricsCollector
+}
+
+func newComposedMetricsCollector(collectors ...MetricsCollector) *composedMetricsCollector {
+	return &composedMetricsCollector{
+		collectors: collectors,
 	}
-	return string(cv.Spec.ClusterID)
+}
+
+func (c *composedMetricsCollector) WriteAll(w io.Writer) {
+	for _, collector := range c.collectors {
+		collector.WriteAll(w)
+	}
 }

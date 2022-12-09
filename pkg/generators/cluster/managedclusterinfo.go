@@ -1,7 +1,7 @@
 // Copyright (c) 2020 Red Hat, Inc.
 // Copyright Contributors to the Open Cluster Management project
 
-package collectors
+package cluster
 
 import (
 	"strconv"
@@ -53,7 +53,7 @@ var (
 		"socket_worker"}
 )
 
-func getManagedClusterInfoMetricFamilies(hubClusterID string) metric.FamilyGenerator {
+func GetManagedClusterInfoMetricFamilies(hubClusterID string) metric.FamilyGenerator {
 	return metric.FamilyGenerator{
 		Name: descClusterInfoName,
 		Type: metric.Gauge,
