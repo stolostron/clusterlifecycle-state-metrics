@@ -11,17 +11,19 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	libgoapplier "github.com/stolostron/applier/pkg/applier"
 	libgoclient "github.com/stolostron/library-go/pkg/client"
+	libgoconfig "github.com/stolostron/library-go/pkg/config"
 	"github.com/stolostron/library-go/pkg/templateprocessor"
+	addonclient "open-cluster-management.io/api/client/addon/clientset/versioned"
+	workclient "open-cluster-management.io/api/client/work/clientset/versioned"
 
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/klog"
-
-	libgoapplier "github.com/stolostron/applier/pkg/applier"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -35,6 +37,8 @@ var (
 	clientDynamic     dynamic.Interface
 	clientApplier     *libgoapplier.Applier
 	gvrManagedcluster schema.GroupVersionResource
+	addOnClient       addonclient.Interface
+	workClient        workclient.Interface
 )
 
 func init() {
@@ -51,7 +55,7 @@ var _ = BeforeSuite(func() {
 
 func TestOCMStateMEtrics(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "ocm-sate-metrics Suite")
+	RunSpecs(t, "ocm-state-metrics Suite")
 }
 
 func setupHub() {
@@ -61,6 +65,14 @@ func setupHub() {
 	defaultClient, err = libgoclient.NewDefaultClient(kubeConfig, client.Options{})
 	Expect(err).To(BeNil())
 	clientDynamic, err = libgoclient.NewDefaultKubeClientDynamic(kubeConfig)
+	Expect(err).To(BeNil())
+
+	config, err := libgoconfig.LoadConfig("", kubeConfig, "")
+	Expect(err).To(BeNil())
+	addOnClient, err = addonclient.NewForConfig(config)
+	Expect(err).To(BeNil())
+
+	workClient, err = workclient.NewForConfig(config)
 	Expect(err).To(BeNil())
 
 	yamlReader := templateprocessor.NewYamlFileReader("resources")

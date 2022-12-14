@@ -40,3 +40,10 @@ rules:
 - apiGroups: [""]
   resources: ["nodes"]
   verbs: ["get"]
+# Allow hub to monitor add-ons & manifestworks
+- apiGroups: ["addon.open-cluster-management.io"]
+  resources: ["managedclusteraddons"]
+  verbs: ["get","list","watch"]
+- apiGroups: ["work.open-cluster-management.io"]
+  resources: ["manifestworks"]
+  verbs: ["get","list","watch"]

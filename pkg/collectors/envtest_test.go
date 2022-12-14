@@ -48,6 +48,24 @@ func setupEnvTestByName(name string) (envTest *envtest.Environment) {
 				"crds",
 				"managedclusters_crd.yaml",
 			),
+			filepath.Join(
+				"..",
+				"..",
+				"test",
+				"functional",
+				"resources",
+				"crds",
+				"managedclusteraddons_crd.yaml",
+			),
+			filepath.Join(
+				"..",
+				"..",
+				"test",
+				"functional",
+				"resources",
+				"crds",
+				"manifestworks_crd.yaml",
+			),
 		},
 	}
 	envTests[name] = envTest

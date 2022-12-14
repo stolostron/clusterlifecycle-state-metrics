@@ -14,14 +14,15 @@ import (
 	ocpclient "github.com/openshift/client-go/config/clientset/versioned"
 	"golang.org/x/net/context"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
-	metricsstore "k8s.io/kube-state-metrics/pkg/metrics_store"
 	koptions "k8s.io/kube-state-metrics/pkg/options"
 	"k8s.io/kube-state-metrics/pkg/whiteblacklist"
-	clusterclient "open-cluster-management.io/api/client/cluster/clientset/versioned"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
+
+	ocpclientfake "github.com/openshift/client-go/config/clientset/versioned/fake"
 )
 
 var (
@@ -315,111 +316,26 @@ func TestBuilder_WithWhiteBlackList(t *testing.T) {
 	}
 }
 
-func TestBuilder_buildManagedClusterCollectorWithClient(t *testing.T) {
-	const headers = `# HELP acm_managed_cluster_info Managed cluster information
-# TYPE acm_managed_cluster_info gauge
-# HELP acm_managed_cluster_labels Managed cluster labels
-# TYPE acm_managed_cluster_labels gauge
-`
-	envTest := setupEnvTest(t)
-	_, err := envtest.InstallCRDs(envTest.Config, envtest.CRDInstallOptions{
-		Paths: []string{"../../test/unit/resources/crds"},
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	_, _, err = envTest.ControlPlane.KubeCtl().Run("create", "ns", "imported-cluster")
-	if err != nil {
-		t.Fatal(err)
-	}
-	ocpClient, _ := ocpclient.NewForConfig(envTest.Config)
-	clusterClient, _ := clusterclient.NewForConfig(envTest.Config)
-
-	version := &ocinfrav1.ClusterVersion{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "version",
-		},
-		Spec: ocinfrav1.ClusterVersionSpec{
-			ClusterID: "mycluster_id",
-		},
-	}
-
-	_, err = ocpClient.ConfigV1().
-		ClusterVersions().
-		Create(context.TODO(), version, metav1.CreateOptions{})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	w, _ := whiteblacklist.New(map[string]struct{}{}, map[string]struct{}{})
-	type fields struct {
-		apiserver         string
-		kubeconfig        string
-		namespaces        koptions.NamespaceList
-		ctx               context.Context
-		enabledCollectors []string
-		whiteBlackList    whiteBlackLister
-	}
-	type args struct {
-		ocpClient     *ocpclient.Clientset
-		clusterClient *clusterclient.Clientset
-	}
-	tests := []struct {
-		name   string
-		fields fields
-		args   args
-		want   *metricsstore.MetricsStore
-	}{
-		{
-			name: "buildManagedClusterCollectorWithClient",
-			fields: fields{
-				apiserver:         envTest.ControlPlane.APIServer.SecureServing.ListenAddr.HostPort(),
-				kubeconfig:        "",
-				namespaces:        koptions.NamespaceList{},
-				ctx:               ctx,
-				enabledCollectors: []string{"managedclusters"},
-				whiteBlackList:    w,
-			},
-			args: args{
-				ocpClient:     ocpClient,
-				clusterClient: clusterClient,
-			},
-			want: nil,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			b := &Builder{
-				apiserver:         tt.fields.apiserver,
-				kubeconfig:        tt.fields.kubeconfig,
-				namespaces:        tt.fields.namespaces,
-				ctx:               tt.fields.ctx,
-				enabledCollectors: tt.fields.enabledCollectors,
-				whiteBlackList:    tt.fields.whiteBlackList,
-			}
-			got := b.buildManagedClusterCollectorWithClient(tt.args.ocpClient, tt.args.clusterClient)
-			if got == nil {
-				t.Errorf(
-					"Builder.buildManagedClusterCollectorWithClient() = %v, want %v",
-					got,
-					tt.want,
-				)
-			}
-			buf := new(bytes.Buffer)
-			got.WriteAll(buf)
-			if buf.String() != headers {
-				t.Errorf("Expected headers \n%s\ngot\n%s", headers, buf.String())
-			}
-		})
-	}
-}
-
 func TestBuilder_Build(t *testing.T) {
-	const headers = `# HELP acm_managed_cluster_info Managed cluster information
+	const (
+		clusterCollectorHeaders = `# HELP acm_managed_cluster_info Managed cluster information
 # TYPE acm_managed_cluster_info gauge
 # HELP acm_managed_cluster_labels Managed cluster labels
 # TYPE acm_managed_cluster_labels gauge
+# HELP acm_managed_cluster_status_condition Managed cluster status condition
+# TYPE acm_managed_cluster_status_condition gauge
+# HELP acm_managed_cluster_count Managed cluster count
+# TYPE acm_managed_cluster_count gauge
 `
+		addOnCollectorHeaders = `# HELP acm_managed_cluster_addon_status_condition Managed cluster add-on status condition
+# TYPE acm_managed_cluster_addon_status_condition gauge
+`
+		workCollectorHeaders = `# HELP acm_manifestwork_status_condition ManifestWork status condition
+# TYPE acm_manifestwork_status_condition gauge
+# HELP acm_manifestwork_count ManifestWork count
+# TYPE acm_manifestwork_count gauge
+`
+	)
 
 	envTest := setupEnvTest(t)
 	_, err := envtest.InstallCRDs(envTest.Config, envtest.CRDInstallOptions{
@@ -485,7 +401,7 @@ func TestBuilder_Build(t *testing.T) {
 			},
 		},
 		{
-			name: "managedclusterinfos enabled",
+			name: "managedclusters enabled",
 			fields: fields{
 				kubeconfig:        kubeconfigFile.Name(),
 				namespaces:        koptions.NamespaceList{},
@@ -493,7 +409,18 @@ func TestBuilder_Build(t *testing.T) {
 				enabledCollectors: []string{"managedclusters"},
 				whiteBlackList:    w,
 			},
-			want: []string{headers},
+			want: []string{clusterCollectorHeaders},
+		},
+		{
+			name: "all collectors enabled",
+			fields: fields{
+				kubeconfig:        kubeconfigFile.Name(),
+				namespaces:        koptions.NamespaceList{},
+				ctx:               ctx,
+				enabledCollectors: []string{"managedclusters", "managedclusteraddons", "manifestworks"},
+				whiteBlackList:    w,
+			},
+			want: []string{clusterCollectorHeaders, addOnCollectorHeaders, workCollectorHeaders},
 		},
 	}
 	for _, tt := range tests {
@@ -543,4 +470,37 @@ func writeKubeconfigFile(restConfig *rest.Config, kubeconfigFileName string) err
 	}
 
 	return clientcmd.WriteToFile(kubeconfig, kubeconfigFileName)
+}
+
+func Test_getHubClusterID(t *testing.T) {
+
+	tests := []struct {
+		name           string
+		exisingObjects []runtime.Object
+		want           string
+	}{
+		{
+			name: "Get cluster id",
+			exisingObjects: []runtime.Object{
+				&ocinfrav1.ClusterVersion{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "version",
+					},
+					Spec: ocinfrav1.ClusterVersionSpec{
+						ClusterID: "mycluster_id",
+					},
+				},
+			},
+			want: "mycluster_id",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			fakeOcpClient := ocpclientfake.NewSimpleClientset(tt.exisingObjects...)
+			if got := getHubClusterID(fakeOcpClient); got != tt.want {
+				t.Errorf("getHubClusterID() = %v, want %v", got, tt.want)
+			}
+		})
+	}
 }

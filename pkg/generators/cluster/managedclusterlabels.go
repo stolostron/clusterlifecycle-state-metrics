@@ -1,7 +1,7 @@
 // Copyright (c) 2022 Red Hat, Inc.
 // Copyright Contributors to the Open Cluster Management project
 
-package collectors
+package cluster
 
 import (
 	"regexp"
@@ -21,7 +21,7 @@ var (
 	}
 )
 
-func getManagedClusterLabelMetricFamilies(hubClusterID string) metric.FamilyGenerator {
+func GetManagedClusterLabelMetricFamilies(hubClusterID string) metric.FamilyGenerator {
 	return metric.FamilyGenerator{
 		Name: descManagedClusterLabelInfoName,
 		Type: metric.Gauge,

@@ -1,12 +1,13 @@
 // Copyright (c) 2020 Red Hat, Inc.
 // Copyright Contributors to the Open Cluster Management project
 
-package collectors
+package cluster
 
 import (
 	"testing"
 
 	mciv1beta1 "github.com/stolostron/cluster-lifecycle-api/clusterinfo/v1beta1"
+	testcommon "github.com/stolostron/clusterlifecycle-state-metrics/test/unit/common"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/kube-state-metrics/pkg/metric"
@@ -167,7 +168,7 @@ func Test_getManagedClusterMetricFamilies(t *testing.T) {
 		},
 	}
 
-	tests := []generateMetricsTestCase{
+	tests := []testcommon.GenerateMetricsTestCase{
 		{
 			Name:        "cluster info",
 			Obj:         mc,
@@ -206,9 +207,9 @@ func Test_getManagedClusterMetricFamilies(t *testing.T) {
 	}
 	for i, c := range tests {
 		c.Func = metric.ComposeMetricGenFuncs(
-			[]metric.FamilyGenerator{getManagedClusterInfoMetricFamilies("mycluster_id")},
+			[]metric.FamilyGenerator{GetManagedClusterInfoMetricFamilies("mycluster_id")},
 		)
-		if err := c.run(); err != nil {
+		if err := c.Run(); err != nil {
 			t.Errorf("unexpected collecting result in %v run:\n%s", i, err)
 		}
 	}
