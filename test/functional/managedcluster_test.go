@@ -61,12 +61,26 @@ acm_managed_cluster_count 4`
 
 	clusterStatusResponse = `# HELP acm_managed_cluster_status_condition Managed cluster status condition
 # TYPE acm_managed_cluster_status_condition gauge
+acm_managed_cluster_status_condition{managed_cluster_id="empty-cluster",managed_cluster_name="empty-cluster",condition="ManagedClusterConditionAvailable",status="true"} 0
+acm_managed_cluster_status_condition{managed_cluster_id="empty-cluster",managed_cluster_name="empty-cluster",condition="ManagedClusterConditionAvailable",status="false"} 0
 acm_managed_cluster_status_condition{managed_cluster_id="empty-cluster",managed_cluster_name="empty-cluster",condition="ManagedClusterConditionAvailable",status="unknown"} 1
 acm_managed_cluster_status_condition{managed_cluster_id="local_cluster_id",managed_cluster_name="local-cluster",condition="hello",status="true"} 1
+acm_managed_cluster_status_condition{managed_cluster_id="local_cluster_id",managed_cluster_name="local-cluster",condition="hello",status="false"} 0
+acm_managed_cluster_status_condition{managed_cluster_id="local_cluster_id",managed_cluster_name="local-cluster",condition="hello",status="unknown"} 0
+acm_managed_cluster_status_condition{managed_cluster_id="local_cluster_id",managed_cluster_name="local-cluster",condition="ManagedClusterConditionAvailable",status="true"} 0
+acm_managed_cluster_status_condition{managed_cluster_id="local_cluster_id",managed_cluster_name="local-cluster",condition="ManagedClusterConditionAvailable",status="false"} 0
 acm_managed_cluster_status_condition{managed_cluster_id="local_cluster_id",managed_cluster_name="local-cluster",condition="ManagedClusterConditionAvailable",status="unknown"} 1
 acm_managed_cluster_status_condition{managed_cluster_id="hive_cluster_id",managed_cluster_name="cluster-hive",condition="hello",status="true"} 1
+acm_managed_cluster_status_condition{managed_cluster_id="hive_cluster_id",managed_cluster_name="cluster-hive",condition="hello",status="false"} 0
+acm_managed_cluster_status_condition{managed_cluster_id="hive_cluster_id",managed_cluster_name="cluster-hive",condition="hello",status="unknown"} 0
+acm_managed_cluster_status_condition{managed_cluster_id="hive_cluster_id",managed_cluster_name="cluster-hive",condition="ManagedClusterConditionAvailable",status="true"} 0
+acm_managed_cluster_status_condition{managed_cluster_id="hive_cluster_id",managed_cluster_name="cluster-hive",condition="ManagedClusterConditionAvailable",status="false"} 0
 acm_managed_cluster_status_condition{managed_cluster_id="hive_cluster_id",managed_cluster_name="cluster-hive",condition="ManagedClusterConditionAvailable",status="unknown"} 1
 acm_managed_cluster_status_condition{managed_cluster_id="import_cluster_id",managed_cluster_name="cluster-import",condition="hello",status="true"} 1
+acm_managed_cluster_status_condition{managed_cluster_id="import_cluster_id",managed_cluster_name="cluster-import",condition="hello",status="false"} 0
+acm_managed_cluster_status_condition{managed_cluster_id="import_cluster_id",managed_cluster_name="cluster-import",condition="hello",status="unknown"} 0
+acm_managed_cluster_status_condition{managed_cluster_id="import_cluster_id",managed_cluster_name="cluster-import",condition="ManagedClusterConditionAvailable",status="true"} 0
+acm_managed_cluster_status_condition{managed_cluster_id="import_cluster_id",managed_cluster_name="cluster-import",condition="ManagedClusterConditionAvailable",status="false"} 0
 acm_managed_cluster_status_condition{managed_cluster_id="import_cluster_id",managed_cluster_name="cluster-import",condition="ManagedClusterConditionAvailable",status="unknown"} 1`
 )
 
