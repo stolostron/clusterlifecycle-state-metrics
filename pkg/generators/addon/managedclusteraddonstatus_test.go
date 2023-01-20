@@ -42,16 +42,24 @@ func Test_getManagedClusterAddOnStatusMetricFamilies(t *testing.T) {
 			Obj:         addOn,
 			MetricNames: []string{"acm_managed_cluster_addon_status_condition"},
 			Want: `acm_managed_cluster_addon_status_condition{addon_name="work-manager",managed_cluster_id="local-cluster",managed_cluster_name="local-cluster",condition="UnsupportedConfiguration",status="true"} 1
+acm_managed_cluster_addon_status_condition{addon_name="work-manager",managed_cluster_id="local-cluster",managed_cluster_name="local-cluster",condition="UnsupportedConfiguration",status="false"} 0
 acm_managed_cluster_addon_status_condition{addon_name="work-manager",managed_cluster_id="local-cluster",managed_cluster_name="local-cluster",condition="ManifestApplied",status="true"} 1
+acm_managed_cluster_addon_status_condition{addon_name="work-manager",managed_cluster_id="local-cluster",managed_cluster_name="local-cluster",condition="ManifestApplied",status="false"} 0
 acm_managed_cluster_addon_status_condition{addon_name="work-manager",managed_cluster_id="local-cluster",managed_cluster_name="local-cluster",condition="RegistrationApplied",status="true"} 1
+acm_managed_cluster_addon_status_condition{addon_name="work-manager",managed_cluster_id="local-cluster",managed_cluster_name="local-cluster",condition="RegistrationApplied",status="false"} 0
 acm_managed_cluster_addon_status_condition{addon_name="work-manager",managed_cluster_id="local-cluster",managed_cluster_name="local-cluster",condition="ClusterCertificateRotated",status="true"} 1
-acm_managed_cluster_addon_status_condition{addon_name="work-manager",managed_cluster_id="local-cluster",managed_cluster_name="local-cluster",condition="Available",status="true"} 1`,
+acm_managed_cluster_addon_status_condition{addon_name="work-manager",managed_cluster_id="local-cluster",managed_cluster_name="local-cluster",condition="ClusterCertificateRotated",status="false"} 0
+acm_managed_cluster_addon_status_condition{addon_name="work-manager",managed_cluster_id="local-cluster",managed_cluster_name="local-cluster",condition="Available",status="true"} 1
+acm_managed_cluster_addon_status_condition{addon_name="work-manager",managed_cluster_id="local-cluster",managed_cluster_name="local-cluster",condition="Available",status="false"} 0
+acm_managed_cluster_addon_status_condition{addon_name="work-manager",managed_cluster_id="local-cluster",managed_cluster_name="local-cluster",condition="Available",status="unknown"} 0`,
 		},
 		{
 			Name:        "test addon status without condition",
 			Obj:         addOnWithoutCondition,
 			MetricNames: []string{"acm_managed_cluster_addon_status_condition"},
-			Want:        `acm_managed_cluster_addon_status_condition{addon_name="work-manager",managed_cluster_id="cluster1",managed_cluster_name="cluster1",condition="Available",status="unknown"} 1`,
+			Want: `acm_managed_cluster_addon_status_condition{addon_name="work-manager",managed_cluster_id="cluster1",managed_cluster_name="cluster1",condition="Available",status="true"} 0
+acm_managed_cluster_addon_status_condition{addon_name="work-manager",managed_cluster_id="cluster1",managed_cluster_name="cluster1",condition="Available",status="false"} 0
+acm_managed_cluster_addon_status_condition{addon_name="work-manager",managed_cluster_id="cluster1",managed_cluster_name="cluster1",condition="Available",status="unknown"} 1`,
 		},
 	}
 

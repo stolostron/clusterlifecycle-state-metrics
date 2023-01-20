@@ -18,6 +18,7 @@ import (
 	ocpclient "github.com/openshift/client-go/config/clientset/versioned"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
+	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/clientcmd"
@@ -254,7 +255,7 @@ func (b *Builder) startWatchingManagedClusters() {
 	if err := b.clusterIdCache.Replace(clusters, ""); err != nil {
 		klog.Fatalf("cannot initialize clusterID cache: %v", err)
 	}
-	klog.Infof("cluster ID cached for %d managed clusters", len(clusters))
+	klog.Infof("Cluster ID cached for %d managed clusters", len(clusters))
 
 	// start watching managed clusters
 	lw := cache.NewListWatchFromClient(clusterClient.ClusterV1().RESTClient(), "managedclusters", metav1.NamespaceAll, fields.Everything())
@@ -274,13 +275,26 @@ func (b *Builder) startWatchingManagedClusterAddOns() {
 		klog.Fatalf("cannot create addonclient: %v", err)
 	}
 
-	// only watch the "work-manager" add-ons
-	lw := cache.NewListWatchFromClient(
-		addOnClient.AddonV1alpha1().RESTClient(),
-		"managedclusteraddons",
-		metav1.NamespaceAll,
-		fields.OneTermEqualSelector("metadata.name", "work-manager"),
-	)
+	// refresh the addon store once the cluster ID of a certian cluster is changed
+	b.clusterIdCache.AddOnClusterIdChangeFunc(func(clusterName string) error {
+		klog.Infof("Refresh the addon metrics since the cluster ID of cluster %q is changed", clusterName)
+		addons, err := addOnClient.AddonV1alpha1().ManagedClusterAddOns(clusterName).List(b.ctx, metav1.ListOptions{})
+		if err != nil {
+			return err
+		}
+
+		errs := []error{}
+		for index := range addons.Items {
+			if err = b.composedAddOnStore.Update(&addons.Items[index]); err != nil {
+				errs = append(errs, err)
+			}
+		}
+
+		return utilerrors.NewAggregate(errs)
+	})
+
+	lw := cache.NewListWatchFromClient(addOnClient.AddonV1alpha1().RESTClient(), "managedclusteraddons",
+		metav1.NamespaceAll, fields.Everything())
 	reflector := cache.NewReflector(lw, &addonv1alpha1.ManagedClusterAddOn{}, b.composedAddOnStore, ResyncPeriod)
 
 	klog.Infof("Start watching ManagedClusterAddOns")
@@ -296,6 +310,24 @@ func (b *Builder) startWatchingManifestWorks() {
 	if err != nil {
 		klog.Fatalf("cannot create workclient: %v", err)
 	}
+
+	// refresh the manifestwork store once the cluster ID of a certian cluster is changed
+	b.clusterIdCache.AddOnClusterIdChangeFunc(func(clusterName string) error {
+		klog.Infof("Refresh the manifestwork metrics since the cluster ID of cluster %q is changed", clusterName)
+		works, err := workClient.WorkV1().ManifestWorks(clusterName).List(b.ctx, metav1.ListOptions{})
+		if err != nil {
+			return err
+		}
+
+		errs := []error{}
+		for index := range works.Items {
+			if err = b.composedManifestWorkStore.Update(&works.Items[index]); err != nil {
+				errs = append(errs, err)
+			}
+		}
+
+		return utilerrors.NewAggregate(errs)
+	})
 
 	lw := cache.NewListWatchFromClient(workClient.WorkV1().RESTClient(), "manifestworks", metav1.NamespaceAll, fields.Everything())
 	reflector := cache.NewReflector(lw, &workv1.ManifestWork{}, b.composedManifestWorkStore, ResyncPeriod)
