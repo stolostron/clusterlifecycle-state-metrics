@@ -7,6 +7,7 @@ import (
 	"k8s.io/kube-state-metrics/pkg/metric"
 
 	"github.com/stolostron/clusterlifecycle-state-metrics/pkg/generators"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/klog/v2"
 	addonv1alpha1 "open-cluster-management.io/api/addon/v1alpha1"
 )
@@ -15,7 +16,7 @@ var (
 	descAddOnStatusName           = "acm_managed_cluster_addon_status_condition"
 	descAddOnStatusHelp           = "Managed cluster add-on status condition"
 	requiredAddOnStatusConditions = []string{
-		"Available",
+		addonv1alpha1.ManagedClusterAddOnConditionAvailable,
 	}
 )
 
@@ -46,9 +47,26 @@ func GetManagedClusterAddOnStatusMetricFamilies(getClusterIdFunc func(string) st
 				keys,
 				values,
 				requiredAddOnStatusConditions,
+				getAllowedAddOnConditionStatuses,
 			)
 			klog.Infof("Returning %v", string(f.ByteSlice()))
 			return &f
 		},
+	}
+}
+
+func getAllowedAddOnConditionStatuses(conditionType string) []metav1.ConditionStatus {
+	switch conditionType {
+	case "RegistrationApplied", "ManifestApplied", "ClusterCertificateRotated", "UnsupportedConfiguration":
+		return []metav1.ConditionStatus{
+			metav1.ConditionTrue,
+			metav1.ConditionFalse,
+		}
+	default:
+		return []metav1.ConditionStatus{
+			metav1.ConditionTrue,
+			metav1.ConditionFalse,
+			metav1.ConditionUnknown,
+		}
 	}
 }

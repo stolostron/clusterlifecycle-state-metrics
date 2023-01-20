@@ -4,6 +4,7 @@
 package collectors
 
 import (
+	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/client-go/tools/cache"
 )
 
@@ -30,35 +31,38 @@ func (s *composedStore) Size() int {
 
 // Add implements the Add method of the store interface.
 func (s *composedStore) Add(obj interface{}) error {
+	errs := []error{}
 	for _, store := range s.stores {
 		if err := store.Add(obj); err != nil {
-			return err
+			errs = append(errs, err)
 		}
 	}
 
-	return nil
+	return utilerrors.NewAggregate(errs)
 }
 
 // Update implements the Update method of the store interface.
 func (s *composedStore) Update(obj interface{}) error {
+	errs := []error{}
 	for _, store := range s.stores {
 		if err := store.Update(obj); err != nil {
-			return err
+			errs = append(errs, err)
 		}
 	}
 
-	return nil
+	return utilerrors.NewAggregate(errs)
 }
 
 // Delete implements the Delete method of the store interface.
 func (s *composedStore) Delete(obj interface{}) error {
+	errs := []error{}
 	for _, store := range s.stores {
 		if err := store.Delete(obj); err != nil {
-			return err
+			errs = append(errs, err)
 		}
 	}
 
-	return nil
+	return utilerrors.NewAggregate(errs)
 }
 
 // List implements the List method of the store interface.
@@ -83,22 +87,24 @@ func (s *composedStore) GetByKey(key string) (item interface{}, exists bool, err
 
 // Replace implements the Replace method of the store interface.
 func (s *composedStore) Replace(list []interface{}, str string) error {
+	errs := []error{}
 	for _, store := range s.stores {
 		if err := store.Replace(list, str); err != nil {
-			return err
+			errs = append(errs, err)
 		}
 	}
 
-	return nil
+	return utilerrors.NewAggregate(errs)
 }
 
 // Resync implements the Resync method of the store interface.
 func (s *composedStore) Resync() error {
+	errs := []error{}
 	for _, store := range s.stores {
 		if err := store.Resync(); err != nil {
-			return err
+			errs = append(errs, err)
 		}
 	}
 
-	return nil
+	return utilerrors.NewAggregate(errs)
 }

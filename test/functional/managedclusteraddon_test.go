@@ -27,14 +27,34 @@ import (
 const (
 	addOnStatusResponse = `# HELP acm_managed_cluster_addon_status_condition Managed cluster add-on status condition
 # TYPE acm_managed_cluster_addon_status_condition gauge
+acm_managed_cluster_addon_status_condition{addon_name="test-addon",managed_cluster_id="empty-cluster",managed_cluster_name="empty-cluster",condition="Available",status="true"} 0
+acm_managed_cluster_addon_status_condition{addon_name="test-addon",managed_cluster_id="empty-cluster",managed_cluster_name="empty-cluster",condition="Available",status="false"} 0
+acm_managed_cluster_addon_status_condition{addon_name="test-addon",managed_cluster_id="empty-cluster",managed_cluster_name="empty-cluster",condition="Available",status="unknown"} 1
+acm_managed_cluster_addon_status_condition{addon_name="work-manager",managed_cluster_id="empty-cluster",managed_cluster_name="empty-cluster",condition="Available",status="true"} 0
+acm_managed_cluster_addon_status_condition{addon_name="work-manager",managed_cluster_id="empty-cluster",managed_cluster_name="empty-cluster",condition="Available",status="false"} 0
 acm_managed_cluster_addon_status_condition{addon_name="work-manager",managed_cluster_id="empty-cluster",managed_cluster_name="empty-cluster",condition="Available",status="unknown"} 1
+acm_managed_cluster_addon_status_condition{addon_name="test-addon",managed_cluster_id="local_cluster_id",managed_cluster_name="local-cluster",condition="Available",status="true"} 1
+acm_managed_cluster_addon_status_condition{addon_name="test-addon",managed_cluster_id="local_cluster_id",managed_cluster_name="local-cluster",condition="Available",status="false"} 0
+acm_managed_cluster_addon_status_condition{addon_name="test-addon",managed_cluster_id="local_cluster_id",managed_cluster_name="local-cluster",condition="Available",status="unknown"} 0
 acm_managed_cluster_addon_status_condition{addon_name="work-manager",managed_cluster_id="local_cluster_id",managed_cluster_name="local-cluster",condition="Available",status="true"} 1
+acm_managed_cluster_addon_status_condition{addon_name="work-manager",managed_cluster_id="local_cluster_id",managed_cluster_name="local-cluster",condition="Available",status="false"} 0
+acm_managed_cluster_addon_status_condition{addon_name="work-manager",managed_cluster_id="local_cluster_id",managed_cluster_name="local-cluster",condition="Available",status="unknown"} 0
+acm_managed_cluster_addon_status_condition{addon_name="test-addon",managed_cluster_id="hive_cluster_id",managed_cluster_name="cluster-hive",condition="Available",status="true"} 0
+acm_managed_cluster_addon_status_condition{addon_name="test-addon",managed_cluster_id="hive_cluster_id",managed_cluster_name="cluster-hive",condition="Available",status="false"} 0
+acm_managed_cluster_addon_status_condition{addon_name="test-addon",managed_cluster_id="hive_cluster_id",managed_cluster_name="cluster-hive",condition="Available",status="unknown"} 1
+acm_managed_cluster_addon_status_condition{addon_name="work-manager",managed_cluster_id="hive_cluster_id",managed_cluster_name="cluster-hive",condition="Available",status="true"} 0
+acm_managed_cluster_addon_status_condition{addon_name="work-manager",managed_cluster_id="hive_cluster_id",managed_cluster_name="cluster-hive",condition="Available",status="false"} 0
 acm_managed_cluster_addon_status_condition{addon_name="work-manager",managed_cluster_id="hive_cluster_id",managed_cluster_name="cluster-hive",condition="Available",status="unknown"} 1
-acm_managed_cluster_addon_status_condition{addon_name="work-manager",managed_cluster_id="import_cluster_id",managed_cluster_name="cluster-import",condition="Available",status="false"} 1`
+acm_managed_cluster_addon_status_condition{addon_name="test-addon",managed_cluster_id="import_cluster_id",managed_cluster_name="cluster-import",condition="Available",status="true"} 0
+acm_managed_cluster_addon_status_condition{addon_name="test-addon",managed_cluster_id="import_cluster_id",managed_cluster_name="cluster-import",condition="Available",status="false"} 1
+acm_managed_cluster_addon_status_condition{addon_name="test-addon",managed_cluster_id="import_cluster_id",managed_cluster_name="cluster-import",condition="Available",status="unknown"} 0
+acm_managed_cluster_addon_status_condition{addon_name="work-manager",managed_cluster_id="import_cluster_id",managed_cluster_name="cluster-import",condition="Available",status="true"} 0
+acm_managed_cluster_addon_status_condition{addon_name="work-manager",managed_cluster_id="import_cluster_id",managed_cluster_name="cluster-import",condition="Available",status="false"} 1
+acm_managed_cluster_addon_status_condition{addon_name="work-manager",managed_cluster_id="import_cluster_id",managed_cluster_name="cluster-import",condition="Available",status="unknown"} 0`
 )
 
 var _ = Describe("ManagedClusterAddOn Metrics", func() {
-	addOnName := "work-manager"
+	addOnNames := []string{"work-manager", "test-addon"}
 	clusterNames := []string{"empty-cluster", "local-cluster", "cluster-hive", "cluster-import"}
 
 	BeforeEach(func() {
@@ -42,39 +62,43 @@ var _ = Describe("ManagedClusterAddOn Metrics", func() {
 		SetDefaultEventuallyPollingInterval(1 * time.Second)
 
 		// create addons for clusters
-		err := newManagedClusterAddOn(addOnName, "empty-cluster", nil)
-		Expect(err).To(BeNil())
+		for _, addOnName := range addOnNames {
+			err := newManagedClusterAddOn(addOnName, "empty-cluster", nil)
+			Expect(err).To(BeNil())
 
-		err = newManagedClusterAddOn(addOnName, "local-cluster", []metav1.Condition{
-			{
-				Type:               "Available",
-				Status:             metav1.ConditionTrue,
-				Message:            "Available",
-				Reason:             "Available",
-				LastTransitionTime: metav1.Now(),
-			},
-		})
-		Expect(err).To(BeNil())
+			err = newManagedClusterAddOn(addOnName, "local-cluster", []metav1.Condition{
+				{
+					Type:               "Available",
+					Status:             metav1.ConditionTrue,
+					Message:            "Available",
+					Reason:             "Available",
+					LastTransitionTime: metav1.Now(),
+				},
+			})
+			Expect(err).To(BeNil())
 
-		err = newManagedClusterAddOn(addOnName, "cluster-hive", nil)
-		Expect(err).To(BeNil())
+			err = newManagedClusterAddOn(addOnName, "cluster-hive", nil)
+			Expect(err).To(BeNil())
 
-		err = newManagedClusterAddOn(addOnName, "cluster-import", []metav1.Condition{
-			{
-				Type:               "Available",
-				Status:             metav1.ConditionFalse,
-				Message:            "NotAvailable",
-				Reason:             "NotAvailable",
-				LastTransitionTime: metav1.Now(),
-			},
-		})
-		Expect(err).To(BeNil())
+			err = newManagedClusterAddOn(addOnName, "cluster-import", []metav1.Condition{
+				{
+					Type:               "Available",
+					Status:             metav1.ConditionFalse,
+					Message:            "NotAvailable",
+					Reason:             "NotAvailable",
+					LastTransitionTime: metav1.Now(),
+				},
+			})
+			Expect(err).To(BeNil())
+		}
 	})
 
 	AfterEach(func() {
 		for _, clusterName := range clusterNames {
-			err := addOnClient.AddonV1alpha1().ManagedClusterAddOns(clusterName).Delete(context.TODO(), addOnName, metav1.DeleteOptions{})
-			Expect(err).To(BeNil())
+			for _, addOnName := range addOnNames {
+				err := addOnClient.AddonV1alpha1().ManagedClusterAddOns(clusterName).Delete(context.TODO(), addOnName, metav1.DeleteOptions{})
+				Expect(err).To(BeNil())
+			}
 		}
 	})
 
@@ -106,8 +130,8 @@ var _ = Describe("ManagedClusterAddOn Metrics", func() {
 						return err
 					}
 
-					expectResult := map[string]string{"empty-cluster": "1", "cluster-hive": "1",
-						"cluster-import": "1", "local-cluster": "1"}
+					expectResult := map[string]string{"empty-cluster": "2", "cluster-hive": "2",
+						"cluster-import": "2", "local-cluster": "2"}
 					actualResult := map[string]string{}
 					for _, r := range queryResult.Data.Result {
 						key := r.Metric.ManagedClusterName

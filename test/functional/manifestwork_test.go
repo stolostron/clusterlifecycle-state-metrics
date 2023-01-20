@@ -29,13 +29,29 @@ import (
 const (
 	workStatusResponse = `# HELP acm_manifestwork_status_condition ManifestWork status condition
 # TYPE acm_manifestwork_status_condition gauge
+acm_manifestwork_status_condition{manifestwork="test-work1",managed_cluster_id="hive_cluster_id",managed_cluster_name="cluster-hive",condition="Applied",status="true"} 0
+acm_manifestwork_status_condition{manifestwork="test-work1",managed_cluster_id="hive_cluster_id",managed_cluster_name="cluster-hive",condition="Applied",status="false"} 0
 acm_manifestwork_status_condition{manifestwork="test-work1",managed_cluster_id="hive_cluster_id",managed_cluster_name="cluster-hive",condition="Applied",status="unknown"} 1
+acm_manifestwork_status_condition{manifestwork="test-work1",managed_cluster_id="hive_cluster_id",managed_cluster_name="cluster-hive",condition="Available",status="true"} 0
 acm_manifestwork_status_condition{manifestwork="test-work1",managed_cluster_id="hive_cluster_id",managed_cluster_name="cluster-hive",condition="Available",status="false"} 1
+acm_manifestwork_status_condition{manifestwork="test-work1",managed_cluster_id="hive_cluster_id",managed_cluster_name="cluster-hive",condition="Available",status="unknown"} 0
+acm_manifestwork_status_condition{manifestwork="test-work1",managed_cluster_id="import_cluster_id",managed_cluster_name="cluster-import",condition="Applied",status="true"} 0
+acm_manifestwork_status_condition{manifestwork="test-work1",managed_cluster_id="import_cluster_id",managed_cluster_name="cluster-import",condition="Applied",status="false"} 0
 acm_manifestwork_status_condition{manifestwork="test-work1",managed_cluster_id="import_cluster_id",managed_cluster_name="cluster-import",condition="Applied",status="unknown"} 1
+acm_manifestwork_status_condition{manifestwork="test-work1",managed_cluster_id="import_cluster_id",managed_cluster_name="cluster-import",condition="Available",status="true"} 0
+acm_manifestwork_status_condition{manifestwork="test-work1",managed_cluster_id="import_cluster_id",managed_cluster_name="cluster-import",condition="Available",status="false"} 0
 acm_manifestwork_status_condition{manifestwork="test-work1",managed_cluster_id="import_cluster_id",managed_cluster_name="cluster-import",condition="Available",status="unknown"} 1
+acm_manifestwork_status_condition{manifestwork="test-work1",managed_cluster_id="empty-cluster",managed_cluster_name="empty-cluster",condition="Applied",status="true"} 0
+acm_manifestwork_status_condition{manifestwork="test-work1",managed_cluster_id="empty-cluster",managed_cluster_name="empty-cluster",condition="Applied",status="false"} 0
 acm_manifestwork_status_condition{manifestwork="test-work1",managed_cluster_id="empty-cluster",managed_cluster_name="empty-cluster",condition="Applied",status="unknown"} 1
+acm_manifestwork_status_condition{manifestwork="test-work1",managed_cluster_id="empty-cluster",managed_cluster_name="empty-cluster",condition="Available",status="true"} 0
+acm_manifestwork_status_condition{manifestwork="test-work1",managed_cluster_id="empty-cluster",managed_cluster_name="empty-cluster",condition="Available",status="false"} 0
 acm_manifestwork_status_condition{manifestwork="test-work1",managed_cluster_id="empty-cluster",managed_cluster_name="empty-cluster",condition="Available",status="unknown"} 1
 acm_manifestwork_status_condition{manifestwork="test-work1",managed_cluster_id="local_cluster_id",managed_cluster_name="local-cluster",condition="Applied",status="true"} 1
+acm_manifestwork_status_condition{manifestwork="test-work1",managed_cluster_id="local_cluster_id",managed_cluster_name="local-cluster",condition="Applied",status="false"} 0
+acm_manifestwork_status_condition{manifestwork="test-work1",managed_cluster_id="local_cluster_id",managed_cluster_name="local-cluster",condition="Applied",status="unknown"} 0
+acm_manifestwork_status_condition{manifestwork="test-work1",managed_cluster_id="local_cluster_id",managed_cluster_name="local-cluster",condition="Available",status="true"} 0
+acm_manifestwork_status_condition{manifestwork="test-work1",managed_cluster_id="local_cluster_id",managed_cluster_name="local-cluster",condition="Available",status="false"} 0
 acm_manifestwork_status_condition{manifestwork="test-work1",managed_cluster_id="local_cluster_id",managed_cluster_name="local-cluster",condition="Available",status="unknown"} 1`
 
 	workCountResponse = `# HELP acm_manifestwork_count ManifestWork count

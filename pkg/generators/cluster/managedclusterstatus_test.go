@@ -39,15 +39,22 @@ func Test_getManagedClusterStatusMetricFamilies(t *testing.T) {
 			Obj:         mc,
 			MetricNames: []string{"acm_managed_cluster_status_condition"},
 			Want: `acm_managed_cluster_status_condition{managed_cluster_id="cluster1",managed_cluster_name="cluster1",condition="HubAcceptedManagedCluster",status="true"} 1
+acm_managed_cluster_status_condition{managed_cluster_id="cluster1",managed_cluster_name="cluster1",condition="HubAcceptedManagedCluster",status="false"} 0
 acm_managed_cluster_status_condition{managed_cluster_id="cluster1",managed_cluster_name="cluster1",condition="ExternalManagedKubeconfigCreatedSucceeded",status="true"} 1
+acm_managed_cluster_status_condition{managed_cluster_id="cluster1",managed_cluster_name="cluster1",condition="ExternalManagedKubeconfigCreatedSucceeded",status="false"} 0
 acm_managed_cluster_status_condition{managed_cluster_id="cluster1",managed_cluster_name="cluster1",condition="ManagedClusterJoined",status="true"} 1
-acm_managed_cluster_status_condition{managed_cluster_id="cluster1",managed_cluster_name="cluster1",condition="ManagedClusterConditionAvailable",status="true"} 1`,
+acm_managed_cluster_status_condition{managed_cluster_id="cluster1",managed_cluster_name="cluster1",condition="ManagedClusterJoined",status="false"} 0
+acm_managed_cluster_status_condition{managed_cluster_id="cluster1",managed_cluster_name="cluster1",condition="ManagedClusterConditionAvailable",status="true"} 1
+acm_managed_cluster_status_condition{managed_cluster_id="cluster1",managed_cluster_name="cluster1",condition="ManagedClusterConditionAvailable",status="false"} 0
+acm_managed_cluster_status_condition{managed_cluster_id="cluster1",managed_cluster_name="cluster1",condition="ManagedClusterConditionAvailable",status="unknown"} 0`,
 		},
 		{
 			Name:        "test cluster status without condition",
 			Obj:         mcWithoutCondition,
 			MetricNames: []string{"acm_managed_cluster_status_condition"},
-			Want:        `acm_managed_cluster_status_condition{managed_cluster_id="cluster1",managed_cluster_name="cluster1",condition="ManagedClusterConditionAvailable",status="unknown"} 1`,
+			Want: `acm_managed_cluster_status_condition{managed_cluster_id="cluster1",managed_cluster_name="cluster1",condition="ManagedClusterConditionAvailable",status="true"} 0
+acm_managed_cluster_status_condition{managed_cluster_id="cluster1",managed_cluster_name="cluster1",condition="ManagedClusterConditionAvailable",status="false"} 0
+acm_managed_cluster_status_condition{managed_cluster_id="cluster1",managed_cluster_name="cluster1",condition="ManagedClusterConditionAvailable",status="unknown"} 1`,
 		},
 	}
 

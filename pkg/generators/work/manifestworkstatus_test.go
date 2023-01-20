@@ -39,13 +39,21 @@ func Test_getManifestWorkStatusMetricFamilies(t *testing.T) {
 			Obj:         work,
 			MetricNames: []string{"acm_manifestwork_status_condition"},
 			Want: `acm_manifestwork_status_condition{manifestwork="local-cluster-klusterlet",managed_cluster_id="local-cluster",managed_cluster_name="local-cluster",condition="Available",status="true"} 1
-acm_manifestwork_status_condition{manifestwork="local-cluster-klusterlet",managed_cluster_id="local-cluster",managed_cluster_name="local-cluster",condition="Applied",status="true"} 1`,
+acm_manifestwork_status_condition{manifestwork="local-cluster-klusterlet",managed_cluster_id="local-cluster",managed_cluster_name="local-cluster",condition="Available",status="false"} 0
+acm_manifestwork_status_condition{manifestwork="local-cluster-klusterlet",managed_cluster_id="local-cluster",managed_cluster_name="local-cluster",condition="Available",status="unknown"} 0
+acm_manifestwork_status_condition{manifestwork="local-cluster-klusterlet",managed_cluster_id="local-cluster",managed_cluster_name="local-cluster",condition="Applied",status="true"} 1
+acm_manifestwork_status_condition{manifestwork="local-cluster-klusterlet",managed_cluster_id="local-cluster",managed_cluster_name="local-cluster",condition="Applied",status="false"} 0
+acm_manifestwork_status_condition{manifestwork="local-cluster-klusterlet",managed_cluster_id="local-cluster",managed_cluster_name="local-cluster",condition="Applied",status="unknown"} 0`,
 		},
 		{
 			Name:        "test work status without condition",
 			Obj:         workWithoutCondition,
 			MetricNames: []string{"acm_manifestwork_status_condition"},
-			Want: `acm_manifestwork_status_condition{manifestwork="hello-work",managed_cluster_id="cluster1",managed_cluster_name="cluster1",condition="Applied",status="unknown"} 1
+			Want: `acm_manifestwork_status_condition{manifestwork="hello-work",managed_cluster_id="cluster1",managed_cluster_name="cluster1",condition="Applied",status="true"} 0
+acm_manifestwork_status_condition{manifestwork="hello-work",managed_cluster_id="cluster1",managed_cluster_name="cluster1",condition="Applied",status="false"} 0
+acm_manifestwork_status_condition{manifestwork="hello-work",managed_cluster_id="cluster1",managed_cluster_name="cluster1",condition="Applied",status="unknown"} 1
+acm_manifestwork_status_condition{manifestwork="hello-work",managed_cluster_id="cluster1",managed_cluster_name="cluster1",condition="Available",status="true"} 0
+acm_manifestwork_status_condition{manifestwork="hello-work",managed_cluster_id="cluster1",managed_cluster_name="cluster1",condition="Available",status="false"} 0
 acm_manifestwork_status_condition{manifestwork="hello-work",managed_cluster_id="cluster1",managed_cluster_name="cluster1",condition="Available",status="unknown"} 1`,
 		},
 	}
