@@ -8,9 +8,13 @@ import (
 
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	utilerrors "k8s.io/apimachinery/pkg/util/errors"
+	"k8s.io/klog/v2"
 
 	mciv1beta1 "github.com/stolostron/cluster-lifecycle-api/clusterinfo/v1beta1"
 )
+
+type onClusterIdChangeFunc func(clusterName string) error
 
 // clusterIdCache implements the k8s.io/client-go/tools/cache.Store
 // interface. Instead of storing entire ManagedCluster objects, it
@@ -21,6 +25,8 @@ type clusterIdCache struct {
 
 	// data is a map indexed by cluster name with cluster IDs
 	data map[string]string
+
+	onClusterIdChangeFuncs []onClusterIdChangeFunc
 }
 
 // newCounterMetricsStore returns a new CounterMetricsStore
@@ -34,6 +40,10 @@ func (s *clusterIdCache) GetClusterId(clusterName string) string {
 	return s.data[clusterName]
 }
 
+func (s *clusterIdCache) AddOnClusterIdChangeFunc(callback onClusterIdChangeFunc) {
+	s.onClusterIdChangeFuncs = append(s.onClusterIdChangeFuncs, callback)
+}
+
 // Add implements the Add method of the store interface.
 func (s *clusterIdCache) Add(obj interface{}) error {
 	o, err := meta.Accessor(obj)
@@ -41,11 +51,29 @@ func (s *clusterIdCache) Add(obj interface{}) error {
 		return err
 	}
 
+	clusterName := o.GetName()
+
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
-	s.data[o.GetName()] = getClusterID(o)
-	return nil
+	clusterId := s.data[clusterName]
+	newClusterId := getClusterID(o)
+	if clusterId == newClusterId {
+		return nil
+	}
+
+	s.data[clusterName] = newClusterId
+	klog.V(5).Infof("Cluster ID of cluster %q is changed from %q to %q", clusterName, clusterId, newClusterId)
+
+	// run callback funcs once cluster ID is changed
+	errs := []error{}
+	for _, callback := range s.onClusterIdChangeFuncs {
+		if err := callback(clusterName); err != nil {
+			errs = append(errs, err)
+		}
+	}
+
+	return utilerrors.NewAggregate(errs)
 }
 
 // Update implements the Update method of the store interface.

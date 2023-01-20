@@ -7,6 +7,7 @@ import (
 	"k8s.io/kube-state-metrics/pkg/metric"
 
 	"github.com/stolostron/clusterlifecycle-state-metrics/pkg/generators"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/klog/v2"
 	workv1 "open-cluster-management.io/api/work/v1"
 )
@@ -15,8 +16,8 @@ var (
 	descWorkStatusName           = "acm_manifestwork_status_condition"
 	descWorkStatusHelp           = "ManifestWork status condition"
 	requiredWorkStatusConditions = []string{
-		"Applied",
-		"Available",
+		workv1.WorkApplied,
+		workv1.WorkAvailable,
 	}
 )
 
@@ -47,9 +48,18 @@ func GetManifestWorkStatusMetricFamilies(getClusterIdFunc func(string) string) m
 				keys,
 				values,
 				requiredWorkStatusConditions,
+				getAllowedManifestWorkConditionStatuses,
 			)
 			klog.Infof("Returning %v", string(f.ByteSlice()))
 			return &f
 		},
+	}
+}
+
+func getAllowedManifestWorkConditionStatuses(conditionType string) []metav1.ConditionStatus {
+	return []metav1.ConditionStatus{
+		metav1.ConditionTrue,
+		metav1.ConditionFalse,
+		metav1.ConditionUnknown,
 	}
 }

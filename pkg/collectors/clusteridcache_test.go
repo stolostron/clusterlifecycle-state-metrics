@@ -21,6 +21,14 @@ func Test_ClusterIDCache_GetClusterId(t *testing.T) {
 			},
 		},
 	}
+	cluster1Modified := &mcv1.ManagedCluster{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "cluster1",
+			Labels: map[string]string{
+				mciv1beta1.LabelClusterID: "cluster1-id-modified",
+			},
+		},
+	}
 	cluster2 := &mcv1.ManagedCluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "cluster2",
@@ -31,13 +39,14 @@ func Test_ClusterIDCache_GetClusterId(t *testing.T) {
 	}
 
 	tests := []struct {
-		name        string
-		clusterName string
-		existing    []interface{}
-		toAdd       []interface{}
-		toUpdate    []interface{}
-		toDelete    []interface{}
-		want        string
+		name              string
+		clusterName       string
+		existing          []interface{}
+		toAdd             []interface{}
+		toUpdate          []interface{}
+		toDelete          []interface{}
+		want              string
+		numberOfIdChanged int
 	}{
 		{
 			name:        "empty",
@@ -45,23 +54,33 @@ func Test_ClusterIDCache_GetClusterId(t *testing.T) {
 			want:        "",
 		},
 		{
-			name:        "add",
+			name:        "existing",
 			clusterName: "cluster1",
 			existing:    []interface{}{cluster1},
 			want:        "cluster1-id",
 		},
 		{
-			name:        "add",
-			clusterName: "cluster1",
-			toAdd:       []interface{}{cluster1},
-			want:        "cluster1-id",
+			name:              "add",
+			clusterName:       "cluster1",
+			toAdd:             []interface{}{cluster1},
+			want:              "cluster1-id",
+			numberOfIdChanged: 1,
 		},
 		{
-			name:        "update",
-			clusterName: "cluster2",
-			toAdd:       []interface{}{cluster1},
-			toUpdate:    []interface{}{cluster2},
-			want:        "cluster2-id",
+			name:              "update cluster1",
+			clusterName:       "cluster1",
+			existing:          []interface{}{cluster1},
+			toUpdate:          []interface{}{cluster1Modified},
+			want:              "cluster1-id-modified",
+			numberOfIdChanged: 1,
+		},
+		{
+			name:              "update cluster2",
+			clusterName:       "cluster2",
+			toAdd:             []interface{}{cluster1},
+			toUpdate:          []interface{}{cluster2},
+			want:              "cluster2-id",
+			numberOfIdChanged: 2,
 		},
 		{
 			name:        "delete",
@@ -73,7 +92,12 @@ func Test_ClusterIDCache_GetClusterId(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			numberOfIdChanged := 0
 			cache := newClusterIdCache()
+			cache.AddOnClusterIdChangeFunc(func(clusterName string) error {
+				numberOfIdChanged += 1
+				return nil
+			})
 
 			err := cache.Replace(tt.existing, "")
 			if err != nil {
@@ -94,6 +118,10 @@ func Test_ClusterIDCache_GetClusterId(t *testing.T) {
 
 			if actual := cache.GetClusterId(tt.clusterName); actual != tt.want {
 				t.Errorf("want\n%s\nbut got\n%v", tt.want, actual)
+			}
+
+			if numberOfIdChanged != tt.numberOfIdChanged {
+				t.Errorf("want numberOfIdChanged %d\nbut got%d", tt.numberOfIdChanged, numberOfIdChanged)
 			}
 		})
 	}
