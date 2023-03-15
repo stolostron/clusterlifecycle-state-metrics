@@ -46,6 +46,7 @@ type whiteBlackLister interface {
 type Builder struct {
 	apiserver         string
 	kubeconfig        string
+	hubType           string
 	namespaces        options.NamespaceList
 	ctx               context.Context
 	enabledCollectors []string
@@ -77,6 +78,11 @@ func (b *Builder) WithApiserver(apiserver string) *Builder {
 
 func (b *Builder) WithKubeConfig(kubeconfig string) *Builder {
 	b.kubeconfig = kubeconfig
+	return b
+}
+
+func (b *Builder) WithHubType(hubType string) *Builder {
+	b.hubType = hubType
 	return b
 }
 
@@ -156,7 +162,7 @@ func (b *Builder) buildManagedClusterCollector() MetricsCollector {
 
 	filteredMetricFamilies := metric.FilterMetricFamilies(b.whiteBlackList,
 		[]metric.FamilyGenerator{
-			cluster.GetManagedClusterInfoMetricFamilies(hubClusterID),
+			cluster.GetManagedClusterInfoMetricFamilies(hubClusterID, b.hubType),
 			cluster.GetManagedClusterLabelMetricFamilies(hubClusterID),
 			cluster.GetManagedClusterStatusMetricFamilies(),
 		})

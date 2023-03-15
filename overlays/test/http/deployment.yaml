@@ -15,6 +15,7 @@ spec:
         args:
           - "--http-port=8080"
           - "--http-telemetry-port=8081"
+          - "--hub-type=mce"
         volumeMounts:
         - mountPath: /tmp/coverage
           name: coverage-dir  

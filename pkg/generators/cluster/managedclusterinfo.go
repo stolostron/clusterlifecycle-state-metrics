@@ -50,10 +50,11 @@ var (
 		"available",
 		"created_via",
 		"core_worker",
-		"socket_worker"}
+		"socket_worker",
+		"hub_type"}
 )
 
-func GetManagedClusterInfoMetricFamilies(hubClusterID string) metric.FamilyGenerator {
+func GetManagedClusterInfoMetricFamilies(hubClusterID, hub_type string) metric.FamilyGenerator {
 	return metric.FamilyGenerator{
 		Name: descClusterInfoName,
 		Type: metric.Gauge,
@@ -79,7 +80,8 @@ ServiceName=%s,
 Version=%s,
 available=%s,
 core_worker=%d,
-socket_worker=%d`,
+socket_worker=%d,
+hub_type=%s`,
 					clusterID,
 					kubeVendor,
 					cloudVendor,
@@ -87,7 +89,8 @@ socket_worker=%d`,
 					version,
 					available,
 					core_worker,
-					socket_worker)
+					socket_worker,
+					hub_type)
 				return metric.Family{Metrics: []*metric.Metric{}}
 			}
 			labelsValues := []string{hubClusterID,
@@ -100,6 +103,7 @@ socket_worker=%d`,
 				createdVia,
 				strconv.FormatInt(core_worker, 10),
 				strconv.FormatInt(socket_worker, 10),
+				hub_type,
 			}
 
 			f := metric.Family{Metrics: []*metric.Metric{
