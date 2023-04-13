@@ -25,6 +25,7 @@ spec:
           - "--https-telemetry-port=8444"
           - "--tls-crt-file=/var/run/clusterlifecycle-state-metrics/tls.crt"
           - "--tls-key-file=/var/run/clusterlifecycle-state-metrics/tls.key"
+          - "--hub-type=mce"
         env:
           - name: POD_NAME
             valueFrom:

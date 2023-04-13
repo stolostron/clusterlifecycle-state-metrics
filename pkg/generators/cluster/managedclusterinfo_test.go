@@ -15,6 +15,8 @@ import (
 )
 
 func Test_getManagedClusterMetricFamilies(t *testing.T) {
+	hubType := "mce"
+
 	mc := &mcv1.ManagedCluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "hive-cluster",
@@ -173,13 +175,13 @@ func Test_getManagedClusterMetricFamilies(t *testing.T) {
 			Name:        "cluster info",
 			Obj:         mc,
 			MetricNames: []string{"acm_managed_cluster_info"},
-			Want:        `acm_managed_cluster_info{cloud="Amazon",core_worker="4",managed_cluster_id="managed_cluster_id",service_name="Other",created_via="Hive",hub_cluster_id="mycluster_id",socket_worker="2",available="Unknown",vendor="OpenShift",version="4.3.1"} 1`,
+			Want:        `acm_managed_cluster_info{cloud="Amazon",core_worker="4",managed_cluster_id="managed_cluster_id",service_name="Other",created_via="Hive",hub_cluster_id="mycluster_id",hub_type="mce",socket_worker="2",available="Unknown",vendor="OpenShift",version="4.3.1"} 1`,
 		},
 		{
 			Name:        "cluster info discovery",
 			Obj:         mcDiscovery,
 			MetricNames: []string{"acm_managed_cluster_info"},
-			Want:        `acm_managed_cluster_info{cloud="Amazon",core_worker="4",managed_cluster_id="managed_cluster_id",service_name="Other",created_via="Discovery",hub_cluster_id="mycluster_id",socket_worker="2",available="Unknown",vendor="OpenShift",version="4.3.1"} 1`,
+			Want:        `acm_managed_cluster_info{cloud="Amazon",core_worker="4",managed_cluster_id="managed_cluster_id",service_name="Other",created_via="Discovery",hub_cluster_id="mycluster_id",hub_type="mce",socket_worker="2",available="Unknown",vendor="OpenShift",version="4.3.1"} 1`,
 		},
 		{
 			Name:        "no cluster id",
@@ -190,24 +192,24 @@ func Test_getManagedClusterMetricFamilies(t *testing.T) {
 			Name:        "missing info",
 			Obj:         mcMissingInfo,
 			MetricNames: []string{"acm_managed_cluster_info"},
-			Want:        `acm_managed_cluster_info{cloud="",core_worker="0",managed_cluster_id="managed_cluster_id",service_name="Other",created_via="Other",hub_cluster_id="mycluster_id",socket_worker="0",available="Unknown",vendor="",version=""} 1`,
+			Want:        `acm_managed_cluster_info{cloud="",core_worker="0",managed_cluster_id="managed_cluster_id",service_name="Other",created_via="Other",hub_cluster_id="mycluster_id",hub_type="mce",socket_worker="0",available="Unknown",vendor="",version=""} 1`,
 		},
 		{
 			Name:        "zero resource",
 			Obj:         mcZeroInfo,
 			MetricNames: []string{"acm_managed_cluster_info"},
-			Want:        `acm_managed_cluster_info{cloud="Amazon",core_worker="0",managed_cluster_id="managed_cluster_id",service_name="Other",created_via="Hive",hub_cluster_id="mycluster_id",socket_worker="0",available="Unknown",vendor="OpenShift",version="4.3.1"} 1`,
+			Want:        `acm_managed_cluster_info{cloud="Amazon",core_worker="0",managed_cluster_id="managed_cluster_id",service_name="Other",created_via="Hive",hub_cluster_id="mycluster_id",hub_type="mce",socket_worker="0",available="Unknown",vendor="OpenShift",version="4.3.1"} 1`,
 		},
 		{
 			Name:        "others resource",
 			Obj:         mcOther,
 			MetricNames: []string{"acm_managed_cluster_info"},
-			Want:        `acm_managed_cluster_info{cloud="Amazon",core_worker="4",managed_cluster_id="cluster-other",service_name="Compute",created_via="Other",hub_cluster_id="mycluster_id",socket_worker="2",available="Unknown",vendor="Other",version="v1.16.2"} 1`,
+			Want:        `acm_managed_cluster_info{cloud="Amazon",core_worker="4",managed_cluster_id="cluster-other",service_name="Compute",created_via="Other",hub_cluster_id="mycluster_id",hub_type="mce",socket_worker="2",available="Unknown",vendor="Other",version="v1.16.2"} 1`,
 		},
 	}
 	for i, c := range tests {
 		c.Func = metric.ComposeMetricGenFuncs(
-			[]metric.FamilyGenerator{GetManagedClusterInfoMetricFamilies("mycluster_id")},
+			[]metric.FamilyGenerator{GetManagedClusterInfoMetricFamilies("mycluster_id", hubType)},
 		)
 		if err := c.Run(); err != nil {
 			t.Errorf("unexpected collecting result in %v run:\n%s", i, err)

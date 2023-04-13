@@ -39,6 +39,11 @@ const (
 	leaderConfigMapName = "clusterlifecycle-state-metrics-lock"
 	metricsPath         = "/metrics"
 	healthzPath         = "/healthz"
+
+	hubTypeMCE              = "mce"
+	hubTypeACM              = "acm"
+	hubTypeStolostronEngine = "stolostron-engine"
+	hubTypeStolostron       = "stolostron"
 )
 
 var opts *options.Options
@@ -98,6 +103,15 @@ func start(opts *options.Options) {
 			klog.Infof("Using %s namespaces", opts.Namespaces)
 		}
 		collectorBuilder.WithNamespaces(opts.Namespaces)
+	}
+
+	switch opts.HubType {
+	case hubTypeMCE, hubTypeACM, hubTypeStolostronEngine, hubTypeStolostron:
+		collectorBuilder.WithHubType(opts.HubType)
+	case "":
+		// do nothing if not specified
+	default:
+		klog.Fatal(fmt.Errorf("invalid hub type %q", opts.HubType))
 	}
 
 	whiteBlackList, err := whiteblacklist.New(opts.MetricWhitelist, opts.MetricBlacklist)

@@ -29,6 +29,7 @@ type Options struct {
 	MetricBlacklist    koptions.MetricSet
 	MetricWhitelist    koptions.MetricSet
 	Version            bool
+	HubType            string
 
 	EnableGZIPEncoding bool
 }
@@ -70,6 +71,7 @@ func (o *Options) AddFlags() {
 	flag.Var(&o.MetricWhitelist, "metric-whitelist", "Comma-separated list of metrics to be exposed. The whitelist and blacklist are mutually exclusive.")
 	flag.Var(&o.MetricBlacklist, "metric-blacklist", "Comma-separated list of metrics not to be enabled. The whitelist and blacklist are mutually exclusive.")
 	flag.BoolVar(&o.Version, "version", false, "openshift-state-metrics build version information")
+	flag.StringVar(&o.HubType, "hub-type", "", `The type of the hub (mce|acm|stolostron-engine|stolostron).`)
 
 	flag.BoolVar(&o.EnableGZIPEncoding, "enable-gzip-encoding", false, "Gzip responses when requested by clients via 'Accept-Encoding: gzip' header.")
 	klog.Info("End add args")
