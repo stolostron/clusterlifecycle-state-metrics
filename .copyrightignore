@@ -1,3 +1,4 @@
-#file extensions to ignore on top of .gitignore
+# file extensions and directories to ignore on top of .gitignore
 .copyrightignore
 _generated.go
+.tekton/
