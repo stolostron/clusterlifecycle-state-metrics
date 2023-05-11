@@ -2,6 +2,7 @@ apiVersion: tekton.dev/v1beta1
 kind: PipelineRun
 metadata:
   annotations:
+    build.appstudio.openshift.io/repo: https://github.com/stolostron/clusterlifecycle-state-metrics?rev={{revision}}
     build.appstudio.redhat.com/commit_sha: '{{revision}}'
     build.appstudio.redhat.com/target_branch: '{{target_branch}}'
     pipelinesascode.tekton.dev/max-keep-runs: "3"
@@ -13,7 +14,7 @@ metadata:
     appstudio.openshift.io/component: clusterlifecycle-state-metrics-1tww
     pipelines.appstudio.openshift.io/type: build
   name: clusterlifecycle-state-metrics-1tww-on-push
-  namespace: red-hat-acm-tenant
+  namespace: crt-redhat-acm-tenant
 spec:
   params:
   - name: dockerfile
@@ -21,7 +22,7 @@ spec:
   - name: git-url
     value: '{{repo_url}}'
   - name: output-image
-    value: quay.io/redhat-user-workloads/red-hat-acm-tenant/mce-24/clusterlifecycle-state-metrics-1tww:{{revision}}
+    value: quay.io/redhat-user-workloads/crt-redhat-acm-tenant/mce-24/clusterlifecycle-state-metrics-1tww:{{revision}}
   - name: path-context
     value: .
   - name: revision
