@@ -5,7 +5,7 @@ SHELL := /bin/bash
 export ARCH       ?= $(shell uname -m)
 export ARCH_TYPE   = $(if $(patsubst x86_64,,$(ARCH)),$(ARCH),amd64)
 
-export CGO_ENABLED  = 0
+export CGO_ENABLED  = 1
 export GO111MODULE := on
 export GOOS         = $(shell go env GOOS)
 export GOARCH       = $(ARCH_TYPE)
