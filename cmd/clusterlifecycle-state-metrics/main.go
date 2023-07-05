@@ -186,7 +186,7 @@ func telemetryServer(
 		s := &http.Server{
 			Addr:      listenAddress,
 			Handler:   mux,
-			TLSConfig: &tls.Config{MinVersion: tls.VersionTLS13},
+			TLSConfig: &tls.Config{MinVersion: tls.VersionTLS12},
 		}
 
 		klog.Infof("Starting clusterlifecycle-state-metrics self metrics server: %s", listenAddress)
@@ -254,7 +254,7 @@ func serveMetrics(collectors []collectors.MetricsCollector,
 		s := &http.Server{
 			Addr:      listenAddress,
 			Handler:   mux,
-			TLSConfig: &tls.Config{MinVersion: tls.VersionTLS13},
+			TLSConfig: &tls.Config{MinVersion: tls.VersionTLS12},
 		}
 
 		klog.Infof("Starting metrics server: %s", listenAddress)
