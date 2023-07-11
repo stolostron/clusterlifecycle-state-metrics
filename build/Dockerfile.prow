@@ -7,8 +7,7 @@ ARG REMOTE_SOURCE_DIR
 
 COPY $REMOTE_SOURCE $REMOTE_SOURCE_DIR/app/
 WORKDIR $REMOTE_SOURCE_DIR/app
-RUN GOFLAGS="" go build ./cmd/clusterlifecycle-state-metrics; \
-GOFLAGS="" go test -covermode=atomic -coverpkg=github.com/stolostron/clusterlifecycle-state-metrics/pkg/... -c -tags testrunmain ./cmd/clusterlifecycle-state-metrics -o clusterlifecycle-state-metrics-coverage
+RUN make build
 
 FROM registry.access.redhat.com/ubi8/ubi-minimal:latest
 RUN microdnf update

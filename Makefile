@@ -6,6 +6,7 @@ export ARCH       ?= $(shell uname -m)
 export ARCH_TYPE   = $(if $(patsubst x86_64,,$(ARCH)),$(ARCH),amd64)
 
 export CGO_ENABLED  = 1
+export GOFLAGS ?= 
 export GO111MODULE := on
 export GOOS         = $(shell go env GOOS)
 export GOARCH       = $(ARCH_TYPE)
@@ -58,6 +59,12 @@ test: dependencies
 ## Builds controller binary inside of an image
 build-image: 
 	$(DOCKER_BUILDER) build -f $(DOCKER_FILE) . -t $(DOCKER_IMAGE)
+
+.PHONY: build
+## Builds controller binary
+build: 
+	go build ./cmd/clusterlifecycle-state-metrics
+	go test -covermode=atomic -coverpkg=github.com/stolostron/clusterlifecycle-state-metrics/pkg/... -c -tags testrunmain ./cmd/clusterlifecycle-state-metrics -o clusterlifecycle-state-metrics-coverage
 
 .PHONY: build-image-coverage
 ## Builds controller binary inside of an image
