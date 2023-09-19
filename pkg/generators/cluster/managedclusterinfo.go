@@ -35,6 +35,7 @@ var createdViaMapping map[string]string = map[string]string{
 	"discovery":          "Discovery",
 	"assisted-installer": "AssistedInstaller",
 	"hive":               "Hive",
+	"hypershift":         "HyperShift",
 	"other":              createdViaAnnotationOther,
 }
 
