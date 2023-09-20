@@ -73,6 +73,34 @@ func Test_getManagedClusterMetricFamilies(t *testing.T) {
 		},
 	}
 
+	mcHyperShift := &mcv1.ManagedCluster{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "hypershift-cluster",
+			Annotations: map[string]string{
+				"open-cluster-management/created-via": "hypershift",
+			},
+			Labels: map[string]string{
+				mciv1beta1.OCPVersion:       "4.3.1",
+				mciv1beta1.LabelKubeVendor:  string(mciv1beta1.KubeVendorOpenShift),
+				mciv1beta1.LabelCloudVendor: string(mciv1beta1.CloudVendorAWS),
+				mciv1beta1.LabelClusterID:   "managed_cluster_id",
+			},
+		},
+		Status: mcv1.ManagedClusterStatus{
+			Capacity: mcv1.ResourceList{
+				resourceCoreWorker:   *resource.NewQuantity(4, resource.DecimalSI),
+				resourceSocketWorker: *resource.NewQuantity(2, resource.DecimalSI),
+			},
+			ClusterClaims: []mcv1.ManagedClusterClaim{
+				{
+					Name:  "kubeversion.open-cluster-management.io",
+					Value: "v1.16.2",
+				},
+			},
+			Conditions: []metav1.Condition{},
+		},
+	}
+
 	mcOther := &mcv1.ManagedCluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "cluster-other",
@@ -182,6 +210,12 @@ func Test_getManagedClusterMetricFamilies(t *testing.T) {
 			Obj:         mcDiscovery,
 			MetricNames: []string{"acm_managed_cluster_info"},
 			Want:        `acm_managed_cluster_info{cloud="Amazon",core_worker="4",managed_cluster_id="managed_cluster_id",service_name="Other",created_via="Discovery",hub_cluster_id="mycluster_id",hub_type="mce",socket_worker="2",available="Unknown",vendor="OpenShift",version="4.3.1"} 1`,
+		},
+		{
+			Name:        "cluster info hypershift",
+			Obj:         mcHyperShift,
+			MetricNames: []string{"acm_managed_cluster_info"},
+			Want:        `acm_managed_cluster_info{cloud="Amazon",core_worker="4",managed_cluster_id="managed_cluster_id",service_name="Other",created_via="HyperShift",hub_cluster_id="mycluster_id",hub_type="mce",socket_worker="2",available="Unknown",vendor="OpenShift",version="4.3.1"} 1`,
 		},
 		{
 			Name:        "no cluster id",
