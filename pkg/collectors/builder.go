@@ -16,6 +16,7 @@ import (
 	workv1 "open-cluster-management.io/api/work/v1"
 
 	ocpclient "github.com/openshift/client-go/config/clientset/versioned"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
@@ -250,7 +251,9 @@ func (b *Builder) startWatchingManagedClusters() {
 
 	// initialize clusterID cache
 	clusterList, err := clusterClient.ClusterV1().ManagedClusters().List(b.ctx, metav1.ListOptions{})
-	if err != nil {
+	if errors.IsNotFound(err) {
+		klog.Errorf("cannot list managed clusters: %v", err)
+	} else if err != nil {
 		klog.Fatalf("cannot list managed clusters: %v", err)
 	}
 
