@@ -324,6 +324,8 @@ func TestBuilder_Build(t *testing.T) {
 # TYPE acm_managed_cluster_labels gauge
 # HELP acm_managed_cluster_status_condition Managed cluster status condition
 # TYPE acm_managed_cluster_status_condition gauge
+# HELP acm_managed_cluster_worker_cores The number of worker CPU cores of ACM managed clusters
+# TYPE acm_managed_cluster_worker_cores gauge
 # HELP acm_managed_cluster_count Managed cluster count
 # TYPE acm_managed_cluster_count gauge
 `

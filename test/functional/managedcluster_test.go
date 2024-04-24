@@ -82,6 +82,20 @@ acm_managed_cluster_status_condition{managed_cluster_id="import_cluster_id",mana
 acm_managed_cluster_status_condition{managed_cluster_id="import_cluster_id",managed_cluster_name="cluster-import",condition="ManagedClusterConditionAvailable",status="true"} 0
 acm_managed_cluster_status_condition{managed_cluster_id="import_cluster_id",managed_cluster_name="cluster-import",condition="ManagedClusterConditionAvailable",status="false"} 0
 acm_managed_cluster_status_condition{managed_cluster_id="import_cluster_id",managed_cluster_name="cluster-import",condition="ManagedClusterConditionAvailable",status="unknown"} 1`
+
+	clusterWorkerCoresResponse = `# HELP acm_managed_cluster_worker_cores The number of worker CPU cores of ACM managed clusters
+# TYPE acm_managed_cluster_worker_cores gauge
+acm_managed_cluster_worker_cores{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="hive_cluster_id"} 0
+acm_managed_cluster_worker_cores{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="import_cluster_id"} 0
+acm_managed_cluster_worker_cores{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="empty-cluster"} 0
+acm_managed_cluster_worker_cores{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="local_cluster_id"} 0`
+
+	clusterWorkerCoresUpdatedResponse = `# HELP acm_managed_cluster_worker_cores The number of worker CPU cores of ACM managed clusters
+# TYPE acm_managed_cluster_worker_cores gauge
+acm_managed_cluster_worker_cores{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="hive_cluster_id"} 5
+acm_managed_cluster_worker_cores{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="import_cluster_id"} 0
+acm_managed_cluster_worker_cores{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="empty-cluster"} 0
+acm_managed_cluster_worker_cores{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="local_cluster_id"} 0`
 )
 
 const (
@@ -492,6 +506,55 @@ var _ = Describe("ManagedCluster Metrics", func() {
 
 		It("Get Metrics", func() {
 			assertGetMetrics("acm_managed_cluster_count", clusterCountResponse)
+		})
+	})
+
+	Context("acm_managed_cluster_worker_cores", func() {
+		AfterEach(func() {
+			By("Query metrics by count(acm_managed_cluster_worker_cores) by (hub_cluster_id)", func() {
+				Eventually(func() error {
+					resp, b, err := queryMetrics("count(acm_managed_cluster_worker_cores)+by+(hub_cluster_id)")
+					klog.Infof("Get Empty Metrics response: %v", b)
+					if err != nil || resp.StatusCode != http.StatusOK {
+						return fmt.Errorf("Failed to query metrics %v: %v", resp.StatusCode, err)
+					}
+
+					queryResult := QueryResult{}
+					if err := json.Unmarshal([]byte(b), &queryResult); err != nil {
+						return err
+					}
+
+					expectResult := map[string]string{"787e5a35-c911-4341-a2e7-65c415147aeb": "4"}
+					actualResult := map[string]string{}
+					for _, r := range queryResult.Data.Result {
+						actualResult[r.Metric.HubClusterID] = r.Value[1].(string)
+					}
+
+					klog.Infof("expect result %v", expectResult)
+					klog.Infof("actual result %v", actualResult)
+					if !reflect.DeepEqual(expectResult, actualResult) {
+						return fmt.Errorf("Unexpect queryResult %v", queryResult)
+					}
+
+					return nil
+				}).WithTimeout(30 * time.Second).Should(BeNil())
+			})
+		})
+
+		It("should get metric", func() {
+			assertGetMetrics("acm_managed_cluster_worker_cores", clusterWorkerCoresResponse)
+		})
+
+		It("should reflect the change on the managed cluster", func() {
+			By("Updating status cluster-hive", func() {
+				Expect(updateMCStatus("cluster-hive", mcv1.ManagedClusterStatus{
+					Capacity: mcv1.ResourceList{
+						resourceCoreWorker: *resource.NewQuantity(5, resource.DecimalSI),
+					},
+				})).Should(BeNil())
+			})
+
+			assertGetMetrics("acm_managed_cluster_worker_cores", clusterWorkerCoresUpdatedResponse)
 		})
 	})
 })

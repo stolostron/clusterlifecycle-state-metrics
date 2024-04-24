@@ -166,6 +166,7 @@ func (b *Builder) buildManagedClusterCollector() MetricsCollector {
 			cluster.GetManagedClusterInfoMetricFamilies(hubClusterID, b.hubType),
 			cluster.GetManagedClusterLabelMetricFamilies(hubClusterID),
 			cluster.GetManagedClusterStatusMetricFamilies(),
+			cluster.GetManagedClusterWorkerCoresMetricFamilies(hubClusterID),
 		})
 	composedMetricGenFuncs := metric.ComposeMetricGenFuncs(filteredMetricFamilies)
 	familyHeaders := metric.ExtractMetricFamilyHeaders(filteredMetricFamilies)
