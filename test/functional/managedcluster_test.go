@@ -29,24 +29,24 @@ import (
 const (
 	clusterInfoDeploymentResponse = `# HELP acm_managed_cluster_info Managed cluster information
 # TYPE acm_managed_cluster_info gauge
-acm_managed_cluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="hive_cluster_id",vendor="OpenShift",cloud="Amazon",service_name="Compute",version="4.3.1",available="Unknown",created_via="Hive",core_worker="0",socket_worker="0",hub_type="mce"} 1
-acm_managed_cluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="import_cluster_id",vendor="OpenShift",cloud="Amazon",service_name="Other",version="4.3.1",available="Unknown",created_via="Other",core_worker="0",socket_worker="0",hub_type="mce"} 1
-acm_managed_cluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="empty-cluster",vendor="",cloud="",service_name="Other",version="",available="Unknown",created_via="Other",core_worker="0",socket_worker="0",hub_type="mce"} 1
-acm_managed_cluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="local_cluster_id",vendor="OpenShift",cloud="Amazon",service_name="Other",version="4.3.1",available="Unknown",created_via="Other",core_worker="0",socket_worker="0",hub_type="mce"} 1`
+acm_managed_cluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="hive_cluster_id",product="",vendor="OpenShift",cloud="Amazon",service_name="Compute",version="4.3.1",available="Unknown",created_via="Hive",core_worker="0",socket_worker="0",hub_type="mce"} 1
+acm_managed_cluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="import_cluster_id",product="",vendor="OpenShift",cloud="Amazon",service_name="Other",version="4.3.1",available="Unknown",created_via="Other",core_worker="0",socket_worker="0",hub_type="mce"} 1
+acm_managed_cluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="empty-cluster",product="",vendor="",cloud="",service_name="Other",version="",available="Unknown",created_via="Other",core_worker="0",socket_worker="0",hub_type="mce"} 1
+acm_managed_cluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="local_cluster_id",product="",vendor="OpenShift",cloud="Amazon",service_name="Other",version="4.3.1",available="Unknown",created_via="Other",core_worker="0",socket_worker="0",hub_type="mce"} 1`
 
 	clusterInfoManagedClusterResponse = `# HELP acm_managed_cluster_info Managed cluster information
 # TYPE acm_managed_cluster_info gauge
-acm_managed_cluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="hive_cluster_id",vendor="OpenShift",cloud="Amazon",service_name="Compute",version="4.3.1",available="Unknown",created_via="Hive",core_worker="0",socket_worker="0",hub_type="mce"} 1
-acm_managed_cluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="import_cluster_id",vendor="OpenShift",cloud="Amazon",service_name="Other",version="4.3.1",available="Unknown",created_via="Other",core_worker="2",socket_worker="1",hub_type="mce"} 1
-acm_managed_cluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="empty-cluster",vendor="",cloud="",service_name="Other",version="",available="Unknown",created_via="Other",core_worker="0",socket_worker="0",hub_type="mce"} 1
-acm_managed_cluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="local_cluster_id",vendor="OpenShift",cloud="Amazon",service_name="Other",version="4.3.1",available="Unknown",created_via="Other",core_worker="2",socket_worker="1",hub_type="mce"} 1`
+acm_managed_cluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="hive_cluster_id",product="",vendor="OpenShift",cloud="Amazon",service_name="Compute",version="4.3.1",available="Unknown",created_via="Hive",core_worker="0",socket_worker="0",hub_type="mce"} 1
+acm_managed_cluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="import_cluster_id",product="AKS",vendor="OpenShift",cloud="Amazon",service_name="Other",version="4.3.1",available="Unknown",created_via="Other",core_worker="2",socket_worker="1",hub_type="mce"} 1
+acm_managed_cluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="empty-cluster",product="",vendor="",cloud="",service_name="Other",version="",available="Unknown",created_via="Other",core_worker="0",socket_worker="0",hub_type="mce"} 1
+acm_managed_cluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="local_cluster_id",product="OpenShift",vendor="OpenShift",cloud="Amazon",service_name="Other",version="4.3.1",available="Unknown",created_via="Other",core_worker="2",socket_worker="1",hub_type="mce"} 1`
 
 	clusterInfoManagedClusterHiveResponse = `# HELP acm_managed_cluster_info Managed cluster information
 # TYPE acm_managed_cluster_info gauge
-acm_managed_cluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="hive_cluster_id",vendor="OpenShift",cloud="Amazon",service_name="Compute",version="4.3.1",available="Unknown",created_via="Hive",core_worker="2",socket_worker="1",hub_type="mce"} 1
-acm_managed_cluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="import_cluster_id",vendor="OpenShift",cloud="Amazon",service_name="Other",version="4.3.1",available="Unknown",created_via="Other",core_worker="0",socket_worker="0",hub_type="mce"} 1
-acm_managed_cluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="empty-cluster",vendor="",cloud="",service_name="Other",version="",available="Unknown",created_via="Other",core_worker="0",socket_worker="0",hub_type="mce"} 1
-acm_managed_cluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="local_cluster_id",vendor="OpenShift",cloud="Amazon",service_name="Other",version="4.3.1",available="Unknown",created_via="Other",core_worker="0",socket_worker="0",hub_type="mce"} 1`
+acm_managed_cluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="hive_cluster_id",product="OpenShift",vendor="OpenShift",cloud="Amazon",service_name="Compute",version="4.3.1",available="Unknown",created_via="Hive",core_worker="2",socket_worker="1",hub_type="mce"} 1
+acm_managed_cluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="import_cluster_id",product="",vendor="OpenShift",cloud="Amazon",service_name="Other",version="4.3.1",available="Unknown",created_via="Other",core_worker="0",socket_worker="0",hub_type="mce"} 1
+acm_managed_cluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="empty-cluster",product="",vendor="",cloud="",service_name="Other",version="",available="Unknown",created_via="Other",core_worker="0",socket_worker="0",hub_type="mce"} 1
+acm_managed_cluster_info{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="local_cluster_id",product="",vendor="OpenShift",cloud="Amazon",service_name="Other",version="4.3.1",available="Unknown",created_via="Other",core_worker="0",socket_worker="0",hub_type="mce"} 1`
 
 	clusterLabelsResponse = `# HELP acm_managed_cluster_labels Managed cluster labels
 # TYPE acm_managed_cluster_labels gauge
@@ -307,6 +307,10 @@ var _ = Describe("ManagedCluster Metrics", func() {
 							Name:  "kubeversion.open-cluster-management.io",
 							Value: "v1.16.2",
 						},
+						{
+							Name:  "product.open-cluster-management.io",
+							Value: "OpenShift",
+						},
 					},
 				})).Should(BeNil())
 			})
@@ -329,6 +333,10 @@ var _ = Describe("ManagedCluster Metrics", func() {
 						{
 							Name:  "kubeversion.open-cluster-management.io",
 							Value: "v1.16.2",
+						},
+						{
+							Name:  "product.open-cluster-management.io",
+							Value: "AKS",
 						},
 					},
 				})).Should(BeNil())
@@ -356,6 +364,10 @@ var _ = Describe("ManagedCluster Metrics", func() {
 						{
 							Name:  "kubeversion.open-cluster-management.io",
 							Value: "v1.16.2",
+						},
+						{
+							Name:  "product.open-cluster-management.io",
+							Value: "OpenShift",
 						},
 					},
 				})).Should(BeNil())

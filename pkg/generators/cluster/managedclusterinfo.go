@@ -24,6 +24,7 @@ const (
 	createdViaAnnotationOther  = "Other"
 	serviceNameAnnotation      = "open-cluster-management/service-name"
 	serviceNameAnnotationOther = "Other"
+	productClaimKey            = "product.open-cluster-management.io"
 )
 
 var serviceNameMapping map[string]string = map[string]string{
@@ -52,7 +53,8 @@ var (
 		"created_via",
 		"core_worker",
 		"socket_worker",
-		"hub_type"}
+		"hub_type",
+		"product"}
 )
 
 func GetManagedClusterInfoMetricFamilies(hubClusterID, hub_type string) metric.FamilyGenerator {
@@ -71,6 +73,7 @@ func GetManagedClusterInfoMetricFamilies(hubClusterID, hub_type string) metric.F
 			serviceName := getServiceName(mc)
 			available := getAvailableStatus(mc)
 			core_worker, socket_worker := getCapacity(mc)
+			product := getProduct(mc)
 
 			if clusterID == "" {
 				klog.Infof("Not enough information available for %s", mc.GetName())
@@ -82,7 +85,8 @@ Version=%s,
 available=%s,
 core_worker=%d,
 socket_worker=%d,
-hub_type=%s`,
+hub_type=%s,
+product=%s`,
 					clusterID,
 					kubeVendor,
 					cloudVendor,
@@ -91,7 +95,8 @@ hub_type=%s`,
 					available,
 					core_worker,
 					socket_worker,
-					hub_type)
+					hub_type,
+					product)
 				return metric.Family{Metrics: []*metric.Metric{}}
 			}
 			labelsValues := []string{hubClusterID,
@@ -105,6 +110,7 @@ hub_type=%s`,
 				strconv.FormatInt(core_worker, 10),
 				strconv.FormatInt(socket_worker, 10),
 				hub_type,
+				product,
 			}
 
 			f := metric.Family{Metrics: []*metric.Metric{
@@ -215,4 +221,13 @@ func getServiceName(mc *mcv1.ManagedCluster) string {
 		return serviceNameMapping[a]
 	}
 	return serviceNameAnnotationOther
+}
+
+func getProduct(mc *mcv1.ManagedCluster) string {
+	for _, claim := range mc.Status.ClusterClaims {
+		if claim.Name == productClaimKey {
+			return claim.Value
+		}
+	}
+	return ""
 }

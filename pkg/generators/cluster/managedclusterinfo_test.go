@@ -40,6 +40,10 @@ func Test_getManagedClusterMetricFamilies(t *testing.T) {
 					Name:  "kubeversion.open-cluster-management.io",
 					Value: "v1.16.2",
 				},
+				{
+					Name:  "product.open-cluster-management.io",
+					Value: "OpenShift",
+				},
 			},
 			Conditions: []metav1.Condition{},
 		},
@@ -67,6 +71,10 @@ func Test_getManagedClusterMetricFamilies(t *testing.T) {
 				{
 					Name:  "kubeversion.open-cluster-management.io",
 					Value: "v1.16.2",
+				},
+				{
+					Name:  "product.open-cluster-management.io",
+					Value: "OpenShiftDedicated",
 				},
 			},
 			Conditions: []metav1.Condition{},
@@ -96,6 +104,10 @@ func Test_getManagedClusterMetricFamilies(t *testing.T) {
 					Name:  "kubeversion.open-cluster-management.io",
 					Value: "v1.16.2",
 				},
+				{
+					Name:  "product.open-cluster-management.io",
+					Value: "ROSA",
+				},
 			},
 			Conditions: []metav1.Condition{},
 		},
@@ -121,6 +133,10 @@ func Test_getManagedClusterMetricFamilies(t *testing.T) {
 				{
 					Name:  "kubeversion.open-cluster-management.io",
 					Value: "v1.16.2",
+				},
+				{
+					Name:  "product.open-cluster-management.io",
+					Value: "Other",
 				},
 			},
 			Conditions: []metav1.Condition{},
@@ -148,6 +164,10 @@ func Test_getManagedClusterMetricFamilies(t *testing.T) {
 				{
 					Name:  "kubeversion.open-cluster-management.io",
 					Value: "v1.16.2",
+				},
+				{
+					Name:  "product.open-cluster-management.io",
+					Value: "Other",
 				},
 			},
 			Conditions: []metav1.Condition{},
@@ -193,6 +213,10 @@ func Test_getManagedClusterMetricFamilies(t *testing.T) {
 					Name:  "kubeversion.open-cluster-management.io",
 					Value: "v1.16.2",
 				},
+				{
+					Name:  "product.open-cluster-management.io",
+					Value: "AKS",
+				},
 			},
 			Conditions: []metav1.Condition{},
 		},
@@ -203,19 +227,19 @@ func Test_getManagedClusterMetricFamilies(t *testing.T) {
 			Name:        "cluster info",
 			Obj:         mc,
 			MetricNames: []string{"acm_managed_cluster_info"},
-			Want:        `acm_managed_cluster_info{cloud="Amazon",core_worker="4",managed_cluster_id="managed_cluster_id",service_name="Other",created_via="Hive",hub_cluster_id="mycluster_id",hub_type="mce",socket_worker="2",available="Unknown",vendor="OpenShift",version="4.3.1"} 1`,
+			Want:        `acm_managed_cluster_info{cloud="Amazon",core_worker="4",managed_cluster_id="managed_cluster_id",product="OpenShift",service_name="Other",created_via="Hive",hub_cluster_id="mycluster_id",hub_type="mce",socket_worker="2",available="Unknown",vendor="OpenShift",version="4.3.1"} 1`,
 		},
 		{
 			Name:        "cluster info discovery",
 			Obj:         mcDiscovery,
 			MetricNames: []string{"acm_managed_cluster_info"},
-			Want:        `acm_managed_cluster_info{cloud="Amazon",core_worker="4",managed_cluster_id="managed_cluster_id",service_name="Other",created_via="Discovery",hub_cluster_id="mycluster_id",hub_type="mce",socket_worker="2",available="Unknown",vendor="OpenShift",version="4.3.1"} 1`,
+			Want:        `acm_managed_cluster_info{cloud="Amazon",core_worker="4",managed_cluster_id="managed_cluster_id",product="OpenShiftDedicated",service_name="Other",created_via="Discovery",hub_cluster_id="mycluster_id",hub_type="mce",socket_worker="2",available="Unknown",vendor="OpenShift",version="4.3.1"} 1`,
 		},
 		{
 			Name:        "cluster info hypershift",
 			Obj:         mcHyperShift,
 			MetricNames: []string{"acm_managed_cluster_info"},
-			Want:        `acm_managed_cluster_info{cloud="Amazon",core_worker="4",managed_cluster_id="managed_cluster_id",service_name="Other",created_via="HyperShift",hub_cluster_id="mycluster_id",hub_type="mce",socket_worker="2",available="Unknown",vendor="OpenShift",version="4.3.1"} 1`,
+			Want:        `acm_managed_cluster_info{cloud="Amazon",core_worker="4",managed_cluster_id="managed_cluster_id",product="ROSA",service_name="Other",created_via="HyperShift",hub_cluster_id="mycluster_id",hub_type="mce",socket_worker="2",available="Unknown",vendor="OpenShift",version="4.3.1"} 1`,
 		},
 		{
 			Name:        "no cluster id",
@@ -226,19 +250,19 @@ func Test_getManagedClusterMetricFamilies(t *testing.T) {
 			Name:        "missing info",
 			Obj:         mcMissingInfo,
 			MetricNames: []string{"acm_managed_cluster_info"},
-			Want:        `acm_managed_cluster_info{cloud="",core_worker="0",managed_cluster_id="managed_cluster_id",service_name="Other",created_via="Other",hub_cluster_id="mycluster_id",hub_type="mce",socket_worker="0",available="Unknown",vendor="",version=""} 1`,
+			Want:        `acm_managed_cluster_info{cloud="",core_worker="0",managed_cluster_id="managed_cluster_id",product="",service_name="Other",created_via="Other",hub_cluster_id="mycluster_id",hub_type="mce",socket_worker="0",available="Unknown",vendor="",version=""} 1`,
 		},
 		{
 			Name:        "zero resource",
 			Obj:         mcZeroInfo,
 			MetricNames: []string{"acm_managed_cluster_info"},
-			Want:        `acm_managed_cluster_info{cloud="Amazon",core_worker="0",managed_cluster_id="managed_cluster_id",service_name="Other",created_via="Hive",hub_cluster_id="mycluster_id",hub_type="mce",socket_worker="0",available="Unknown",vendor="OpenShift",version="4.3.1"} 1`,
+			Want:        `acm_managed_cluster_info{cloud="Amazon",core_worker="0",managed_cluster_id="managed_cluster_id",product="AKS",service_name="Other",created_via="Hive",hub_cluster_id="mycluster_id",hub_type="mce",socket_worker="0",available="Unknown",vendor="OpenShift",version="4.3.1"} 1`,
 		},
 		{
 			Name:        "others resource",
 			Obj:         mcOther,
 			MetricNames: []string{"acm_managed_cluster_info"},
-			Want:        `acm_managed_cluster_info{cloud="Amazon",core_worker="4",managed_cluster_id="cluster-other",service_name="Compute",created_via="Other",hub_cluster_id="mycluster_id",hub_type="mce",socket_worker="2",available="Unknown",vendor="Other",version="v1.16.2"} 1`,
+			Want:        `acm_managed_cluster_info{cloud="Amazon",core_worker="4",managed_cluster_id="cluster-other",product="Other",service_name="Compute",created_via="Other",hub_cluster_id="mycluster_id",hub_type="mce",socket_worker="2",available="Unknown",vendor="Other",version="v1.16.2"} 1`,
 		},
 	}
 	for i, c := range tests {
