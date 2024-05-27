@@ -1,0 +1,15 @@
+# Copyright Contributors to the Open Cluster Management project
+
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  labels:
+    name: clusterlifecycle-state-metrics
+  name: clusterlifecycle-state-metrics.rules
+  namespace: openshift-monitoring
+spec:
+  groups:
+    - name: acm_managed_cluster_worker_cores.rules
+      rules:
+        - expr: sum by (hub_cluster_id, managed_cluster_id) (acm_managed_cluster_worker_cores)
+          record: 'acm_managed_cluster_worker_cores:sum'

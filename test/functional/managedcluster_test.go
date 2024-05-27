@@ -14,6 +14,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"reflect"
+	"regexp"
 	"sort"
 	"strings"
 	"time"
@@ -190,6 +191,30 @@ var _ = Describe("ManagedCluster Metrics", func() {
 				}
 				return len(b)
 			}).Should(Equal(len(response)))
+		})
+	}
+
+	assertRecordingRule := func(record, expr string) {
+		var re = regexp.MustCompile(`[0-9]{10}\.[0-9]{3}`)
+		By("Querying recording rule ...", func() {
+			Eventually(func() bool {
+				resp, recordBody, err := queryMetrics(record)
+				if err != nil || resp.StatusCode != http.StatusOK {
+					return false
+				}
+				recordBody = strings.Replace(recordBody, fmt.Sprintf("\"__name__\":\"%s\",", record), "", -1)
+				recordBody = re.ReplaceAllString(recordBody, `0000000000.000`)
+				klog.Infof("Querying record %s response: %s", record, recordBody)
+
+				resp, exprBody, err := queryMetrics(expr)
+				if err != nil || resp.StatusCode != http.StatusOK {
+					return false
+				}
+				exprBody = re.ReplaceAllString(exprBody, `0000000000.000`)
+				klog.Infof("Querying with expr %s response: %s", expr, exprBody)
+
+				return recordBody == exprBody
+			}).Should(BeTrue())
 		})
 	}
 
@@ -510,6 +535,8 @@ var _ = Describe("ManagedCluster Metrics", func() {
 	})
 
 	Context("acm_managed_cluster_worker_cores", func() {
+		ruleExpr := "sum(acm_managed_cluster_worker_cores)+by+(hub_cluster_id,managed_cluster_id)"
+
 		AfterEach(func() {
 			By("Query metrics by count(acm_managed_cluster_worker_cores) by (hub_cluster_id)", func() {
 				Eventually(func() error {
@@ -543,6 +570,7 @@ var _ = Describe("ManagedCluster Metrics", func() {
 
 		It("should get metric", func() {
 			assertGetMetrics("acm_managed_cluster_worker_cores", clusterWorkerCoresResponse)
+			assertRecordingRule("acm_managed_cluster_worker_cores:sum", ruleExpr)
 		})
 
 		It("should reflect the change on the managed cluster", func() {
@@ -555,6 +583,7 @@ var _ = Describe("ManagedCluster Metrics", func() {
 			})
 
 			assertGetMetrics("acm_managed_cluster_worker_cores", clusterWorkerCoresUpdatedResponse)
+			assertRecordingRule("acm_managed_cluster_worker_cores:sum", ruleExpr)
 		})
 	})
 })
