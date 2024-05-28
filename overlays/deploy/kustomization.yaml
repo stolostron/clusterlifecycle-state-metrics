@@ -8,6 +8,7 @@ bases:
 - ../../deploy
 resources:
 - servicemonitor.yaml
+- prometheusrule.yaml
 images:
 - name: clusterlifecycle-state-metrics
   newName: quay.io/itdove/clusterlifecycle-state-metrics

@@ -3,6 +3,7 @@
 bases:
 - ../../../deploy
 - servicemonitor.yaml
+- prometheusrule.yaml
 
 patchesStrategicMerge:
 - deployment.yaml
