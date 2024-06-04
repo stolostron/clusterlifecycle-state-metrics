@@ -547,7 +547,7 @@ var _ = Describe("ManagedCluster Metrics", func() {
 	})
 
 	Context("acm_managed_cluster_worker_cores", func() {
-		ruleExpr := "sum(acm_managed_cluster_worker_cores)+by+(hub_cluster_id,managed_cluster_id)"
+		ruleExpr := "max(acm_managed_cluster_worker_cores)+by+(hub_cluster_id,managed_cluster_id)"
 
 		AfterEach(func() {
 			By("Query metrics by count(acm_managed_cluster_worker_cores) by (hub_cluster_id)", func() {
@@ -582,7 +582,7 @@ var _ = Describe("ManagedCluster Metrics", func() {
 
 		It("should get metric", func() {
 			assertGetMetrics("acm_managed_cluster_worker_cores", clusterWorkerCoresResponse)
-			assertRecordingRule("acm_managed_cluster_worker_cores:sum", ruleExpr)
+			assertRecordingRule("acm_managed_cluster_worker_cores:max", ruleExpr)
 		})
 
 		It("should reflect the change on the managed cluster", func() {
@@ -595,7 +595,7 @@ var _ = Describe("ManagedCluster Metrics", func() {
 			})
 
 			assertGetMetrics("acm_managed_cluster_worker_cores", clusterWorkerCoresUpdatedResponse)
-			assertRecordingRule("acm_managed_cluster_worker_cores:sum", ruleExpr)
+			assertRecordingRule("acm_managed_cluster_worker_cores:max", ruleExpr)
 		})
 	})
 })
