@@ -37,11 +37,33 @@ func GetManagedClusterLabelMetricFamilies(hubClusterID string) metric.FamilyGene
 				mangedClusterID,
 			}
 
-			regex := regexp.MustCompile(`[^\w]+`)
+			// Regex patterns which is following the Prometheus metric label validation rules.
+			nonWordRegex := regexp.MustCompile(`[^\w]+`) // Regex to check non-word characters
+			firstDigitRegex := regexp.MustCompile(`^\d`) // Regex to check if the first character is a digit
+
 			for key, value := range mc.Labels {
 				// Ignore the clusterID label since it is being set within the hub and managed cluster IDs
 				if key != "clusterID" {
-					labelsKeys = append(labelsKeys, regex.ReplaceAllString(key, "_"))
+					// Preserve the original key for logging
+					originalKey := key
+
+					// Replace non-word characters with underscores
+					// For example, label key velero.io/exclude-from-backup will be replaced with velero_io_exclude_from_backup,
+					modifiedKey := nonWordRegex.ReplaceAllString(key, "_")
+
+					// If the first character is a digit, prepend an underscore
+					// For example, label key 5g-dev01 will be replaced with _5g_dev01.
+					if firstDigitRegex.MatchString(modifiedKey) {
+						modifiedKey = "_" + modifiedKey
+					}
+
+					// If the key was modified, log a warning
+					if originalKey != modifiedKey {
+						klog.Warningf("Label key '%s' was modified to '%s'", originalKey, modifiedKey)
+					}
+
+					// Add the modified key and value to the label slices
+					labelsKeys = append(labelsKeys, modifiedKey)
 					labelsValues = append(labelsValues, value)
 				}
 			}
