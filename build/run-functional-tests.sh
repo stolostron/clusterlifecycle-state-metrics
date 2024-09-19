@@ -27,17 +27,11 @@ if ! which kind > /dev/null; then
 fi
 if ! which ginkgo > /dev/null; then
     echo "Installing ginkgo ..."
-    pushd $(mktemp -d)
-    go install github.com/onsi/ginkgo/v2/ginkgo@v2.3.1
-    echo "installing gomega ..."
-    GO111MODULE=off go get github.com/onsi/gomega/...
-    popd
+    go install github.com/onsi/ginkgo/v2/ginkgo@v2.9.1
 fi
 if ! which gocovmerge > /dev/null; then
     echo "Installing gocovmerge..."
-    pushd $(mktemp -d)
-    go install github.com/wadey/gocovmerge@latest
-    popd
+    go install -mod=mod github.com/wadey/gocovmerge
 fi
 if ! which helm > /dev/null; then
     echo "Installing helm..."
