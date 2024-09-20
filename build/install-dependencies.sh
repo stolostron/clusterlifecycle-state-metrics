@@ -3,20 +3,13 @@
 # Copyright (c) 2020 Red Hat, Inc.
 # Copyright Contributors to the Open Cluster Management project
 
-export GO111MODULE=off
-
 # Go tools
 _OS=$(go env GOOS)
 _ARCH=$(go env GOARCH)
 KubeBuilderVersion="2.3.0"
 
-if ! which patter > /dev/null; then      echo "Installing patter ..."; go get -u github.com/apg/patter; fi
-if ! which gocovmerge > /dev/null; then  echo "Installing gocovmerge..."; go get -u github.com/wadey/gocovmerge; fi
-if ! which go-bindata > /dev/null; then
-	echo "Installing go-bindata..."
-	cd $(mktemp -d) && GOSUMDB=off go get -u github.com/go-bindata/go-bindata/...
-fi
-go-bindata --version
+if ! which patter > /dev/null; then      echo "Installing patter ..."; go install github.com/apg/patter@latest; fi
+if ! which gocovmerge > /dev/null; then  echo "Installing gocovmerge..."; go install -mod=mod github.com/wadey/gocovmerge; fi
 
 # Build tools
 if ! which kubebuilder > /dev/null; then
