@@ -214,8 +214,6 @@ github.com/stolostron/library-go/pkg/apis/meta/v1/deployment
 github.com/stolostron/library-go/pkg/client
 github.com/stolostron/library-go/pkg/config
 github.com/stolostron/library-go/pkg/templateprocessor
-# github.com/wadey/gocovmerge v0.0.0-20160331181800-b5bfa59ec0ad
-## explicit
 # go.uber.org/atomic v1.9.0
 ## explicit; go 1.13
 go.uber.org/atomic

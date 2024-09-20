@@ -31,7 +31,7 @@ if ! which ginkgo > /dev/null; then
 fi
 if ! which gocovmerge > /dev/null; then
     echo "Installing gocovmerge..."
-    go install -mod=mod github.com/wadey/gocovmerge
+    go install github.com/wadey/gocovmerge@latest
 fi
 if ! which helm > /dev/null; then
     echo "Installing helm..."
