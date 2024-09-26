@@ -9,7 +9,7 @@ _ARCH=$(go env GOARCH)
 KubeBuilderVersion="2.3.0"
 
 if ! which patter > /dev/null; then      echo "Installing patter ..."; go install github.com/apg/patter@latest; fi
-if ! which gocovmerge > /dev/null; then  echo "Installing gocovmerge..."; go install -mod=mod github.com/wadey/gocovmerge; fi
+if ! which gocovmerge > /dev/null; then  echo "Installing gocovmerge..."; go install github.com/wadey/gocovmerge@latest; fi
 
 # Build tools
 if ! which kubebuilder > /dev/null; then
