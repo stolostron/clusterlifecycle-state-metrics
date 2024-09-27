@@ -13,8 +13,8 @@ import (
 	ocinfrav1 "github.com/openshift/api/config/v1"
 	ocpclient "github.com/openshift/client-go/config/clientset/versioned"
 	"golang.org/x/net/context"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
@@ -23,6 +23,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 
 	ocpclientfake "github.com/openshift/client-go/config/clientset/versioned/fake"
+	kubeclientfake "k8s.io/client-go/kubernetes/fake"
 )
 
 var (
@@ -478,29 +479,42 @@ func Test_getHubClusterID(t *testing.T) {
 
 	tests := []struct {
 		name           string
-		exisingObjects []runtime.Object
+		clusterVersion *ocinfrav1.ClusterVersion
+		ns             *corev1.Namespace
 		want           string
 	}{
 		{
 			name: "Get cluster id",
-			exisingObjects: []runtime.Object{
-				&ocinfrav1.ClusterVersion{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "version",
-					},
-					Spec: ocinfrav1.ClusterVersionSpec{
-						ClusterID: "mycluster_id",
-					},
+			clusterVersion: &ocinfrav1.ClusterVersion{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "version",
+				},
+				Spec: ocinfrav1.ClusterVersionSpec{
+					ClusterID: "mycluster_id",
 				},
 			},
+			ns:   &corev1.Namespace{},
 			want: "mycluster_id",
+		},
+		{
+			name:           "Get cluster id",
+			clusterVersion: &ocinfrav1.ClusterVersion{},
+			ns: &corev1.Namespace{
+				TypeMeta: metav1.TypeMeta{},
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "kube-system",
+					UID:  "kube-system-uid",
+				},
+			},
+			want: "kube-system-uid",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fakeOcpClient := ocpclientfake.NewSimpleClientset(tt.exisingObjects...)
-			if got := getHubClusterID(fakeOcpClient); got != tt.want {
+			fakeOcpClient := ocpclientfake.NewSimpleClientset(tt.clusterVersion)
+			fakeKubeClient := kubeclientfake.NewSimpleClientset(tt.ns)
+			if got := getHubClusterID(fakeOcpClient, fakeKubeClient); got != tt.want {
 				t.Errorf("getHubClusterID() = %v, want %v", got, tt.want)
 			}
 		})

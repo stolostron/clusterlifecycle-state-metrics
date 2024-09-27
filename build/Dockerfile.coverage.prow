@@ -6,7 +6,7 @@ ENV OPERATOR=/usr/local/bin/clusterlifecycle-state-metrics \
     
 USER root
 # Install unzip
-RUN microdnf update
+RUN microdnf update -y
 RUN microdnf install -y --nodocs jq
 RUN microdnf install -y --nodocs openssl
 

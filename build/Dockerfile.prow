@@ -11,7 +11,7 @@ RUN GOFLAGS="" go build ./cmd/clusterlifecycle-state-metrics; \
 GOFLAGS="" go test -covermode=atomic -coverpkg=github.com/stolostron/clusterlifecycle-state-metrics/pkg/... -c -tags testrunmain ./cmd/clusterlifecycle-state-metrics -o clusterlifecycle-state-metrics-coverage
 
 FROM registry.access.redhat.com/ubi9/ubi-minimal:latest
-RUN microdnf update
+RUN microdnf update -y
 
 ARG REMOTE_SOURCE_DIR
 
