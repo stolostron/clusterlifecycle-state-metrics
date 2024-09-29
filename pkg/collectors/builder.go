@@ -28,6 +28,7 @@ import (
 	"k8s.io/kube-state-metrics/pkg/options"
 
 	"golang.org/x/net/context"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/klog/v2"
 
 	"github.com/stolostron/clusterlifecycle-state-metrics/pkg/generators/addon"
@@ -159,7 +160,13 @@ func (b *Builder) buildManagedClusterCollector() MetricsCollector {
 	if err != nil {
 		klog.Fatalf("cannot create ocpclient: %v", err)
 	}
-	hubClusterID := getHubClusterID(ocpClient)
+
+	kubeClient, err := kubernetes.NewForConfig(b.restConfig)
+	if err != nil {
+		klog.Fatalf("cannot create kubeClient: %v", err)
+	}
+
+	hubClusterID := getHubClusterID(ocpClient, kubeClient)
 
 	filteredMetricFamilies := metric.FilterMetricFamilies(b.whiteBlackList,
 		[]metric.FamilyGenerator{
@@ -346,10 +353,20 @@ func (b *Builder) startWatchingManifestWorks() {
 	go reflector.Run(b.ctx.Done())
 }
 
-func getHubClusterID(ocpclient ocpclient.Interface) string {
-	cv, err := ocpclient.ConfigV1().ClusterVersions().Get(context.TODO(), "version", metav1.GetOptions{})
-	if err != nil {
-		klog.Fatalf("Error getting cluster version %v \n", err)
+func getHubClusterID(ocpClient ocpclient.Interface, kubeClient kubernetes.Interface) string {
+	cv, err := ocpClient.ConfigV1().ClusterVersions().Get(context.TODO(), "version", metav1.GetOptions{})
+	if err == nil {
+		return string(cv.Spec.ClusterID)
 	}
-	return string(cv.Spec.ClusterID)
+
+	if errors.IsNotFound(err) {
+		ns, err := kubeClient.CoreV1().Namespaces().Get(context.TODO(), "kube-system", metav1.GetOptions{})
+		if err != nil {
+			klog.Fatalf("Error getting namespace %v \n", err)
+		}
+		return string(ns.GetUID())
+	}
+
+	klog.Fatalf("Error getting cluster version %v \n,", err)
+	return ""
 }
