@@ -1,6 +1,6 @@
 module github.com/stolostron/clusterlifecycle-state-metrics
 
-go 1.22
+go 1.22.5
 
 require (
 	github.com/onsi/ginkgo/v2 v2.9.1
