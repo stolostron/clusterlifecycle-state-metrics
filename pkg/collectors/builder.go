@@ -174,6 +174,7 @@ func (b *Builder) buildManagedClusterCollector() MetricsCollector {
 			cluster.GetManagedClusterLabelMetricFamilies(hubClusterID),
 			cluster.GetManagedClusterStatusMetricFamilies(),
 			cluster.GetManagedClusterWorkerCoresMetricFamilies(hubClusterID),
+			cluster.GetManagedClusterTimestampMetricFamilies(hubClusterID),
 		})
 	composedMetricGenFuncs := metric.ComposeMetricGenFuncs(filteredMetricFamilies)
 	familyHeaders := metric.ExtractMetricFamilyHeaders(filteredMetricFamilies)
@@ -224,6 +225,7 @@ func (b *Builder) buildManifestWorkCollector() MetricsCollector {
 	filteredMetricFamilies := metric.FilterMetricFamilies(b.whiteBlackList,
 		[]metric.FamilyGenerator{
 			work.GetManifestWorkStatusMetricFamilies(b.clusterIdCache.GetClusterId),
+			work.GetManifestWorkTimestampMetricFamilies(b.clusterIdCache.GetClusterId),
 		})
 	composedMetricGenFuncs := metric.ComposeMetricGenFuncs(filteredMetricFamilies)
 	familyHeaders := metric.ExtractMetricFamilyHeaders(filteredMetricFamilies)
