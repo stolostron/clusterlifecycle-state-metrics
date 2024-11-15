@@ -4,6 +4,7 @@
 package cluster
 
 import (
+	"github.com/stolostron/clusterlifecycle-state-metrics/pkg/generators"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/klog/v2"
@@ -12,36 +13,35 @@ import (
 )
 
 var (
-	descTimestampName          = "acm_managed_cluster_import_timestamp"
-	descTimestampHelp          = "The timestamp of different status when importing an ACM managed clusters"
-	descTimestampDefaultLabels = []string{"hub_cluster_id",
-		"managed_cluster_id",
-		"managed_cluster_name",
-	}
+	descTimestampName                   = "acm_managed_cluster_import_timestamp"
+	descTimestampHelp                   = "The timestamp of different status when importing an ACM managed clusters"
+	hostingClusterNameAnnotation string = "import.open-cluster-management.io/hosting-cluster-name"
 )
 
-func GetManagedClusterTimestampMetricFamilies(hubClusterID string) metric.FamilyGenerator {
+func GetManagedClusterTimestampMetricFamilies(hubClusterID string,
+	getClusterTimestamps func(clusterName string) map[string]float64) metric.FamilyGenerator {
 	return metric.FamilyGenerator{
 		Name: descTimestampName,
 		Type: metric.Gauge,
 		Help: descTimestampHelp,
 		GenerateFunc: wrapManagedClusterTimestampFunc(func(mc *mcv1.ManagedCluster) metric.Family {
 			klog.Infof("Wrap %s", mc.GetName())
-			keys := []string{}
-			values := []string{}
+			keys := []string{"managed_cluster_name"}
+			values := []string{mc.GetName()}
 			if clusterId := getClusterID(mc); len(clusterId) > 0 {
 				keys = append(keys, "managed_cluster_id")
 				values = append(values, clusterId)
 			}
-			keys = append(keys, "managed_cluster_name")
-			values = append(values, mc.GetName())
+			if hostingcluster, ok := mc.GetAnnotations()[hostingClusterNameAnnotation]; ok {
+				keys = append(keys, "hosting_cluster_name")
+				values = append(values, hostingcluster)
+			}
 
 			f := buildManagedClusterTimestampMetricFamily(
 				mc,
 				keys,
 				values,
-				requiredClusterStatusConditions,
-				getAllowedClusterConditionStatuses,
+				getClusterTimestamps,
 			)
 			klog.Infof("Returning %v", string(f.ByteSlice()))
 			return f
@@ -64,39 +64,32 @@ func wrapManagedClusterTimestampFunc(f func(obj *mcv1.ManagedCluster) metric.Fam
 	}
 }
 
-func buildManagedClusterTimestampMetricFamily(mc *mcv1.ManagedCluster, labelKeys, labelValues, requiredConditionTypes []string, getAllowedConditionStatuses func(conditionType string) []metav1.ConditionStatus) metric.Family {
+func buildManagedClusterTimestampMetricFamily(mc *mcv1.ManagedCluster, labelKeys, labelValues []string,
+	getClusterTimestamps func(clusterName string) map[string]float64) metric.Family {
 	family := metric.Family{}
 
-	family.Metrics = append(family.Metrics, buildCreationTimeMetric(mc.CreationTimestamp, labelKeys, labelValues))
+	family.Metrics = append(family.Metrics,
+		generators.BuildTimestampMetric(mc.CreationTimestamp, labelKeys, labelValues, generators.CreatedTimestamp))
 
 	// handle existing conditions
 	joinedCond := meta.FindStatusCondition(mc.Status.Conditions, mcv1.ManagedClusterConditionJoined)
 	if joinedCond != nil && joinedCond.Status == metav1.ConditionTrue {
-		family.Metrics = append(family.Metrics, buildJoinedTimeMetric(joinedCond.LastTransitionTime, labelKeys, labelValues))
+		family.Metrics = append(family.Metrics, generators.BuildTimestampMetric(
+			joinedCond.LastTransitionTime, labelKeys, labelValues, generators.JoinedTimestamp))
+	}
+
+	timestamps := getClusterTimestamps(mc.GetName())
+	if len(timestamps) == 0 {
+		return family
+	}
+
+	for status, timestamp := range timestamps {
+		family.Metrics = append(family.Metrics,
+			&metric.Metric{
+				LabelKeys:   append(labelKeys, "status"),
+				LabelValues: append(labelValues, status),
+				Value:       timestamp,
+			})
 	}
 	return family
-}
-
-func buildCreationTimeMetric(creationTime metav1.Time, keys, values []string) *metric.Metric {
-	labelKeys := append(keys, "status")
-
-	metric := &metric.Metric{
-		LabelKeys:   labelKeys,
-		LabelValues: append(values, "Created"),
-		Value:       float64(creationTime.Unix()),
-	}
-
-	return metric
-}
-
-func buildJoinedTimeMetric(joinedTime metav1.Time, keys, values []string) *metric.Metric {
-	labelKeys := append(keys, "status")
-
-	metric := &metric.Metric{
-		LabelKeys:   labelKeys,
-		LabelValues: append(values, "Joined"),
-		Value:       float64(joinedTime.Unix()),
-	}
-
-	return metric
 }

@@ -51,3 +51,23 @@ func buildStatusConditionMetrics(conditionType string, conditionStatus metav1.Co
 
 	return metrics
 }
+
+type TimestampStatusType string
+
+const (
+	CreatedTimestamp TimestampStatusType = "Created"
+	AppliedTimestamp TimestampStatusType = "Applied"
+	JoinedTimestamp  TimestampStatusType = "Joined"
+)
+
+func BuildTimestampMetric(time metav1.Time, keys, values []string, status TimestampStatusType) *metric.Metric {
+	labelKeys := append(keys, "status")
+
+	metric := &metric.Metric{
+		LabelKeys:   labelKeys,
+		LabelValues: append(values, string(status)),
+		Value:       float64(time.Unix()),
+	}
+
+	return metric
+}

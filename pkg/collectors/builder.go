@@ -4,6 +4,8 @@
 package collectors
 
 import (
+	"fmt"
+	"os"
 	"sort"
 	"strings"
 	"time"
@@ -36,6 +38,10 @@ import (
 	"github.com/stolostron/clusterlifecycle-state-metrics/pkg/generators/work"
 )
 
+const (
+	configMapName = "clusterlifecycle-state-metrics-config"
+)
+
 var ResyncPeriod = 60 * time.Minute
 
 type whiteBlackLister interface {
@@ -54,22 +60,28 @@ type Builder struct {
 	enabledCollectors []string
 	whiteBlackList    whiteBlackLister
 	restConfig        *rest.Config
+	kubeclient        kubernetes.Interface
 
 	clusterIdCache            *clusterIdCache
+	clusterTimestampCache     *clusterTimestampCache
 	composedClusterStore      *composedStore
 	composedAddOnStore        *composedStore
 	composedManifestWorkStore *composedStore
+
+	timestampMetricsEnabled bool
 }
 
 // NewBuilder returns a new builder.
 func NewBuilder(ctx context.Context) *Builder {
 	clusterIdCache := newClusterIdCache()
+	clusterTimestampCache := newClusterTimestampCache()
 	return &Builder{
 		ctx:                       ctx,
 		clusterIdCache:            clusterIdCache,
+		clusterTimestampCache:     clusterTimestampCache,
 		composedClusterStore:      newComposedStore(clusterIdCache),
 		composedAddOnStore:        newComposedStore(),
-		composedManifestWorkStore: newComposedStore(),
+		composedManifestWorkStore: newComposedStore(clusterTimestampCache),
 	}
 }
 
@@ -123,6 +135,18 @@ func (b *Builder) Build() []MetricsCollector {
 	}
 	b.restConfig = config
 
+	kubeClient, err := kubernetes.NewForConfig(b.restConfig)
+	if err != nil {
+		klog.Fatalf("cannot create kubeClient: %v", err)
+	}
+	b.kubeclient = kubeClient
+
+	timestampMetricsEnabled, err := isTimestampMetricsEnabled(kubeClient)
+	if err != nil {
+		klog.Fatalf("cannot determine if timestamp metrics should be enabled: %v", err)
+	}
+	b.timestampMetricsEnabled = timestampMetricsEnabled
+
 	collectors := []MetricsCollector{}
 	activeCollectorNames := []string{}
 
@@ -161,21 +185,19 @@ func (b *Builder) buildManagedClusterCollector() MetricsCollector {
 		klog.Fatalf("cannot create ocpclient: %v", err)
 	}
 
-	kubeClient, err := kubernetes.NewForConfig(b.restConfig)
-	if err != nil {
-		klog.Fatalf("cannot create kubeClient: %v", err)
+	hubClusterID := getHubClusterID(ocpClient, b.kubeclient)
+
+	clusterFamilies := []metric.FamilyGenerator{
+		cluster.GetManagedClusterInfoMetricFamilies(hubClusterID, b.hubType),
+		cluster.GetManagedClusterLabelMetricFamilies(hubClusterID),
+		cluster.GetManagedClusterStatusMetricFamilies(),
+		cluster.GetManagedClusterWorkerCoresMetricFamilies(hubClusterID),
 	}
-
-	hubClusterID := getHubClusterID(ocpClient, kubeClient)
-
-	filteredMetricFamilies := metric.FilterMetricFamilies(b.whiteBlackList,
-		[]metric.FamilyGenerator{
-			cluster.GetManagedClusterInfoMetricFamilies(hubClusterID, b.hubType),
-			cluster.GetManagedClusterLabelMetricFamilies(hubClusterID),
-			cluster.GetManagedClusterStatusMetricFamilies(),
-			cluster.GetManagedClusterWorkerCoresMetricFamilies(hubClusterID),
-			cluster.GetManagedClusterTimestampMetricFamilies(hubClusterID),
-		})
+	if b.timestampMetricsEnabled {
+		clusterFamilies = append(clusterFamilies,
+			cluster.GetManagedClusterTimestampMetricFamilies(hubClusterID, b.clusterTimestampCache.GetClusterTimestamps))
+	}
+	filteredMetricFamilies := metric.FilterMetricFamilies(b.whiteBlackList, clusterFamilies)
 	composedMetricGenFuncs := metric.ComposeMetricGenFuncs(filteredMetricFamilies)
 	familyHeaders := metric.ExtractMetricFamilyHeaders(filteredMetricFamilies)
 	metricsStore := metricsstore.NewMetricsStore(
@@ -222,11 +244,13 @@ func (b *Builder) buildManagedClusterAddOnCollector() MetricsCollector {
 
 func (b *Builder) buildManifestWorkCollector() MetricsCollector {
 	// build metrics store
-	filteredMetricFamilies := metric.FilterMetricFamilies(b.whiteBlackList,
-		[]metric.FamilyGenerator{
-			work.GetManifestWorkStatusMetricFamilies(b.clusterIdCache.GetClusterId),
-			work.GetManifestWorkTimestampMetricFamilies(b.clusterIdCache.GetClusterId),
-		})
+	workFamilies := []metric.FamilyGenerator{
+		work.GetManifestWorkStatusMetricFamilies(b.clusterIdCache.GetClusterId),
+	}
+	if b.timestampMetricsEnabled {
+		workFamilies = append(workFamilies, work.GetManifestWorkTimestampMetricFamilies(b.clusterIdCache.GetClusterId))
+	}
+	filteredMetricFamilies := metric.FilterMetricFamilies(b.whiteBlackList, workFamilies)
 	composedMetricGenFuncs := metric.ComposeMetricGenFuncs(filteredMetricFamilies)
 	familyHeaders := metric.ExtractMetricFamilyHeaders(filteredMetricFamilies)
 	metricsStore := metricsstore.NewMetricsStore(
@@ -371,4 +395,36 @@ func getHubClusterID(ocpClient ocpclient.Interface, kubeClient kubernetes.Interf
 
 	klog.Fatalf("Error getting cluster version %v \n,", err)
 	return ""
+}
+
+// Check the ConfigMap to see if the timestamp-metrics should be enabled
+func isTimestampMetricsEnabled(clientset *kubernetes.Clientset) (bool, error) {
+	namespace, err := GetComponentNamespace()
+	if err != nil {
+		return false, fmt.Errorf("failed to get namespace: %v", err)
+	}
+
+	// Get the ConfigMap
+	cm, err := clientset.CoreV1().ConfigMaps(namespace).Get(context.TODO(), configMapName, metav1.GetOptions{})
+	if errors.IsNotFound(err) {
+		return false, nil
+	} else if err != nil {
+		return false, fmt.Errorf("failed to get ConfigMap: %v", err)
+	}
+
+	// Check if collect-timestamp-metrics is "enable"
+	value, exists := cm.Data["collect-timestamp-metrics"]
+	if !exists {
+		return false, nil
+	}
+
+	return value == "Enable", nil
+}
+
+func GetComponentNamespace() (string, error) {
+	nsBytes, err := os.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/namespace")
+	if err != nil {
+		return "multicluster-engine", err
+	}
+	return string(nsBytes), nil
 }
