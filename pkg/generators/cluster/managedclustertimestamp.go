@@ -51,9 +51,9 @@ func GetManagedClusterTimestampMetricFamilies(hubClusterID string,
 
 func wrapManagedClusterTimestampFunc(f func(obj *mcv1.ManagedCluster) metric.Family) func(interface{}) *metric.Family {
 	return func(obj interface{}) *metric.Family {
-		Cluster := obj.(*mcv1.ManagedCluster)
+		cluster := obj.(*mcv1.ManagedCluster)
 
-		metricFamily := f(Cluster)
+		metricFamily := f(cluster)
 
 		for _, m := range metricFamily.Metrics {
 			m.LabelKeys = append([]string{}, m.LabelKeys...)
@@ -86,8 +86,10 @@ func buildManagedClusterTimestampMetricFamily(mc *mcv1.ManagedCluster, labelKeys
 	for status, timestamp := range timestamps {
 		family.Metrics = append(family.Metrics,
 			&metric.Metric{
-				LabelKeys:   append(labelKeys, "status"),
-				LabelValues: append(labelValues, status),
+				// do not use 'LabelValues: append(labelValues, status),',
+				// prevent from using the shared backing array
+				LabelKeys:   append([]string{"status"}, labelKeys...),
+				LabelValues: append([]string{status}, labelValues...),
 				Value:       timestamp,
 			})
 	}

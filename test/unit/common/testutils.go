@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	metricsstore "k8s.io/kube-state-metrics/pkg/metrics_store"
@@ -151,5 +152,13 @@ func NewCondition(conditonType string, status metav1.ConditionStatus) metav1.Con
 	return metav1.Condition{
 		Type:   conditonType,
 		Status: status,
+	}
+}
+
+func NewConditionWithTime(conditonType string, status metav1.ConditionStatus, t time.Time) metav1.Condition {
+	return metav1.Condition{
+		Type:               conditonType,
+		Status:             status,
+		LastTransitionTime: metav1.NewTime(t),
 	}
 }

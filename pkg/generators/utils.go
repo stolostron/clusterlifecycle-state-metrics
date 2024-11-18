@@ -61,13 +61,13 @@ const (
 )
 
 func BuildTimestampMetric(time metav1.Time, keys, values []string, status TimestampStatusType) *metric.Metric {
-	labelKeys := append(keys, "status")
+	// do not use 'labelValues := append(labelValues, string(status))', prevent from using the shared backing array
+	labelKeys := append([]string{"status"}, keys...)
+	labelValues := append([]string{string(status)}, values...)
 
-	metric := &metric.Metric{
+	return &metric.Metric{
 		LabelKeys:   labelKeys,
-		LabelValues: append(values, string(status)),
+		LabelValues: labelValues,
 		Value:       float64(time.Unix()),
 	}
-
-	return metric
 }
