@@ -20,8 +20,6 @@ const (
 	StatusStartToApplyKlusterletResources  = "StartToApplyKlusterletResources"
 )
 
-// type onClusterIdChangeFunc func(clusterName string) error
-
 // clusterTimestampCache implements the k8s.io/client-go/tools/cache.Store interface.
 // It stores timestamps for the cluster importing phases of ManagedCluster objects.
 // Note the cached value is for ManagedCluster, but the input obj should be a ManifestWork.
@@ -31,8 +29,6 @@ type clusterTimestampCache struct {
 
 	// data is a map indexed by cluster name with cluster IDs
 	data map[string]map[string]float64
-
-	// onClusterIdChangeFuncs []onClusterIdChangeFunc
 }
 
 func newClusterTimestampCache() *clusterTimestampCache {
@@ -47,6 +43,10 @@ func (s *clusterTimestampCache) GetClusterTimestamps(clusterName string) map[str
 
 // Add implements the Add method of the store interface.
 func (s *clusterTimestampCache) Add(obj interface{}) error {
+	return s.replace(obj, false)
+}
+
+func (s *clusterTimestampCache) replace(obj interface{}, replace bool) error {
 	mw, ok := obj.(*workv1.ManifestWork)
 	if !ok {
 		return fmt.Errorf("invalid ManifestWork: %v", obj)
@@ -65,6 +65,9 @@ func (s *clusterTimestampCache) Add(obj interface{}) error {
 		return err
 	}
 	if len(timestamps) == 0 {
+		if replace {
+			s.data[clusterName] = timestamps
+		}
 		return nil
 	}
 
@@ -101,24 +104,26 @@ func getClusterTimestampsByFeedbackRules(feedbackValues []workv1.FeedbackValue) 
 		}
 	}
 
-	timestamps := make(map[string]float64)
-	if status {
-		transition, err := time.Parse(time.RFC3339, lastTransitionTime)
-		if err != nil {
-			return nil, fmt.Errorf("failed to parse last transition time %q: %v", lastTransitionTime, err)
-		}
-		timestamps[StatusStartToApplyKlusterletResources] = float64(transition.Unix())
+	if !status {
+		return nil, nil
+	}
 
-		// parse the message to get the kubeconfig secret creation time, the message format is:
-		// "Klusterlet is ready to apply, the external managed kubeconfig secret was created at: 2021-07-01T00:00:00Z"
-		parts := strings.SplitN(message, "the external managed kubeconfig secret was created at:", 2)
-		if len(parts) == 2 {
-			creationTime, err := time.Parse(time.RFC3339, strings.TrimSpace(parts[1]))
-			if err != nil {
-				return nil, fmt.Errorf("failed to parse kubeconfig secret creation time %q: %v", parts[1], err)
-			}
-			timestamps[StatusManagedClusterKubeconfigProvided] = float64(creationTime.Unix())
+	timestamps := make(map[string]float64)
+	transition, err := time.Parse(time.RFC3339, lastTransitionTime)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse last transition time %q: %v", lastTransitionTime, err)
+	}
+	timestamps[StatusStartToApplyKlusterletResources] = float64(transition.Unix())
+
+	// parse the message to get the kubeconfig secret creation time, the message format is:
+	// "Klusterlet is ready to apply, the external managed kubeconfig secret was created at: 2021-07-01T00:00:00Z"
+	parts := strings.SplitN(message, "the external managed kubeconfig secret was created at:", 2)
+	if len(parts) == 2 {
+		creationTime, err := time.Parse(time.RFC3339, strings.TrimSpace(parts[1]))
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse kubeconfig secret creation time %q: %v", parts[1], err)
 		}
+		timestamps[StatusManagedClusterKubeconfigProvided] = float64(creationTime.Unix())
 	}
 	return timestamps, nil
 }
@@ -129,7 +134,7 @@ func hostedKlusterletCRName(managedClusterName string) string {
 
 // Update implements the Update method of the store interface.
 func (s *clusterTimestampCache) Update(obj interface{}) error {
-	return s.Add(obj)
+	return s.replace(obj, true)
 }
 
 // Delete implements the Delete method of the store interface.
