@@ -5,11 +5,14 @@ package collectors
 
 import (
 	"fmt"
+	"reflect"
 	"strings"
 	"sync"
 	"time"
 
 	"k8s.io/apimachinery/pkg/api/meta"
+	utilerrors "k8s.io/apimachinery/pkg/util/errors"
+	"k8s.io/klog/v2"
 	operatorv1 "open-cluster-management.io/api/operator/v1"
 	workv1 "open-cluster-management.io/api/work/v1"
 )
@@ -20,6 +23,8 @@ const (
 	StatusStartToApplyKlusterletResources  = "StartToApplyKlusterletResources"
 )
 
+type onTimestampChangeFunc func(clusterName string) error
+
 // clusterTimestampCache implements the k8s.io/client-go/tools/cache.Store interface.
 // It stores timestamps for the cluster importing phases of ManagedCluster objects.
 // Note the cached value is for ManagedCluster, but the input obj should be a ManifestWork.
@@ -27,8 +32,10 @@ type clusterTimestampCache struct {
 	// Protects metrics
 	mutex sync.RWMutex
 
-	// data is a map indexed by cluster name with cluster IDs
+	// data is a map indexed by cluster name with timestamps of different status
 	data map[string]map[string]float64
+
+	onTimestampChangeFuncs []onTimestampChangeFunc
 }
 
 func newClusterTimestampCache() *clusterTimestampCache {
@@ -43,10 +50,6 @@ func (s *clusterTimestampCache) GetClusterTimestamps(clusterName string) map[str
 
 // Add implements the Add method of the store interface.
 func (s *clusterTimestampCache) Add(obj interface{}) error {
-	return s.replace(obj, false)
-}
-
-func (s *clusterTimestampCache) replace(obj interface{}, replace bool) error {
 	mw, ok := obj.(*workv1.ManifestWork)
 	if !ok {
 		return fmt.Errorf("invalid ManifestWork: %v", obj)
@@ -60,19 +63,27 @@ func (s *clusterTimestampCache) replace(obj interface{}, replace bool) error {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
-	timestamps, err := getClusterTimestamps(clusterName, mw.Status)
+	newTimestamps, err := getClusterTimestamps(clusterName, mw.Status)
 	if err != nil {
 		return err
 	}
-	if len(timestamps) == 0 {
-		if replace {
-			s.data[clusterName] = timestamps
-		}
+
+	timestamps := s.data[clusterName]
+	if reflect.DeepEqual(newTimestamps, timestamps) {
 		return nil
 	}
 
-	s.data[clusterName] = timestamps
-	return nil
+	s.data[clusterName] = newTimestamps
+	klog.V(5).Infof("Timestamps of cluster %q is changed from %v to %v", clusterName, timestamps, newTimestamps)
+
+	// run callback funcs once cluster ID is changed
+	errs := []error{}
+	for _, callback := range s.onTimestampChangeFuncs {
+		if err := callback(clusterName); err != nil {
+			errs = append(errs, err)
+		}
+	}
+	return utilerrors.NewAggregate(errs)
 }
 
 func getClusterTimestamps(clusterName string, workStatus workv1.ManifestWorkStatus) (map[string]float64, error) {
@@ -134,7 +145,7 @@ func hostedKlusterletCRName(managedClusterName string) string {
 
 // Update implements the Update method of the store interface.
 func (s *clusterTimestampCache) Update(obj interface{}) error {
-	return s.replace(obj, true)
+	return s.Add(obj)
 }
 
 // Delete implements the Delete method of the store interface.
@@ -205,4 +216,8 @@ func (s *clusterTimestampCache) Replace(list []interface{}, _ string) error {
 // Resync implements the Resync method of the store interface.
 func (s *clusterTimestampCache) Resync() error {
 	return nil
+}
+
+func (s *clusterTimestampCache) AddOnTimestampChangeFunc(callback onTimestampChangeFunc) {
+	s.onTimestampChangeFuncs = append(s.onTimestampChangeFuncs, callback)
 }

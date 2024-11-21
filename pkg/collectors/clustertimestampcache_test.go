@@ -120,14 +120,14 @@ func Test_ClusterTimestampCache(t *testing.T) {
 	}
 
 	tests := []struct {
-		name              string
-		clusterName       string
-		existing          []interface{}
-		toAdd             []interface{}
-		toUpdate          []interface{}
-		toDelete          []interface{}
-		want              map[string]float64
-		numberOfIdChanged int
+		name                     string
+		clusterName              string
+		existing                 []interface{}
+		toAdd                    []interface{}
+		toUpdate                 []interface{}
+		toDelete                 []interface{}
+		want                     map[string]float64
+		numberOfTimestampChanged int
 	}{
 		{
 			name:        "empty",
@@ -151,6 +151,7 @@ func Test_ClusterTimestampCache(t *testing.T) {
 				StatusManagedClusterKubeconfigProvided: float64(t1.Unix()),
 				StatusStartToApplyKlusterletResources:  float64(t2.Unix()),
 			},
+			numberOfTimestampChanged: 1,
 		},
 		{
 			name:        "update cluster1",
@@ -161,13 +162,15 @@ func Test_ClusterTimestampCache(t *testing.T) {
 				StatusManagedClusterKubeconfigProvided: float64(t1.Unix()),
 				StatusStartToApplyKlusterletResources:  float64(t1.Unix()),
 			},
+			numberOfTimestampChanged: 1,
 		},
 		{
-			name:        "update cluster1 to null",
-			clusterName: "cluster1",
-			existing:    []interface{}{work1},
-			toUpdate:    []interface{}{work1ModifiedNull},
-			want:        nil,
+			name:                     "update cluster1 to null",
+			clusterName:              "cluster1",
+			existing:                 []interface{}{work1},
+			toUpdate:                 []interface{}{work1ModifiedNull},
+			want:                     nil,
+			numberOfTimestampChanged: 1,
 		},
 		{
 			name:        "update cluster2",
@@ -178,7 +181,7 @@ func Test_ClusterTimestampCache(t *testing.T) {
 				StatusManagedClusterKubeconfigProvided: float64(t2.Unix()),
 				StatusStartToApplyKlusterletResources:  float64(t2.Unix()),
 			},
-			numberOfIdChanged: 2,
+			numberOfTimestampChanged: 2,
 		},
 		{
 			name:        "delete",
@@ -190,8 +193,12 @@ func Test_ClusterTimestampCache(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-
+			numberOfTimestampChanged := 0
 			cache := newClusterTimestampCache()
+			cache.AddOnTimestampChangeFunc(func(clusterName string) error {
+				numberOfTimestampChanged += 1
+				return nil
+			})
 
 			err := cache.Replace(tt.existing, "")
 			if err != nil {
@@ -214,6 +221,10 @@ func Test_ClusterTimestampCache(t *testing.T) {
 				t.Errorf("want\n%v\nbut got\n%v", tt.want, actual)
 			}
 
+			if numberOfTimestampChanged != tt.numberOfTimestampChanged {
+				t.Errorf("want numberOfTimestampChanged %d\nbut got%d",
+					tt.numberOfTimestampChanged, numberOfTimestampChanged)
+			}
 		})
 	}
 }
