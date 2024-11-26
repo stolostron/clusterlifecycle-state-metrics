@@ -122,7 +122,7 @@ func start(opts *options.Options) {
 		klog.Fatal(err)
 	}
 
-	klog.Infof("metric white- blacklisting: %v", whiteBlackList.Status())
+	klog.Infof("metric white-black listing: %v", whiteBlackList.Status())
 
 	collectorBuilder.WithWhiteBlackList(whiteBlackList)
 

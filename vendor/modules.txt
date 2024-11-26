@@ -693,6 +693,7 @@ open-cluster-management.io/api/client/work/clientset/versioned/typed/work/v1
 open-cluster-management.io/api/cluster/v1
 open-cluster-management.io/api/cluster/v1alpha1
 open-cluster-management.io/api/cluster/v1beta1
+open-cluster-management.io/api/operator/v1
 open-cluster-management.io/api/work/v1
 # sigs.k8s.io/controller-runtime v0.12.3
 ## explicit; go 1.17
