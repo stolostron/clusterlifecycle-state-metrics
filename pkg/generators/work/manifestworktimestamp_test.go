@@ -41,6 +41,38 @@ func Test_getManifestWorkTimestampMetricFamilies(t *testing.T) {
 		},
 	}
 
+	sdwork := &workv1.ManifestWork{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:              "cluster2-hosted-klusterlet",
+			Namespace:         "local-cluster",
+			CreationTimestamp: metav1.Time{Time: t1},
+			Labels: map[string]string{
+				clusterServiceManagementClusterLabel: "local-cluster",
+			},
+		},
+		Status: workv1.ManifestWorkStatus{
+			Conditions: []metav1.Condition{
+				testcommon.NewConditionWithTime("Applied", metav1.ConditionTrue, t2),
+			},
+		},
+	}
+
+	sdreservedwork := &workv1.ManifestWork{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:              "cluster2-hosted-klusterlet",
+			Namespace:         "local-cluster",
+			CreationTimestamp: metav1.Time{Time: t1},
+			Labels: map[string]string{
+				hostedClusterLabel: "cluster2",
+			},
+		},
+		Status: workv1.ManifestWorkStatus{
+			Conditions: []metav1.Condition{
+				testcommon.NewConditionWithTime("Applied", metav1.ConditionTrue, t2),
+			},
+		},
+	}
+
 	workWithoutCondition := &workv1.ManifestWork{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "cluster2-hosted-klusterlet",
@@ -58,6 +90,20 @@ func Test_getManifestWorkTimestampMetricFamilies(t *testing.T) {
 		{
 			Name:        "test work status",
 			Obj:         work,
+			MetricNames: []string{"acm_manifestwork_apply_timestamp"},
+			Want: fmt.Sprintf(`acm_manifestwork_apply_timestamp{manifestwork="cluster2-hosted-klusterlet",managed_cluster_name="local-cluster",hosted_cluster_name="cluster2",managed_cluster_id="local-cluster",status="Created"} %.9e
+acm_manifestwork_apply_timestamp{manifestwork="cluster2-hosted-klusterlet",managed_cluster_name="local-cluster",hosted_cluster_name="cluster2",managed_cluster_id="local-cluster",status="Applied"} %.9e`, float64(t1.Unix()), float64(t2.Unix())),
+		},
+		{
+			Name:        "test sd work status",
+			Obj:         sdwork,
+			MetricNames: []string{"acm_manifestwork_apply_timestamp"},
+			Want: fmt.Sprintf(`acm_manifestwork_apply_timestamp{manifestwork="cluster2-hosted-klusterlet",managed_cluster_name="local-cluster",managed_cluster_id="local-cluster",status="Created"} %.9e
+acm_manifestwork_apply_timestamp{manifestwork="cluster2-hosted-klusterlet",managed_cluster_name="local-cluster",managed_cluster_id="local-cluster",status="Applied"} %.9e`, float64(t1.Unix()), float64(t2.Unix())),
+		},
+		{
+			Name:        "test sd reserved work status",
+			Obj:         sdreservedwork,
 			MetricNames: []string{"acm_manifestwork_apply_timestamp"},
 			Want: fmt.Sprintf(`acm_manifestwork_apply_timestamp{manifestwork="cluster2-hosted-klusterlet",managed_cluster_name="local-cluster",hosted_cluster_name="cluster2",managed_cluster_id="local-cluster",status="Created"} %.9e
 acm_manifestwork_apply_timestamp{manifestwork="cluster2-hosted-klusterlet",managed_cluster_name="local-cluster",hosted_cluster_name="cluster2",managed_cluster_id="local-cluster",status="Applied"} %.9e`, float64(t1.Unix()), float64(t2.Unix())),
