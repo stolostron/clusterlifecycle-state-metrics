@@ -14,10 +14,11 @@ import (
 )
 
 var (
-	descWorkTimestampName            = "acm_manifestwork_apply_timestamp"
-	descWorkTimestampHelp            = "The timestamp of the manifestwork appled"
-	clusterServiceHostedClusterLabel = "api.openshift.com/management-cluster"
-	importHostedClusterLabel         = "import.open-cluster-management.io/hosted-cluster"
+	descWorkTimestampName                = "acm_manifestwork_apply_timestamp"
+	descWorkTimestampHelp                = "The timestamp of the manifestwork appled"
+	clusterServiceManagementClusterLabel = "api.openshift.com/management-cluster"
+	importHostedClusterLabel             = "import.open-cluster-management.io/hosted-cluster"
+	hostedClusterLabel                   = "api.open-cluster-management.io/hosted-cluster"
 )
 
 func GetManifestWorkTimestampMetricFamilies(getClusterIdFunc func(string) string) metric.FamilyGenerator {
@@ -32,14 +33,18 @@ func GetManifestWorkTimestampMetricFamilies(getClusterIdFunc func(string) string
 				return &metric.Family{Metrics: []*metric.Metric{}}
 			}
 
-			hostedcluster := getHostedClusterName(mw)
-			if len(hostedcluster) == 0 {
+			report, hostedcluster := filterManifestwork(mw)
+			if !report {
 				return &metric.Family{Metrics: []*metric.Metric{}}
 			}
 
 			klog.Infof("Hanlde ManifestWork %s/%s", mw.Namespace, mw.Name)
-			keys := []string{"manifestwork", "managed_cluster_name", "hosted_cluster_name"}
-			values := []string{mw.Name, mw.Namespace, hostedcluster}
+			keys := []string{"manifestwork", "managed_cluster_name"}
+			values := []string{mw.Name, mw.Namespace}
+			if len(hostedcluster) != 0 {
+				keys = append(keys, "hosted_cluster_name")
+				values = append(values, hostedcluster)
+			}
 			if clusterId := getClusterIdFunc(mw.Namespace); len(clusterId) > 0 {
 				keys = append(keys, "managed_cluster_id")
 				values = append(values, clusterId)
@@ -60,16 +65,21 @@ func GetManifestWorkTimestampMetricFamilies(getClusterIdFunc func(string) string
 	}
 }
 
-func getHostedClusterName(mw *workv1.ManifestWork) string {
+func filterManifestwork(mw *workv1.ManifestWork) (bool, string) {
 	if len(mw.GetLabels()) == 0 {
-		return ""
+		return false, ""
 	}
 	if hostedcluster, ok := mw.GetLabels()[importHostedClusterLabel]; ok {
-		return hostedcluster
+		return true, hostedcluster
 	}
-	if hostedcluster, ok := mw.GetLabels()[clusterServiceHostedClusterLabel]; ok {
-		return hostedcluster
+	// currently, the service delivery team uses the clusterServiceManagementClusterLabel that can not indicate the
+	// hosted cluster, here we reserve a label hostedClusterLabel for them to pass to the hosted cluster in the future
+	if hostedcluster, ok := mw.GetLabels()[hostedClusterLabel]; ok {
+		return true, hostedcluster
+	}
+	if _, ok := mw.GetLabels()[clusterServiceManagementClusterLabel]; ok {
+		return true, ""
 	}
 
-	return ""
+	return false, ""
 }
