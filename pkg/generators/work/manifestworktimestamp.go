@@ -4,13 +4,17 @@
 package work
 
 import (
-	"github.com/stolostron/clusterlifecycle-state-metrics/pkg/generators"
+	"encoding/json"
+	"fmt"
+	"time"
+
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/klog/v2"
 	"k8s.io/kube-state-metrics/pkg/metric"
 	workv1 "open-cluster-management.io/api/work/v1"
 
-	"k8s.io/klog/v2"
+	"github.com/stolostron/clusterlifecycle-state-metrics/pkg/generators"
 )
 
 var (
@@ -51,14 +55,46 @@ func GetManifestWorkTimestampMetricFamilies(getClusterIdFunc func(string) string
 			}
 
 			family := metric.Family{}
-			family.Metrics = append(family.Metrics,
-				generators.BuildTimestampMetric(mw.CreationTimestamp, keys, values, generators.CreatedTimestamp))
 
-			appliedCond := meta.FindStatusCondition(mw.Status.Conditions, workv1.WorkApplied)
-			if appliedCond != nil && appliedCond.Status == metav1.ConditionTrue {
-				family.Metrics = append(family.Metrics, generators.BuildTimestampMetric(
-					appliedCond.LastTransitionTime, keys, values, generators.AppliedTimestamp))
+			generationTime := getGenerationTime(mw)
+			if generationTime != nil {
+				gkeys := append(keys, "generation")
+				gvalues := append(values, fmt.Sprint(generationTime.Generation))
+				family.Metrics = append(family.Metrics,
+					generators.BuildTimestampMetric(
+						metav1.NewTime(generationTime.CreatedTime),
+						gkeys, gvalues, generators.CreatedTimestamp),
+				)
+				family.Metrics = append(family.Metrics,
+					generators.BuildTimestampMetric(
+						metav1.NewTime(generationTime.AppliedTime),
+						gkeys, gvalues, generators.AppliedTimestamp),
+				)
+
+				if generationTime.Generation != 1 {
+					gkeys := append(keys, "generation")
+					gvalues := append(values, "1")
+					family.Metrics = append(family.Metrics,
+						generators.BuildTimestampMetric(
+							mw.CreationTimestamp, gkeys, gvalues, generators.CreatedTimestamp),
+					)
+					family.Metrics = append(family.Metrics,
+						generators.BuildTimestampMetric(
+							metav1.NewTime(generationTime.FirstGenerationAppliedTime),
+							gkeys, gvalues, generators.AppliedTimestamp),
+					)
+				}
+			} else {
+				family.Metrics = append(family.Metrics,
+					generators.BuildTimestampMetric(mw.CreationTimestamp, keys, values, generators.CreatedTimestamp))
+
+				appliedCond := meta.FindStatusCondition(mw.Status.Conditions, workv1.WorkApplied)
+				if appliedCond != nil && appliedCond.Status == metav1.ConditionTrue {
+					family.Metrics = append(family.Metrics, generators.BuildTimestampMetric(
+						appliedCond.LastTransitionTime, keys, values, generators.AppliedTimestamp))
+				}
 			}
+
 			klog.Infof("Returning %v", string(family.ByteSlice()))
 			return &family
 		},
@@ -82,4 +118,30 @@ func filterManifestwork(mw *workv1.ManifestWork) (bool, string) {
 	}
 
 	return false, ""
+}
+
+const (
+	// TODO: move to the api repo
+	annotationKeyGenerationTime = "metrics.open-cluster-management.io/observed-generation-time"
+)
+
+type GenerationTimestamp struct {
+	Generation                 int64     `json:"generation"`
+	CreatedTime                time.Time `json:"createdTime"`
+	AppliedTime                time.Time `json:"appliedTime"`
+	FirstGenerationAppliedTime time.Time `json:"firstGenerationAppliedTime"`
+}
+
+func getGenerationTime(mw *workv1.ManifestWork) *GenerationTimestamp {
+	value, ok := mw.Annotations[annotationKeyGenerationTime]
+	if !ok || len(value) == 0 {
+		return nil
+	}
+
+	generationTime := &GenerationTimestamp{}
+	err := json.Unmarshal([]byte(value), generationTime)
+	if err != nil {
+		return nil
+	}
+	return generationTime
 }
