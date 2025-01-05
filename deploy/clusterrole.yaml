@@ -53,3 +53,7 @@ rules:
 - apiGroups: ["work.open-cluster-management.io"]
   resources: ["manifestworks"]
   verbs: ["get","list","watch"]
+# Allow hub to patch manifestwroks annotation
+- apiGroups: ["work.open-cluster-management.io"]
+  resources: ["manifestworks"]
+  verbs: ["patch"]

@@ -4,8 +4,6 @@
 package collectors
 
 import (
-	"fmt"
-	"os"
 	"sort"
 	"strings"
 	"time"
@@ -24,7 +22,6 @@ import (
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
-	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/kube-state-metrics/pkg/metric"
 	metricsstore "k8s.io/kube-state-metrics/pkg/metrics_store"
 	"k8s.io/kube-state-metrics/pkg/options"
@@ -38,10 +35,6 @@ import (
 	"github.com/stolostron/clusterlifecycle-state-metrics/pkg/generators/work"
 )
 
-const (
-	configMapName = "clusterlifecycle-state-metrics-config"
-)
-
 var ResyncPeriod = 60 * time.Minute
 
 type whiteBlackLister interface {
@@ -52,8 +45,6 @@ type whiteBlackLister interface {
 // Builder helps to build collectors. It follows the builder pattern
 // (https://en.wikipedia.org/wiki/Builder_pattern).
 type Builder struct {
-	apiserver         string
-	kubeconfig        string
 	hubType           string
 	namespaces        options.NamespaceList
 	ctx               context.Context
@@ -85,13 +76,18 @@ func NewBuilder(ctx context.Context) *Builder {
 	}
 }
 
-func (b *Builder) WithApiserver(apiserver string) *Builder {
-	b.apiserver = apiserver
+func (b *Builder) WithKubeclient(kubeclient kubernetes.Interface) *Builder {
+	b.kubeclient = kubeclient
 	return b
 }
 
-func (b *Builder) WithKubeConfig(kubeconfig string) *Builder {
-	b.kubeconfig = kubeconfig
+func (b *Builder) WithRestConfig(restConfig *rest.Config) *Builder {
+	b.restConfig = restConfig
+	return b
+}
+
+func (b *Builder) WithTimestampMetricsEnabled(timestampMetricsEnabled bool) *Builder {
+	b.timestampMetricsEnabled = timestampMetricsEnabled
 	return b
 }
 
@@ -129,23 +125,23 @@ func (b *Builder) Build() []MetricsCollector {
 		panic("whiteBlackList should not be nil")
 	}
 
-	config, err := clientcmd.BuildConfigFromFlags(b.apiserver, b.kubeconfig)
-	if err != nil {
-		klog.Fatalf("cannot create config: %v", err)
-	}
-	b.restConfig = config
+	// config, err := clientcmd.BuildConfigFromFlags(b.apiserver, b.kubeconfig)
+	// if err != nil {
+	// 	klog.Fatalf("cannot create config: %v", err)
+	// }
+	// b.restConfig = config
 
-	kubeClient, err := kubernetes.NewForConfig(b.restConfig)
-	if err != nil {
-		klog.Fatalf("cannot create kubeClient: %v", err)
-	}
-	b.kubeclient = kubeClient
+	// kubeClient, err := kubernetes.NewForConfig(b.restConfig)
+	// if err != nil {
+	// 	klog.Fatalf("cannot create kubeClient: %v", err)
+	// }
+	// b.kubeclient = kubeClient
 
-	timestampMetricsEnabled, err := isTimestampMetricsEnabled(kubeClient)
-	if err != nil {
-		klog.Fatalf("cannot determine if timestamp metrics should be enabled: %v", err)
-	}
-	b.timestampMetricsEnabled = timestampMetricsEnabled
+	// timestampMetricsEnabled, err := isTimestampMetricsEnabled(kubeClient)
+	// if err != nil {
+	// 	klog.Fatalf("cannot determine if timestamp metrics should be enabled: %v", err)
+	// }
+	// b.timestampMetricsEnabled = timestampMetricsEnabled
 
 	collectors := []MetricsCollector{}
 	activeCollectorNames := []string{}
@@ -406,36 +402,4 @@ func getHubClusterID(ocpClient ocpclient.Interface, kubeClient kubernetes.Interf
 
 	klog.Fatalf("Error getting cluster version %v \n,", err)
 	return ""
-}
-
-// Check the ConfigMap to see if the timestamp-metrics should be enabled
-func isTimestampMetricsEnabled(clientset *kubernetes.Clientset) (bool, error) {
-	namespace, err := GetComponentNamespace()
-	if err != nil {
-		return false, fmt.Errorf("failed to get namespace: %v", err)
-	}
-
-	// Get the ConfigMap
-	cm, err := clientset.CoreV1().ConfigMaps(namespace).Get(context.TODO(), configMapName, metav1.GetOptions{})
-	if errors.IsNotFound(err) {
-		return false, nil
-	} else if err != nil {
-		return false, fmt.Errorf("failed to get ConfigMap: %v", err)
-	}
-
-	// Check if collect-timestamp-metrics is "enable"
-	value, exists := cm.Data["collect-timestamp-metrics"]
-	if !exists {
-		return false, nil
-	}
-
-	return value == "Enable", nil
-}
-
-func GetComponentNamespace() (string, error) {
-	nsBytes, err := os.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/namespace")
-	if err != nil {
-		return "multicluster-engine", err
-	}
-	return string(nsBytes), nil
 }

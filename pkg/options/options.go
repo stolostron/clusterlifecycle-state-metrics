@@ -31,7 +31,8 @@ type Options struct {
 	Version            bool
 	HubType            string
 
-	EnableGZIPEncoding bool
+	EnableGZIPEncoding   bool
+	EnableLeaderElection bool
 }
 
 func NewOptions() *Options {
@@ -74,6 +75,9 @@ func (o *Options) AddFlags() {
 	flag.StringVar(&o.HubType, "hub-type", "", `The type of the hub (mce|acm|stolostron-engine|stolostron).`)
 
 	flag.BoolVar(&o.EnableGZIPEncoding, "enable-gzip-encoding", false, "Gzip responses when requested by clients via 'Accept-Encoding: gzip' header.")
+	flag.BoolVar(&o.EnableLeaderElection, "leader-elect", true,
+		"Enable leader election for controller manager. "+
+			"Enabling this will ensure there is only one active controller manager.")
 	klog.Info("End add args")
 }
 

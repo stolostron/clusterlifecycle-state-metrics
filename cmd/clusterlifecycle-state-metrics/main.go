@@ -18,19 +18,27 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/kubernetes"
+	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	_ "k8s.io/client-go/plugin/pkg/client/auth"
+	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/klog/v2"
+	koptions "k8s.io/kube-state-metrics/pkg/options"
+	"k8s.io/kube-state-metrics/pkg/whiteblacklist"
+	workv1 "open-cluster-management.io/api/work/v1"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-	_ "k8s.io/client-go/plugin/pkg/client/auth"
-	"k8s.io/klog/v2"
-
-	koptions "k8s.io/kube-state-metrics/pkg/options"
-	"k8s.io/kube-state-metrics/pkg/whiteblacklist"
-
 	"github.com/stolostron/clusterlifecycle-state-metrics/pkg/collectors"
-	ocollectors "github.com/stolostron/clusterlifecycle-state-metrics/pkg/collectors"
+	"github.com/stolostron/clusterlifecycle-state-metrics/pkg/common"
+	"github.com/stolostron/clusterlifecycle-state-metrics/pkg/controllers"
 	"github.com/stolostron/clusterlifecycle-state-metrics/pkg/options"
 	"github.com/stolostron/clusterlifecycle-state-metrics/pkg/version"
 )
@@ -44,9 +52,14 @@ const (
 	hubTypeACM              = "acm"
 	hubTypeStolostronEngine = "stolostron-engine"
 	hubTypeStolostron       = "stolostron"
+
+	configMapName = "clusterlifecycle-state-metrics-config"
 )
 
-var opts *options.Options
+var (
+	opts   *options.Options
+	scheme = runtime.NewScheme()
+)
 
 // promLogger implements promhttp.Logger
 type promLogger struct{}
@@ -62,6 +75,10 @@ func init() {
 
 	opts = options.NewOptions()
 	opts.AddFlags()
+
+	// init schema
+	_ = clientgoscheme.AddToScheme(scheme)
+	_ = workv1.AddToScheme(scheme)
 }
 
 func (pl promLogger) Println(v ...interface{}) {
@@ -84,8 +101,29 @@ func main() {
 }
 
 func start(opts *options.Options) {
-	collectorBuilder := ocollectors.NewBuilder(context.TODO())
-	collectorBuilder.WithApiserver(opts.Apiserver).WithKubeConfig(opts.Kubeconfig)
+	ctx := context.TODO()
+	config, err := clientcmd.BuildConfigFromFlags(opts.Apiserver, opts.Kubeconfig)
+	if err != nil {
+		klog.Fatalf("cannot create config: %v", err)
+	}
+	kubeClient, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		klog.Fatalf("cannot create kubeClient: %v", err)
+	}
+
+	timestampMetricsEnabled, err := isTimestampMetricsEnabled(ctx, kubeClient)
+	if err != nil {
+		klog.Fatalf("cannot determine if timestamp metrics should be enabled: %v", err)
+	}
+
+	if timestampMetricsEnabled {
+		go startControllers(opts)
+	}
+
+	collectorBuilder := collectors.NewBuilder(ctx)
+	collectorBuilder.WithRestConfig(config).
+		WithKubeclient(kubeClient).
+		WithTimestampMetricsEnabled(timestampMetricsEnabled)
 	if len(opts.Collectors) == 0 {
 		klog.Info("Using default collectors")
 		collectorBuilder.WithEnabledCollectors(options.DefaultCollectors.AsSlice())
@@ -127,10 +165,10 @@ func start(opts *options.Options) {
 	collectorBuilder.WithWhiteBlackList(whiteBlackList)
 
 	ocmMetricsRegistry := prometheus.NewRegistry()
-	if err := ocmMetricsRegistry.Register(ocollectors.ResourcesPerScrapeMetric); err != nil {
+	if err := ocmMetricsRegistry.Register(collectors.ResourcesPerScrapeMetric); err != nil {
 		panic(err)
 	}
-	if err := ocmMetricsRegistry.Register(ocollectors.ScrapeErrorTotalMetric); err != nil {
+	if err := ocmMetricsRegistry.Register(collectors.ScrapeErrorTotalMetric); err != nil {
 		panic(err)
 	}
 	if err := ocmMetricsRegistry.Register(prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{})); err != nil {
@@ -144,6 +182,73 @@ func start(opts *options.Options) {
 	collectors := collectorBuilder.Build()
 
 	serveMetrics(collectors, opts.Host, opts.HTTPPort, opts.HTTPSPort, opts.TLSCrtFile, opts.TLSKeyFile, opts.EnableGZIPEncoding)
+}
+
+func startControllers(opts *options.Options) {
+	// if the controller should watch other resources in the future, should move the selector
+	// into the pkg/controllers/manifestwork as an event filter
+	mwSelector, err := common.TimestampManifestworkLabelSelector()
+	if err != nil {
+		panic(err)
+	}
+	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
+		Scheme: scheme,
+		// Metrics:                metricsServerOptions,
+		// WebhookServer:          webhookServer,
+		// HealthProbeBindAddress: probeAddr,
+		LeaderElection:   opts.EnableLeaderElection,
+		LeaderElectionID: "ecaf1259.my.domain",
+		// LeaderElectionReleaseOnCancel defines if the leader should step down voluntarily
+		// when the Manager ends. This requires the binary to immediately end when the
+		// Manager is stopped, otherwise, this setting is unsafe. Setting this significantly
+		// LeaseDuration time first.
+		//
+		// In the default scaffold provided, the program ends immediately after
+		// the manager stops, so would be fine to enable this option. However,
+		// if you are doing or is intended to do any operation such as perform cleanups
+		// after the manager stops then its usage might be unsafe.
+		LeaderElectionReleaseOnCancel: true,
+		Cache: cache.Options{
+			DefaultTransform: func(obj interface{}) (interface{}, error) {
+				mw, ok := obj.(*workv1.ManifestWork)
+				if !ok {
+					return obj, nil
+				}
+
+				// Transform the object to only include metadata and conditions
+				return &workv1.ManifestWork{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:              mw.Name,
+						Namespace:         mw.Namespace,
+						Annotations:       mw.Annotations,
+						Labels:            mw.Labels,
+						CreationTimestamp: mw.CreationTimestamp,
+					},
+					Status: workv1.ManifestWorkStatus{
+						Conditions: mw.Status.Conditions,
+					},
+				}, nil
+			},
+			DefaultLabelSelector: mwSelector,
+		},
+	})
+	if err != nil {
+		logf.Log.Error(err, "unable to start manager")
+		os.Exit(1)
+	} // speeds up voluntary leader transitions as the new leader don't have to wait
+
+	if err = (&controllers.ManifestworkReconciler{
+		Client: mgr.GetClient(),
+	}).SetupWithManager(mgr); err != nil {
+		logf.Log.Error(err, "unable to create controller", "controller", "Guestbook")
+		os.Exit(1)
+	}
+	// +kubebuilder:scaffold:builder
+
+	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
+		logf.Log.Error(err, "problem running manager")
+		os.Exit(1)
+	}
 }
 
 func telemetryServer(
@@ -309,4 +414,36 @@ func (m *metricHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			panic(err)
 		}
 	}
+}
+
+// Check the ConfigMap to see if the timestamp-metrics should be enabled
+func isTimestampMetricsEnabled(ctx context.Context, clientset *kubernetes.Clientset) (bool, error) {
+	namespace, err := GetComponentNamespace()
+	if err != nil {
+		return false, fmt.Errorf("failed to get namespace: %v", err)
+	}
+
+	// Get the ConfigMap
+	cm, err := clientset.CoreV1().ConfigMaps(namespace).Get(context.TODO(), configMapName, metav1.GetOptions{})
+	if errors.IsNotFound(err) {
+		return false, nil
+	} else if err != nil {
+		return false, fmt.Errorf("failed to get ConfigMap: %v", err)
+	}
+
+	// Check if collect-timestamp-metrics is "enable"
+	value, exists := cm.Data["collect-timestamp-metrics"]
+	if !exists {
+		return false, nil
+	}
+
+	return value == "Enable", nil
+}
+
+func GetComponentNamespace() (string, error) {
+	nsBytes, err := os.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/namespace")
+	if err != nil {
+		return "multicluster-engine", err
+	}
+	return string(nsBytes), nil
 }

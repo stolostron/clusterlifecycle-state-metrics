@@ -15,6 +15,7 @@ import (
 	"golang.org/x/net/context"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
@@ -23,6 +24,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 
 	ocpclientfake "github.com/openshift/client-go/config/clientset/versioned/fake"
+	"k8s.io/client-go/kubernetes/fake"
 	kubeclientfake "k8s.io/client-go/kubernetes/fake"
 )
 
@@ -30,74 +32,16 @@ var (
 	ctx context.Context = context.TODO()
 )
 
-func TestBuilder_WithApiserver(t *testing.T) {
+func TestBuilder_WithKubeClient(t *testing.T) {
+	fakeclient := fake.NewSimpleClientset()
 	type fields struct {
-		apiserver         string
-		kubeconfig        string
 		namespaces        koptions.NamespaceList
 		ctx               context.Context
 		enabledCollectors []string
 		whiteBlackList    whiteBlackLister
 	}
 	type args struct {
-		apiserver string
-	}
-	tests := []struct {
-		name   string
-		fields fields
-		args   args
-		want   *Builder
-	}{
-		{
-			name: "apiserver",
-			fields: fields{
-				apiserver:         "",
-				kubeconfig:        "",
-				namespaces:        koptions.NamespaceList{},
-				ctx:               ctx,
-				enabledCollectors: []string{"col1", "col2"},
-				// whiteBlackList:    whiteBlackLister{func(s) { return false }, func(s) { return false }},
-			},
-			args: args{
-				apiserver: "apiserver",
-			},
-			want: &Builder{
-				apiserver:         "apiserver",
-				kubeconfig:        "",
-				namespaces:        koptions.NamespaceList{},
-				ctx:               ctx,
-				enabledCollectors: []string{"col1", "col2"},
-			},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			b := &Builder{
-				apiserver:         tt.fields.apiserver,
-				kubeconfig:        tt.fields.kubeconfig,
-				namespaces:        tt.fields.namespaces,
-				ctx:               tt.fields.ctx,
-				enabledCollectors: tt.fields.enabledCollectors,
-				whiteBlackList:    tt.fields.whiteBlackList,
-			}
-			if got := b.WithApiserver(tt.args.apiserver); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Builder.WithApiserver() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestBuilder_WithKubeConfig(t *testing.T) {
-	type fields struct {
-		apiserver         string
-		kubeconfig        string
-		namespaces        koptions.NamespaceList
-		ctx               context.Context
-		enabledCollectors []string
-		whiteBlackList    whiteBlackLister
-	}
-	type args struct {
-		kubeconfig string
+		kubeclient kubernetes.Interface
 	}
 	tests := []struct {
 		name   string
@@ -108,19 +52,16 @@ func TestBuilder_WithKubeConfig(t *testing.T) {
 		{
 			name: "kubeconfig",
 			fields: fields{
-				apiserver:         "",
-				kubeconfig:        "",
 				namespaces:        koptions.NamespaceList{},
 				ctx:               ctx,
 				enabledCollectors: []string{"col1", "col2"},
 				// whiteBlackList:    whiteBlackLister{func(s) { return false }, func(s) { return false }},
 			},
 			args: args{
-				kubeconfig: "kubeconfig",
+				kubeclient: fakeclient,
 			},
 			want: &Builder{
-				apiserver:         "",
-				kubeconfig:        "kubeconfig",
+				kubeclient:        fakeclient,
 				namespaces:        koptions.NamespaceList{},
 				ctx:               ctx,
 				enabledCollectors: []string{"col1", "col2"},
@@ -130,15 +71,13 @@ func TestBuilder_WithKubeConfig(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			b := &Builder{
-				apiserver:         tt.fields.apiserver,
-				kubeconfig:        tt.fields.kubeconfig,
 				namespaces:        tt.fields.namespaces,
 				ctx:               tt.fields.ctx,
 				enabledCollectors: tt.fields.enabledCollectors,
 				whiteBlackList:    tt.fields.whiteBlackList,
 			}
-			if got := b.WithKubeConfig(tt.args.kubeconfig); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Builder.WithKubeConfig() = %v, want %v", got, tt.want)
+			if got := b.WithKubeclient(tt.args.kubeclient); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Builder.WithKubeclient() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -176,8 +115,6 @@ func TestBuilder_WithEnabledCollectors(t *testing.T) {
 				c: []string{"col1", "col2"},
 			},
 			want: &Builder{
-				apiserver:         "",
-				kubeconfig:        "",
 				namespaces:        koptions.NamespaceList{},
 				ctx:               ctx,
 				enabledCollectors: []string{"col1", "col2"},
@@ -187,8 +124,6 @@ func TestBuilder_WithEnabledCollectors(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			b := &Builder{
-				apiserver:         tt.fields.apiserver,
-				kubeconfig:        tt.fields.kubeconfig,
 				namespaces:        tt.fields.namespaces,
 				ctx:               tt.fields.ctx,
 				enabledCollectors: tt.fields.enabledCollectors,
@@ -233,8 +168,6 @@ func TestBuilder_WithNamespaces(t *testing.T) {
 				n: []string{"ns1"},
 			},
 			want: &Builder{
-				apiserver:         "",
-				kubeconfig:        "",
 				namespaces:        []string{"ns1"},
 				ctx:               ctx,
 				enabledCollectors: []string{"col1", "col2"},
@@ -244,8 +177,6 @@ func TestBuilder_WithNamespaces(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			b := &Builder{
-				apiserver:         tt.fields.apiserver,
-				kubeconfig:        tt.fields.kubeconfig,
 				namespaces:        tt.fields.namespaces,
 				ctx:               tt.fields.ctx,
 				enabledCollectors: tt.fields.enabledCollectors,
@@ -291,8 +222,6 @@ func TestBuilder_WithWhiteBlackList(t *testing.T) {
 				l: w,
 			},
 			want: &Builder{
-				apiserver:         "",
-				kubeconfig:        "",
 				namespaces:        koptions.NamespaceList{},
 				ctx:               ctx,
 				enabledCollectors: []string{"col1", "col2"},
@@ -303,8 +232,6 @@ func TestBuilder_WithWhiteBlackList(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			b := &Builder{
-				apiserver:         tt.fields.apiserver,
-				kubeconfig:        tt.fields.kubeconfig,
 				namespaces:        tt.fields.namespaces,
 				ctx:               tt.fields.ctx,
 				enabledCollectors: tt.fields.enabledCollectors,
@@ -429,7 +356,7 @@ func TestBuilder_Build(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			b := NewBuilder(tt.fields.ctx)
-			b.kubeconfig = tt.fields.kubeconfig
+			// b.kubeconfig = tt.fields.kubeconfig
 			b.namespaces = tt.fields.namespaces
 			b.enabledCollectors = tt.fields.enabledCollectors
 			b.whiteBlackList = tt.fields.whiteBlackList
