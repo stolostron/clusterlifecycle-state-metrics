@@ -150,9 +150,9 @@ func TestReconcile(t *testing.T) {
 					t.Errorf("unexpected error: %v", err)
 				}
 
-				timestamp, ok := mw.Annotations[common.AnnotationAppliedTime]
+				timestamp, ok := mw.Annotations[common.AnnotationObservedTimestamp]
 				if !ok {
-					t.Errorf("annotations %s not found", common.AnnotationAppliedTime)
+					t.Errorf("annotations %s not found", common.AnnotationObservedTimestamp)
 				}
 				if timestamp != `{"appliedTime":"2021-09-01T08:01:04+08:00"}` {
 					t.Errorf("unexpected timestamp annotation value: %s", timestamp)
@@ -168,10 +168,9 @@ func TestReconcile(t *testing.T) {
 
 			runtimeClient := fake.NewClientBuilder().WithScheme(testscheme).
 				WithObjects(c.works...).WithStatusSubresource(c.works...).Build()
-			r := &ManifestworkReconciler{
+			r := &manifestworkReconciler{
 				Client:    runtimeClient,
-				startTime: current,
-				// Scheme: testscheme,
+				StartTime: current,
 			}
 
 			_, err := r.Reconcile(ctx, c.request)

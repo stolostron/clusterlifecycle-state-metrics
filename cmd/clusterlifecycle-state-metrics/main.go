@@ -17,6 +17,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -35,9 +36,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
 	"github.com/stolostron/clusterlifecycle-state-metrics/pkg/collectors"
-	"github.com/stolostron/clusterlifecycle-state-metrics/pkg/common"
 	"github.com/stolostron/clusterlifecycle-state-metrics/pkg/controllers"
 	"github.com/stolostron/clusterlifecycle-state-metrics/pkg/options"
 	"github.com/stolostron/clusterlifecycle-state-metrics/pkg/version"
@@ -185,15 +186,11 @@ func start(opts *options.Options) {
 }
 
 func startControllers(opts *options.Options) {
-	// if the controller should watch other resources in the future, should move the selector
-	// into the pkg/controllers/manifestwork as an event filter
-	mwSelector, err := common.TimestampManifestworkLabelSelector()
-	if err != nil {
-		panic(err)
-	}
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme: scheme,
-		// Metrics:                metricsServerOptions,
+		Metrics: metricsserver.Options{
+			BindAddress: opts.ControllerMetricsAddress,
+		},
 		// WebhookServer:          webhookServer,
 		// HealthProbeBindAddress: probeAddr,
 		LeaderElection:   opts.EnableLeaderElection,
@@ -223,13 +220,13 @@ func startControllers(opts *options.Options) {
 						Annotations:       mw.Annotations,
 						Labels:            mw.Labels,
 						CreationTimestamp: mw.CreationTimestamp,
+						UID:               mw.UID,
 					},
 					Status: workv1.ManifestWorkStatus{
 						Conditions: mw.Status.Conditions,
 					},
 				}, nil
 			},
-			DefaultLabelSelector: mwSelector,
 		},
 	})
 	if err != nil {
@@ -237,12 +234,13 @@ func startControllers(opts *options.Options) {
 		os.Exit(1)
 	} // speeds up voluntary leader transitions as the new leader don't have to wait
 
-	if err = (&controllers.ManifestworkReconciler{
-		Client: mgr.GetClient(),
-	}).SetupWithManager(mgr); err != nil {
-		logf.Log.Error(err, "unable to create controller", "controller", "Guestbook")
+	now := time.Now()
+	if err = controllers.NewManifestworkReconciler(mgr.GetClient(), now).SetupWithManager(mgr); err != nil {
+		logf.Log.Error(err, "unable to create controller", "controller", "ManifestWork")
 		os.Exit(1)
 	}
+	logf.Log.Info("The manifestwork controller start time has been set", "startTime", now)
+
 	// +kubebuilder:scaffold:builder
 
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {

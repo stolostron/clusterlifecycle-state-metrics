@@ -125,24 +125,6 @@ func (b *Builder) Build() []MetricsCollector {
 		panic("whiteBlackList should not be nil")
 	}
 
-	// config, err := clientcmd.BuildConfigFromFlags(b.apiserver, b.kubeconfig)
-	// if err != nil {
-	// 	klog.Fatalf("cannot create config: %v", err)
-	// }
-	// b.restConfig = config
-
-	// kubeClient, err := kubernetes.NewForConfig(b.restConfig)
-	// if err != nil {
-	// 	klog.Fatalf("cannot create kubeClient: %v", err)
-	// }
-	// b.kubeclient = kubeClient
-
-	// timestampMetricsEnabled, err := isTimestampMetricsEnabled(kubeClient)
-	// if err != nil {
-	// 	klog.Fatalf("cannot determine if timestamp metrics should be enabled: %v", err)
-	// }
-	// b.timestampMetricsEnabled = timestampMetricsEnabled
-
 	collectors := []MetricsCollector{}
 	activeCollectorNames := []string{}
 

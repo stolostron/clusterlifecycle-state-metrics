@@ -31,8 +31,9 @@ type Options struct {
 	Version            bool
 	HubType            string
 
-	EnableGZIPEncoding   bool
-	EnableLeaderElection bool
+	EnableGZIPEncoding       bool
+	EnableLeaderElection     bool
+	ControllerMetricsAddress string
 }
 
 func NewOptions() *Options {
@@ -78,6 +79,9 @@ func (o *Options) AddFlags() {
 	flag.BoolVar(&o.EnableLeaderElection, "leader-elect", true,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
+	// set default "0" to disable the controller metrics, otherwise the the default 8080 port will conflict.
+	flag.StringVar(&o.ControllerMetricsAddress, "controller-metrics-bind-address", "0", "The address the metrics"+
+		"endpoint binds to. Use :8443 for HTTPS or :8080 for HTTP, or leave as 0 to disable the metrics service.")
 	klog.Info("End add args")
 }
 

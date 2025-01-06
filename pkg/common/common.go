@@ -1,10 +1,9 @@
 package common
 
 import (
+	"encoding/json"
 	"time"
 
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/selection"
 	workv1 "open-cluster-management.io/api/work/v1"
 )
 
@@ -22,11 +21,12 @@ const (
 )
 
 const (
-	// AnnotationAppliedTime is the annotation key used to recored the applied time for resources
-	AnnotationAppliedTime = "metrics.open-cluster-management.io/applied-time"
+	// AnnotationObservedTimestamp is the annotation key used to recored the timestamp
+	// for resources that the controller observed
+	AnnotationObservedTimestamp = "metrics.open-cluster-management.io/observed-timestamp"
 )
 
-type AppliedTimestamp struct {
+type ObservedTimestamp struct {
 	AppliedTime time.Time `json:"appliedTime"`
 }
 
@@ -51,18 +51,17 @@ func FilterTimestampManifestwork(mw *workv1.ManifestWork) (bool, string) {
 	return false, ""
 }
 
-func TimestampManifestworkLabelSelector() (labels.Selector, error) {
-	r1, err := labels.NewRequirement(LabelClusterServiceManagementCluster, selection.Exists, nil)
-	if err != nil {
-		return nil, err
+// GetObservedTimestamp gets the observed timestamp from annotation
+func GetObservedTimestamp(mw *workv1.ManifestWork) *ObservedTimestamp {
+	value, ok := mw.Annotations[AnnotationObservedTimestamp]
+	if !ok || len(value) == 0 {
+		return nil
 	}
-	r2, err := labels.NewRequirement(LabelClusterServiceManagementCluster, selection.Exists, nil)
+
+	timestamp := &ObservedTimestamp{}
+	err := json.Unmarshal([]byte(value), timestamp)
 	if err != nil {
-		return nil, err
+		return nil
 	}
-	r3, err := labels.NewRequirement(LabelClusterServiceManagementCluster, selection.Exists, nil)
-	if err != nil {
-		return nil, err
-	}
-	return labels.NewSelector().Add(*r1, *r2, *r3), nil
+	return timestamp
 }

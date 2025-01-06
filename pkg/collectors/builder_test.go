@@ -356,7 +356,6 @@ func TestBuilder_Build(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			b := NewBuilder(tt.fields.ctx)
-			// b.kubeconfig = tt.fields.kubeconfig
 			b.namespaces = tt.fields.namespaces
 			b.enabledCollectors = tt.fields.enabledCollectors
 			b.whiteBlackList = tt.fields.whiteBlackList
