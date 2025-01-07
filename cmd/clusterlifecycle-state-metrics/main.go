@@ -194,7 +194,7 @@ func startControllers(opts *options.Options) {
 		// WebhookServer:          webhookServer,
 		// HealthProbeBindAddress: probeAddr,
 		LeaderElection:   opts.EnableLeaderElection,
-		LeaderElectionID: "ecaf1259.my.domain",
+		LeaderElectionID: "clusterlifecycle-state-metrics-controller",
 		// LeaderElectionReleaseOnCancel defines if the leader should step down voluntarily
 		// when the Manager ends. This requires the binary to immediately end when the
 		// Manager is stopped, otherwise, this setting is unsafe. Setting this significantly
