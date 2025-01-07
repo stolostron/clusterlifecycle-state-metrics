@@ -150,12 +150,11 @@ func TestReconcile(t *testing.T) {
 					t.Errorf("unexpected error: %v", err)
 				}
 
-				timestamp, ok := mw.Annotations[common.AnnotationObservedTimestamp]
-				if !ok {
+				timestamp := common.GetObservedTimestamp(mw)
+				if timestamp == nil {
 					t.Errorf("annotations %s not found", common.AnnotationObservedTimestamp)
-				}
-				if timestamp != `{"appliedTime":"2021-09-01T08:01:04+08:00"}` {
-					t.Errorf("unexpected timestamp annotation value: %s", timestamp)
+				} else if !timestamp.AppliedTime.Equal(lastTransitionTime) {
+					t.Errorf("unexpected timestamp annotation value: %s", timestamp.AppliedTime)
 				}
 			},
 		},

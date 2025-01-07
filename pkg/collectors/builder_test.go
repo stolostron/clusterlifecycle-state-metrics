@@ -254,6 +254,8 @@ func TestBuilder_Build(t *testing.T) {
 # TYPE acm_managed_cluster_status_condition gauge
 # HELP acm_managed_cluster_worker_cores The number of worker CPU cores of ACM managed clusters
 # TYPE acm_managed_cluster_worker_cores gauge
+# HELP acm_managed_cluster_import_timestamp The timestamp of different status when importing an ACM managed clusters
+# TYPE acm_managed_cluster_import_timestamp gauge
 # HELP acm_managed_cluster_count Managed cluster count
 # TYPE acm_managed_cluster_count gauge
 `
@@ -262,6 +264,8 @@ func TestBuilder_Build(t *testing.T) {
 `
 		workCollectorHeaders = `# HELP acm_manifestwork_status_condition ManifestWork status condition
 # TYPE acm_manifestwork_status_condition gauge
+# HELP acm_manifestwork_apply_timestamp The timestamp of the manifestwork appled
+# TYPE acm_manifestwork_apply_timestamp gauge
 # HELP acm_manifestwork_count ManifestWork count
 # TYPE acm_manifestwork_count gauge
 `
@@ -355,10 +359,11 @@ func TestBuilder_Build(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			b := NewBuilder(tt.fields.ctx)
+			b := NewBuilder(tt.fields.ctx).WithTimestampMetricsEnabled(true)
 			b.namespaces = tt.fields.namespaces
 			b.enabledCollectors = tt.fields.enabledCollectors
 			b.whiteBlackList = tt.fields.whiteBlackList
+			b.restConfig = envTest.Config
 
 			stores := b.Build()
 			if len(stores) != len(tt.want) {
