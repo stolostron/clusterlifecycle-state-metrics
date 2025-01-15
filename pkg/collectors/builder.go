@@ -65,14 +65,12 @@ type Builder struct {
 // NewBuilder returns a new builder.
 func NewBuilder(ctx context.Context) *Builder {
 	clusterIdCache := newClusterIdCache()
-	clusterTimestampCache := newClusterTimestampCache()
 	return &Builder{
 		ctx:                       ctx,
 		clusterIdCache:            clusterIdCache,
-		clusterTimestampCache:     clusterTimestampCache,
 		composedClusterStore:      newComposedStore(clusterIdCache),
 		composedAddOnStore:        newComposedStore(),
-		composedManifestWorkStore: newComposedStore(clusterTimestampCache),
+		composedManifestWorkStore: newComposedStore(),
 	}
 }
 
@@ -88,6 +86,11 @@ func (b *Builder) WithRestConfig(restConfig *rest.Config) *Builder {
 
 func (b *Builder) WithTimestampMetricsEnabled(timestampMetricsEnabled bool) *Builder {
 	b.timestampMetricsEnabled = timestampMetricsEnabled
+	if timestampMetricsEnabled {
+		clusterTimestampCache := newClusterTimestampCache()
+		b.composedManifestWorkStore.AddStore(clusterTimestampCache)
+		b.clusterTimestampCache = clusterTimestampCache
+	}
 	return b
 }
 
