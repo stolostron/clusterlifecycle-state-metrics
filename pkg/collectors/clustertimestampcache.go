@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/stolostron/clusterlifecycle-state-metrics/pkg/common"
 	"k8s.io/apimachinery/pkg/api/meta"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/klog/v2"
@@ -18,7 +19,6 @@ import (
 )
 
 const (
-	HostedClusterLabel                     = "import.open-cluster-management.io/hosted-cluster"
 	StatusManagedClusterKubeconfigProvided = "ManagedClusterKubeconfigProvided"
 	StatusStartToApplyKlusterletResources  = "StartToApplyKlusterletResources"
 )
@@ -55,7 +55,7 @@ func (s *clusterTimestampCache) Add(obj interface{}) error {
 		return fmt.Errorf("invalid ManifestWork: %v", obj)
 	}
 
-	clusterName, ok := mw.GetLabels()[HostedClusterLabel]
+	clusterName, ok := mw.GetLabels()[common.LabelImportHostedCluster]
 	if !ok {
 		return nil
 	}
@@ -74,7 +74,8 @@ func (s *clusterTimestampCache) Add(obj interface{}) error {
 	}
 
 	s.data[clusterName] = newTimestamps
-	klog.V(5).Infof("Timestamps of cluster %q is changed from %v to %v", clusterName, timestamps, newTimestamps)
+	klog.InfoS("Timestamps of cluster is changed", "clusterName", clusterName,
+		"oldTimestamps", timestamps, "newTimestamps", newTimestamps)
 
 	// run callback funcs once cluster ID is changed
 	errs := []error{}
@@ -154,7 +155,7 @@ func (s *clusterTimestampCache) Delete(obj interface{}) error {
 	if err != nil {
 		return err
 	}
-	clusterName, ok := mw.GetLabels()[HostedClusterLabel]
+	clusterName, ok := mw.GetLabels()[common.LabelImportHostedCluster]
 	if !ok {
 		return nil
 	}
@@ -193,24 +194,34 @@ func (s *clusterTimestampCache) Replace(list []interface{}, _ string) error {
 	defer s.mutex.Unlock()
 
 	s.data = map[string]map[string]float64{}
+	errs := []error{}
 
 	for _, obj := range list {
 		mw, ok := obj.(*workv1.ManifestWork)
 		if !ok {
-			return fmt.Errorf("invalid ManifestWork: %v", obj)
+			errs = append(errs, fmt.Errorf("invalid ManifestWork: %v", obj))
+			continue
 		}
-		clusterName, ok := mw.GetLabels()[HostedClusterLabel]
+		clusterName, ok := mw.GetLabels()[common.LabelImportHostedCluster]
 		if !ok {
-			return nil
+			continue
 		}
 		timestamps, err := getClusterTimestamps(clusterName, mw.Status)
 		if err != nil {
-			return err
+			errs = append(errs, err)
+			continue
 		}
 		s.data[clusterName] = timestamps
+
+		// run callback funcs once cluster ID is changed
+		for _, callback := range s.onTimestampChangeFuncs {
+			if err := callback(clusterName); err != nil {
+				errs = append(errs, err)
+			}
+		}
 	}
 
-	return nil
+	return utilerrors.NewAggregate(errs)
 }
 
 // Resync implements the Resync method of the store interface.
