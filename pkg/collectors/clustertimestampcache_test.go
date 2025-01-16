@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stolostron/clusterlifecycle-state-metrics/pkg/common"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	operatorv1 "open-cluster-management.io/api/operator/v1"
 	workv1 "open-cluster-management.io/api/work/v1"
@@ -27,7 +28,7 @@ func Test_ClusterTimestampCache(t *testing.T) {
 			Name:      "cluster1-hosted-klusterlet",
 			Namespace: "local-cluster",
 			Labels: map[string]string{
-				HostedClusterLabel: "cluster1",
+				common.LabelImportHostedCluster: "cluster1",
 			},
 		},
 		Status: workv1.ManifestWorkStatus{
@@ -78,7 +79,7 @@ func Test_ClusterTimestampCache(t *testing.T) {
 			Name:      "cluster2-hosted-klusterlet",
 			Namespace: "local-cluster",
 			Labels: map[string]string{
-				HostedClusterLabel: "cluster2",
+				common.LabelImportHostedCluster: "cluster2",
 			},
 		},
 		Status: workv1.ManifestWorkStatus{
@@ -142,6 +143,7 @@ func Test_ClusterTimestampCache(t *testing.T) {
 				StatusManagedClusterKubeconfigProvided: float64(t1.Unix()),
 				StatusStartToApplyKlusterletResources:  float64(t2.Unix()),
 			},
+			numberOfTimestampChanged: 1,
 		},
 		{
 			name:        "add",
@@ -162,7 +164,7 @@ func Test_ClusterTimestampCache(t *testing.T) {
 				StatusManagedClusterKubeconfigProvided: float64(t1.Unix()),
 				StatusStartToApplyKlusterletResources:  float64(t1.Unix()),
 			},
-			numberOfTimestampChanged: 1,
+			numberOfTimestampChanged: 2,
 		},
 		{
 			name:                     "update cluster1 to null",
@@ -170,7 +172,7 @@ func Test_ClusterTimestampCache(t *testing.T) {
 			existing:                 []interface{}{work1},
 			toUpdate:                 []interface{}{work1ModifiedNull},
 			want:                     nil,
-			numberOfTimestampChanged: 1,
+			numberOfTimestampChanged: 2,
 		},
 		{
 			name:        "update cluster2",
@@ -184,10 +186,11 @@ func Test_ClusterTimestampCache(t *testing.T) {
 			numberOfTimestampChanged: 2,
 		},
 		{
-			name:        "delete",
-			clusterName: "cluster1",
-			existing:    []interface{}{work1},
-			toDelete:    []interface{}{work1},
+			name:                     "delete",
+			clusterName:              "cluster1",
+			existing:                 []interface{}{work1},
+			toDelete:                 []interface{}{work1},
+			numberOfTimestampChanged: 1,
 		},
 	}
 

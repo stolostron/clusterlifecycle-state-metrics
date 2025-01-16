@@ -86,7 +86,8 @@ func (b *Builder) WithRestConfig(restConfig *rest.Config) *Builder {
 
 func (b *Builder) WithTimestampMetricsEnabled(timestampMetricsEnabled bool) *Builder {
 	b.timestampMetricsEnabled = timestampMetricsEnabled
-	if timestampMetricsEnabled {
+	klog.InfoS("set timetamp metrics enabled", "enabled", timestampMetricsEnabled)
+	if timestampMetricsEnabled && b.clusterTimestampCache == nil {
 		clusterTimestampCache := newClusterTimestampCache()
 		b.composedManifestWorkStore.AddStore(clusterTimestampCache)
 		b.clusterTimestampCache = clusterTimestampCache
@@ -174,7 +175,7 @@ func (b *Builder) buildManagedClusterCollector() MetricsCollector {
 		cluster.GetManagedClusterStatusMetricFamilies(),
 		cluster.GetManagedClusterWorkerCoresMetricFamilies(hubClusterID),
 	}
-	if b.timestampMetricsEnabled {
+	if b.timestampMetricsEnabled && b.clusterTimestampCache != nil {
 		clusterFamilies = append(clusterFamilies,
 			cluster.GetManagedClusterTimestampMetricFamilies(hubClusterID, b.clusterTimestampCache.GetClusterTimestamps))
 	}
@@ -281,16 +282,18 @@ func (b *Builder) startWatchingManagedClusters() {
 	}
 	klog.Infof("Cluster ID cached for %d managed clusters", len(clusters))
 
-	// refresh the managed cluster store once the timestamp of a certian cluster is changed
-	b.clusterTimestampCache.AddOnTimestampChangeFunc(func(clusterName string) error {
-		klog.Infof("Refresh the managed cluster metrics since the timestamp of cluster %q is changed", clusterName)
-		cluster, err := clusterClient.ClusterV1().ManagedClusters().Get(b.ctx, clusterName, metav1.GetOptions{})
-		if err != nil {
-			return err
-		}
+	if b.timestampMetricsEnabled && b.clusterTimestampCache != nil {
+		// refresh the managed cluster store once the timestamp of a certian cluster is changed
+		b.clusterTimestampCache.AddOnTimestampChangeFunc(func(clusterName string) error {
+			klog.Infof("Refresh the managed cluster metrics since the timestamp of cluster %q is changed", clusterName)
+			cluster, err := clusterClient.ClusterV1().ManagedClusters().Get(b.ctx, clusterName, metav1.GetOptions{})
+			if err != nil {
+				return err
+			}
 
-		return b.composedClusterStore.Update(cluster)
-	})
+			return b.composedClusterStore.Update(cluster)
+		})
+	}
 
 	// start watching managed clusters
 	lw := cache.NewListWatchFromClient(clusterClient.ClusterV1().RESTClient(), "managedclusters", metav1.NamespaceAll, fields.Everything())

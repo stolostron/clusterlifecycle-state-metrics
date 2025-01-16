@@ -86,6 +86,7 @@ func (s *composedStore) GetByKey(key string) (item interface{}, exists bool, err
 }
 
 // Replace implements the Replace method of the store interface.
+// When the app restarts, the Replace func will be invoked by listwatcher
 func (s *composedStore) Replace(list []interface{}, str string) error {
 	errs := []error{}
 	for _, store := range s.stores {
