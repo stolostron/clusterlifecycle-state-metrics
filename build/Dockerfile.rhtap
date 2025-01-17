@@ -1,18 +1,29 @@
 # Copyright Contributors to the Open Cluster Management project
 # This dockerfile only used in middle stream build, without downloading and building APISERVER_NETWORK_PROXY_VERSION
-FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_8_1.22 as builder
+FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_9_1.22 as builder
 
 WORKDIR /workspace
 COPY . .
 
 RUN chmod g+w . && \
-  git config --global --add safe.directory "$PWD" 
+    git config --global --add safe.directory "$PWD"
 
 RUN GOFLAGS="" go build ./cmd/clusterlifecycle-state-metrics; \
-GOFLAGS="" go test -covermode=atomic -coverpkg=github.com/stolostron/clusterlifecycle-state-metrics/pkg/... -c -tags testrunmain ./cmd/clusterlifecycle-state-metrics -o clusterlifecycle-state-metrics-coverage
+    GOFLAGS="" go test -covermode=atomic -coverpkg=github.com/stolostron/clusterlifecycle-state-metrics/pkg/... \
+    -c -tags testrunmain ./cmd/clusterlifecycle-state-metrics -o clusterlifecycle-state-metrics-coverage
 
 FROM registry.access.redhat.com/ubi9/ubi-minimal:latest
-RUN microdnf update -y
+
+LABEL \
+    name="clusterlifecycle-state-metrics" \
+    com.redhat.component="clusterlifecycle-state-metrics" \
+    description="Cluster Lifecycle State Metrics generates a number of clusters related metrics used \
+    for business analysis." \
+    io.k8s.description="Cluster Lifecycle State Metrics generates a number of clusters related metrics used \
+    for business analysis." \
+    summary="A mce clusters related metrics server" \
+    io.k8s.display-name="Red Hat Advanced Cluster Management Cluster Lifecycle State Metrics" \
+    io.openshift.tags="mce acm metrics clusterlifecycle-state-metrics"
 
 ENV OPERATOR=/usr/local/bin/clusterlifecycle-state-metrics \
     USER_UID=1001 \
@@ -26,7 +37,7 @@ COPY --from=builder \
     /usr/local/bin/coverage-entrypoint-func.sh
 COPY --from=builder /workspace/build/bin /usr/local/bin
 
-RUN  /usr/local/bin/user_setup
+RUN /usr/local/bin/user_setup
 
 ENTRYPOINT ["/usr/local/bin/entrypoint"]
 
