@@ -50,6 +50,14 @@ func Test_getManifestWorkTimestampMetricFamilies(t *testing.T) {
 		},
 	}
 
+	workwithoutlabel := &workv1.ManifestWork{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:              "cluster2-hosted-klusterlet",
+			Namespace:         "local-cluster",
+			CreationTimestamp: metav1.Time{Time: t1},
+		},
+	}
+
 	workwithoutanno := &workv1.ManifestWork{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:              "cluster2-hosted-klusterlet",
@@ -107,10 +115,16 @@ func Test_getManifestWorkTimestampMetricFamilies(t *testing.T) {
 
 	tests := []testcommon.GenerateMetricsTestCase{
 		{
+			Name:        "test work without label",
+			Obj:         workwithoutlabel,
+			MetricNames: []string{"acm_manifestwork_apply_timestamp"},
+			Want:        "",
+		},
+		{
 			Name:        "test work without annotation",
 			Obj:         workwithoutanno,
 			MetricNames: []string{"acm_manifestwork_apply_timestamp"},
-			Want:        "",
+			Want:        fmt.Sprintf(`acm_manifestwork_apply_timestamp{manifestwork="cluster2-hosted-klusterlet",managed_cluster_name="local-cluster",hosted_cluster_name="cluster2",managed_cluster_id="local-cluster",status="Created"} %.9e`, float64(t1.Unix())),
 		},
 		{
 			Name:        "test work with annotation",
