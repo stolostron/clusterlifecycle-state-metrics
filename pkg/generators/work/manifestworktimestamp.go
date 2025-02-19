@@ -48,10 +48,11 @@ func GetManifestWorkTimestampMetricFamilies(getClusterIdFunc func(string) string
 			}
 
 			family := metric.Family{}
+			family.Metrics = append(family.Metrics,
+				generators.BuildTimestampMetric(mw.CreationTimestamp, keys, values, generators.CreatedTimestamp))
+
 			observedTimestamp := common.GetObservedTimestamp(mw)
 			if observedTimestamp != nil {
-				family.Metrics = append(family.Metrics,
-					generators.BuildTimestampMetric(mw.CreationTimestamp, keys, values, generators.CreatedTimestamp))
 				family.Metrics = append(family.Metrics, generators.BuildTimestampMetric(
 					metav1.NewTime(observedTimestamp.AppliedTime),
 					keys, values, generators.AppliedTimestamp))
