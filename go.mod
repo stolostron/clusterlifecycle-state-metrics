@@ -1,6 +1,6 @@
 module github.com/stolostron/clusterlifecycle-state-metrics
 
-go 1.22.5
+go 1.23.6
 
 require (
 	github.com/onsi/ginkgo/v2 v2.19.0
@@ -70,7 +70,7 @@ require (
 	go.uber.org/zap v1.26.0 // indirect
 	golang.org/x/crypto v0.32.0 // indirect
 	golang.org/x/exp v0.0.0-20230515195305-f3d0a9c9a5cc // indirect
-	golang.org/x/oauth2 v0.21.0 // indirect
+	golang.org/x/oauth2 v0.28.0 // indirect
 	golang.org/x/sys v0.29.0 // indirect
 	golang.org/x/term v0.28.0 // indirect
 	golang.org/x/text v0.21.0 // indirect
