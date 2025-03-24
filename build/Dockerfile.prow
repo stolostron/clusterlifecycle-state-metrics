@@ -1,6 +1,6 @@
 # Copyright Contributors to the Open Cluster Management project
 
-FROM registry.ci.openshift.org/stolostron/builder:go1.21-linux AS builder
+FROM registry.ci.openshift.org/stolostron/builder:go1.23-linux AS builder
 
 ARG REMOTE_SOURCE
 ARG REMOTE_SOURCE_DIR
@@ -10,8 +10,8 @@ WORKDIR $REMOTE_SOURCE_DIR/app
 RUN GOFLAGS="" go build ./cmd/clusterlifecycle-state-metrics; \
 GOFLAGS="" go test -covermode=atomic -coverpkg=github.com/stolostron/clusterlifecycle-state-metrics/pkg/... -c -tags testrunmain ./cmd/clusterlifecycle-state-metrics -o clusterlifecycle-state-metrics-coverage
 
-FROM registry.access.redhat.com/ubi8/ubi-minimal:latest
-RUN microdnf update
+FROM registry.access.redhat.com/ubi9/ubi-minimal:latest
+RUN microdnf update -y
 
 ARG REMOTE_SOURCE_DIR
 
