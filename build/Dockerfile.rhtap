@@ -1,6 +1,6 @@
 # Copyright Contributors to the Open Cluster Management project
 # This dockerfile only used in middle stream build, without downloading and building APISERVER_NETWORK_PROXY_VERSION
-FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_8_1.22 as builder
+FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_9_1.23 as builder
 
 WORKDIR /workspace
 COPY . .
