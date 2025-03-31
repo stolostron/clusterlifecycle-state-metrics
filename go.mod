@@ -1,6 +1,7 @@
 module github.com/stolostron/clusterlifecycle-state-metrics
 
 go 1.23.6
+toolchain go1.24.1
 
 require (
 	github.com/onsi/ginkgo/v2 v2.19.0
@@ -12,7 +13,7 @@ require (
 	github.com/stolostron/applier v0.0.0-20220328110401-26b0ea4f8e1e
 	github.com/stolostron/cluster-lifecycle-api v0.0.0-20220714081119-eae2fe1f05fd
 	github.com/stolostron/library-go v0.0.0-20220328023725-63d77a3ad428
-	golang.org/x/net v0.34.0
+	golang.org/x/net v0.36.0
 	k8s.io/api v0.31.0
 	k8s.io/apimachinery v0.31.0
 	k8s.io/client-go v0.31.0
