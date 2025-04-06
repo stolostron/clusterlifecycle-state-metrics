@@ -26,6 +26,12 @@ type ManifestWork struct {
 	Status ManifestWorkStatus `json:"status,omitempty"`
 }
 
+const (
+	// ManifestConfigSpecHashAnnotationKey is the annotation key to identify the configurations
+	// used by the manifestwork.
+	ManifestConfigSpecHashAnnotationKey = "open-cluster-management.io/config-spec-hash"
+)
+
 // ManifestWorkSpec represents a desired configuration of manifests to be deployed on the managed cluster.
 type ManifestWorkSpec struct {
 	// Workload represents the manifest workload to be deployed on a managed cluster.
@@ -92,9 +98,9 @@ type ManifestConfigOption struct {
 	FeedbackRules []FeedbackRule `json:"feedbackRules,omitempty"`
 
 	// UpdateStrategy defines the strategy to update this manifest. UpdateStrategy is Update
-	// if it is not set,
-	// optional
-	UpdateStrategy *UpdateStrategy `json:"updateStrategy"`
+	// if it is not set.
+	// +optional
+	UpdateStrategy *UpdateStrategy `json:"updateStrategy,omitempty"`
 }
 
 // ManifestWorkExecutor is the executor that applies the resources to the managed cluster. i.e. the
@@ -156,8 +162,10 @@ type UpdateStrategy struct {
 	// ServerSideApply type means to update resource using server side apply with work-controller as the field manager.
 	// If there is conflict, the related Applied condition of manifest will be in the status of False with the
 	// reason of ApplyConflict.
+	// ReadOnly type means the agent will only check the existence of the resource based on its metadata,
+	// statusFeedBackRules can still be used to get feedbackResults.
 	// +kubebuilder:default=Update
-	// +kubebuilder:validation:Enum=Update;CreateOnly;ServerSideApply
+	// +kubebuilder:validation:Enum=Update;CreateOnly;ServerSideApply;ReadOnly
 	// +kubebuilder:validation:Required
 	// +required
 	Type UpdateStrategyType `json:"type,omitempty"`
@@ -171,18 +179,23 @@ type UpdateStrategy struct {
 type UpdateStrategyType string
 
 const (
-	// Update type means to update resource by an update call.
+	// UpdateStrategyTypeUpdate means to update resource by an update call.
 	UpdateStrategyTypeUpdate UpdateStrategyType = "Update"
 
-	// CreateOnly type means do not update resource based on current manifest. This should be used only when
+	// UpdateStrategyTypeCreateOnly means do not update resource based on current manifest. This should be used only when
 	// ServerSideApply type is not support on the spoke, and the user on hub would like some other controller
 	// on the spoke to own the control of the resource.
 	UpdateStrategyTypeCreateOnly UpdateStrategyType = "CreateOnly"
 
-	// ServerSideApply type means to update resource using server side apply with work-controller as the field manager.
+	// UpdateStrategyTypeServerSideApply means to update resource using server side apply with work-controller as the field manager.
 	// If there is conflict, the related Applied condition of manifest will be in the status of False with the
 	// reason of ApplyConflict. This type allows another controller on the spoke to control certain field of the resource.
 	UpdateStrategyTypeServerSideApply UpdateStrategyType = "ServerSideApply"
+
+	// UpdateStrategyTypeReadOnly type means only check the existence of the resource based on the resource's metadata.
+	// If the statusFeedBackRules are set, the feedbackResult will also be returned.
+	// The resource will not be removed when the type is ReadOnly, and only resource metadata is required.
+	UpdateStrategyTypeReadOnly UpdateStrategyType = "ReadOnly"
 )
 
 type ServerSideApplyConfig struct {
@@ -446,40 +459,51 @@ type FieldValue struct {
 	// +optional
 	Integer *int64 `json:"integer,omitempty"`
 
-	// String is the string value when when type is string.
+	// String is the string value when type is string.
 	// +optional
 	String *string `json:"string,omitempty"`
 
 	// Boolean is bool value when type is boolean.
 	// +optional
 	Boolean *bool `json:"boolean,omitempty"`
+
+	// JsonRaw is a json string when type is a list or object
+	// +kubebuilder:validation:MaxLength=1024
+	JsonRaw *string `json:"jsonRaw,omitempty"`
 }
 
-// +kubebuilder:validation:Enum=Integer;String;Boolean
+// +kubebuilder:validation:Enum=Integer;String;Boolean;JsonRaw
 type ValueType string
 
 const (
 	Integer ValueType = "Integer"
 	String  ValueType = "String"
 	Boolean ValueType = "Boolean"
+	JsonRaw ValueType = "JsonRaw"
 )
-
-// ManifestConditionType represents the condition type of a single
-// resource manifest deployed on the managed cluster.
-type ManifestConditionType string
 
 const (
 	// ManifestProgressing represents that the resource is being applied on the managed cluster
-	ManifestProgressing ManifestConditionType = "Progressing"
+	ManifestProgressing string = "Progressing"
 	// ManifestApplied represents that the resource object is applied
 	// on the managed cluster.
-	ManifestApplied ManifestConditionType = "Applied"
+	ManifestApplied string = "Applied"
 	// ManifestAvailable represents that the resource object exists
 	// on the managed cluster.
-	ManifestAvailable ManifestConditionType = "Available"
+	ManifestAvailable string = "Available"
 	// ManifestDegraded represents that the current state of resource object does not
 	// match the desired state for a certain period.
-	ManifestDegraded ManifestConditionType = "Degraded"
+	ManifestDegraded string = "Degraded"
+)
+
+const (
+	// ManifestWorkFinalizer is the name of the finalizer added to manifestworks. It is used to ensure
+	// related appliedmanifestwork of a manifestwork are deleted before the manifestwork itself is deleted
+	ManifestWorkFinalizer = "cluster.open-cluster-management.io/manifest-work-cleanup"
+	// AppliedManifestWorkFinalizer is the name of the finalizer added to appliedmanifestwork. It is to
+	// ensure all resource relates to appliedmanifestwork is deleted before appliedmanifestwork itself
+	// is deleted.
+	AppliedManifestWorkFinalizer = "cluster.open-cluster-management.io/applied-manifest-work-cleanup"
 )
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -527,6 +551,9 @@ type AppliedManifestWorkSpec struct {
 	// +required
 	HubHash string `json:"hubHash"`
 
+	// AgentID represents the ID of the work agent who is to handle this AppliedManifestWork.
+	AgentID string `json:"agentID"`
+
 	// ManifestWorkName represents the name of the related manifestwork on the hub.
 	// +required
 	ManifestWorkName string `json:"manifestWorkName"`
@@ -542,6 +569,13 @@ type AppliedManifestWorkStatus struct {
 	// However, the resource will not be undeleted, so it can be removed from this list and eventual consistency is preserved.
 	// +optional
 	AppliedResources []AppliedManifestResourceMeta `json:"appliedResources,omitempty"`
+
+	// EvictionStartTime represents the current appliedmanifestwork will be evicted after a grace period.
+	// An appliedmanifestwork will be evicted from the managed cluster in the following two scenarios:
+	//   - the manifestwork of the current appliedmanifestwork is missing on the hub, or
+	//   - the appliedmanifestwork hub hash does not match the current hub hash of the work agent.
+	// +optional
+	EvictionStartTime *metav1.Time `json:"evictionStartTime,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
