@@ -1,6 +1,8 @@
 module github.com/stolostron/clusterlifecycle-state-metrics
 
-go 1.19
+go 1.21
+
+toolchain go1.22.9
 
 // CVE-2025-22868
 // This is from tag v0.26.openshift.1
@@ -33,7 +35,7 @@ require (
 
 require (
 	github.com/Masterminds/goutils v1.1.1 // indirect
-	github.com/Masterminds/semver/v3 v3.1.1 // indirect
+	github.com/Masterminds/semver/v3 v3.3.1 // indirect
 	github.com/Masterminds/sprig/v3 v3.2.2 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
