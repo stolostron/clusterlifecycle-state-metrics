@@ -78,7 +78,7 @@ github.com/google/gofuzz/bytesource
 # github.com/google/pprof v0.0.0-20220608213341-c488b8fa1db3
 ## explicit; go 1.17
 github.com/google/pprof/profile
-# github.com/google/uuid v1.3.0
+# github.com/google/uuid v1.6.0
 ## explicit
 github.com/google/uuid
 # github.com/huandu/xstrings v1.3.2
