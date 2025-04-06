@@ -1,6 +1,8 @@
 module github.com/stolostron/clusterlifecycle-state-metrics
 
-go 1.19
+go 1.22.0
+
+toolchain go1.22.9
 
 // CVE-2025-22868
 // This is from tag v0.26.openshift.1
@@ -14,7 +16,7 @@ require (
 	github.com/onsi/ginkgo/v2 v2.9.1
 	github.com/onsi/gomega v1.27.4
 	github.com/openshift/api v3.9.1-0.20191111211345-a27ff30ebf09+incompatible
-	github.com/openshift/build-machinery-go v0.0.0-20220720161851-9b4f0386f6b0
+	github.com/openshift/build-machinery-go v0.0.0-20250211133638-a00a772ae1a2
 	github.com/openshift/client-go v0.0.0-20210916133943-9acee1a0fb83
 	github.com/prometheus/client_golang v1.12.2
 	github.com/stolostron/applier v0.0.0-20220328110401-26b0ea4f8e1e
