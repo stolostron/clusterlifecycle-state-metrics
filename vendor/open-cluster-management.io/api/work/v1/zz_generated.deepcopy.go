@@ -112,6 +112,10 @@ func (in *AppliedManifestWorkStatus) DeepCopyInto(out *AppliedManifestWorkStatus
 		*out = make([]AppliedManifestResourceMeta, len(*in))
 		copy(*out, *in)
 	}
+	if in.EvictionStartTime != nil {
+		in, out := &in.EvictionStartTime, &out.EvictionStartTime
+		*out = (*in).DeepCopy()
+	}
 	return
 }
 
@@ -200,6 +204,11 @@ func (in *FieldValue) DeepCopyInto(out *FieldValue) {
 	if in.Boolean != nil {
 		in, out := &in.Boolean, &out.Boolean
 		*out = new(bool)
+		**out = **in
+	}
+	if in.JsonRaw != nil {
+		in, out := &in.JsonRaw, &out.JsonRaw
+		*out = new(string)
 		**out = **in
 	}
 	return

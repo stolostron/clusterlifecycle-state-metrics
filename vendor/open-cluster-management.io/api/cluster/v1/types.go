@@ -16,20 +16,20 @@ import (
 // +kubebuilder:printcolumn:JSONPath=`.status.conditions[?(@.type=="ManagedClusterConditionAvailable")].status`,name="Available",type=string
 // +kubebuilder:printcolumn:JSONPath=`.metadata.creationTimestamp`,name="Age",type=date
 
-// ManagedCluster represents the desired state and current status of managed
-// cluster. ManagedCluster is a cluster scoped resource. The name is the cluster
-// UID.
+// ManagedCluster represents the desired state and current status
+// of a managed cluster. ManagedCluster is a cluster-scoped resource. The name
+// is the cluster UID.
 //
-// The cluster join process follows a double opt-in process:
+// The cluster join process is a double opt-in process. See the following join process steps:
 //
-// 1. Agent on managed cluster creates CSR on hub with cluster UID and agent name.
-// 2. Agent on managed cluster creates ManagedCluster on hub.
-// 3. Cluster admin on hub approves the CSR for UID and agent name of the ManagedCluster.
-// 4. Cluster admin sets spec.acceptClient of ManagedCluster to true.
-// 5. Cluster admin on managed cluster creates credential of kubeconfig to hub.
+// 1. The agent on the managed cluster creates a CSR on the hub with the cluster UID and agent name.
+// 2. The agent on the managed cluster creates a ManagedCluster on the hub.
+// 3. The cluster admin on the hub cluster approves the CSR for the UID and agent name of the ManagedCluster.
+// 4. The cluster admin sets the spec.acceptClient of the ManagedCluster to true.
+// 5. The cluster admin on the managed cluster creates a credential of the kubeconfig for the hub cluster.
 //
-// Once the hub creates the cluster namespace, the Klusterlet agent on the ManagedCluster
-// pushes the credential to the hub to use against the kube-apiserver of the ManagedCluster.
+// After the hub cluster creates the cluster namespace, the klusterlet agent on the ManagedCluster pushes
+// the credential to the hub cluster to use against the kube-apiserver of the ManagedCluster.
 type ManagedCluster struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -132,12 +132,12 @@ const (
 
 const (
 	// ManagedClusterTaintUnavailable is the key of the taint added to a managed cluster when it is not available.
-	// To be specific, the cluster has a condtion 'ManagedClusterConditionAvailable' with status of 'False';
+	// To be specific, the cluster has a condition 'ManagedClusterConditionAvailable' with status of 'False';
 	ManagedClusterTaintUnavailable string = "cluster.open-cluster-management.io/unavailable"
 	// ManagedClusterTaintUnreachable is the key of the taint added to a managed cluster when it is not reachable.
 	// To be specific,
 	// 1) The cluster has no condition 'ManagedClusterConditionAvailable';
-	// 2) Or the status of condtion 'ManagedClusterConditionAvailable' is 'Unknown';
+	// 2) Or the status of condition 'ManagedClusterConditionAvailable' is 'Unknown';
 	ManagedClusterTaintUnreachable string = "cluster.open-cluster-management.io/unreachable"
 )
 
@@ -200,6 +200,8 @@ const (
 	// cluster is available, the kube-apiserver is healthy and the Klusterlet agent is
 	// running with the minimum deployment on this managed cluster
 	ManagedClusterConditionAvailable string = "ManagedClusterConditionAvailable"
+	// ManagedClusterConditionClockSynced means the clock between the hub and the agent is synced.
+	ManagedClusterConditionClockSynced string = "ManagedClusterConditionClockSynced"
 )
 
 // ResourceName is the name identifying various resources in a ResourceList.
@@ -229,3 +231,58 @@ type ManagedClusterList struct {
 	// Items is a list of managed clusters.
 	Items []ManagedCluster `json:"items"`
 }
+
+const (
+	// ClusterNameLabelKey is the key of a label to set ManagedCluster name.
+	ClusterNameLabelKey = "open-cluster-management.io/cluster-name"
+)
+
+const (
+	// ClusterImageRegistriesAnnotationKey is an annotation key on ManagedCluster to configure image override for addons
+	// running on the ManagedCluster, the value of the annotation should be a json string like this:
+	//
+	// {
+	//   "registries": [
+	//     {
+	//       "source": "quay.io/ocm",
+	//       "mirrors": "quay.io/open-cluster-management"
+	//     }
+	//   ]
+	// }
+	//
+	// Note: Image registries configured in the addonDeploymentConfig will take precedence over this annotation.
+	ClusterImageRegistriesAnnotationKey = "open-cluster-management.io/image-registries"
+)
+
+const (
+	// ManagedClusterFinalizer is the name of the finalizer added to ManagedCluster, it is to ensure that resources
+	// relating to the ManagedCluster is removed when the ManagedCluster is deleted.
+	ManagedClusterFinalizer = "cluster.open-cluster-management.io/api-resource-cleanup"
+)
+
+const (
+	// ManagedClusterConditionDeleting is a condition which means the cluster is in deletion process.
+	ManagedClusterConditionDeleting string = "Deleting"
+
+	// ConditionDeletingReasonResourceRemaining is a reason for the condition ManagedClusterConditionDeleting, which means
+	// there are resources are remaining during deletion process.
+	ConditionDeletingReasonResourceRemaining string = "ResourceRemaining"
+
+	// ConditionDeletingReasonNoResource is a reason for the condition ManagedClusterConditionDeleting, which means
+	// there is no resources left in the cluster ns during the deletion process.
+	ConditionDeletingReasonNoResource string = "NoResource"
+
+	// ConditionDeletingReasonResourceError is a reason for the condition ManagedClusterConditionDeleting, which means
+	// meet errors during the deletion process.
+	ConditionDeletingReasonResourceError string = "DeletingError"
+
+	// CleanupPriorityAnnotationKey is an annotation for the resources deployed in cluster ns which are waiting to
+	// be cleaned up after cluster is deleted.
+	// The value is an integer value [0,100], The larger the value, the later the order of deletion.
+	// The deletion order is :
+	// 1. delete resources without this annotation firstly.
+	// 2. delete resources with invalid value of this annotation (!= [0,100]).
+	// 3. delete resources following the priority value. For example, there are 2 manifestWorks, one value is set 100
+	// and another is set 10, the manifestWorks with 10 will be deleted before the one with 100.
+	CleanupPriorityAnnotationKey string = "open-cluster-management.io/cleanup-priority"
+)
