@@ -8,7 +8,7 @@ replace golang.org/x/oauth2 => github.com/openshift/golang-oauth2 v0.26.1-0.2025
 
 // CVE-2025-22869
 // This is from tag v0.33.openshift.1
-replace golang/x/crypto => github.com/openshift/golang-crypto v0.33.1-0.20250310193910-9003f682e581
+replace golang/x/crypto => github.com/openshift/golang-crypto v0.36.0
 
 require (
 	github.com/onsi/ginkgo/v2 v2.9.1
