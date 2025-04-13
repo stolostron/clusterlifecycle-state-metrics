@@ -44,6 +44,11 @@ type ClusterManagerSpec struct {
 	// +kubebuilder:default=quay.io/open-cluster-management/placement
 	PlacementImagePullSpec string `json:"placementImagePullSpec,omitempty"`
 
+	// AddOnManagerImagePullSpec represents the desired image configuration of addon manager controller/webhook installed on hub.
+	// +optional
+	// +kubebuilder:default=quay.io/open-cluster-management/addon-manager
+	AddOnManagerImagePullSpec string `json:"addOnManagerImagePullSpec,omitempty"`
+
 	// NodePlacement enables explicit control over the scheduling of the deployed pods.
 	// +optional
 	NodePlacement NodePlacement `json:"nodePlacement,omitempty"`
@@ -56,11 +61,96 @@ type ClusterManagerSpec struct {
 
 	// RegistrationConfiguration contains the configuration of registration
 	// +optional
-	RegistrationConfiguration *RegistrationConfiguration `json:"registrationConfiguration,omitempty"`
+	RegistrationConfiguration *RegistrationHubConfiguration `json:"registrationConfiguration,omitempty"`
+
+	// WorkConfiguration contains the configuration of work
+	// +optional
+	// +kubebuilder:default={workDriver: kube}
+	WorkConfiguration *WorkConfiguration `json:"workConfiguration,omitempty"`
+
+	// AddOnManagerConfiguration contains the configuration of addon manager
+	// +optional
+	AddOnManagerConfiguration *AddOnManagerConfiguration `json:"addOnManagerConfiguration,omitempty"`
+
+	// ResourceRequirement specify QoS classes of deployments managed by clustermanager.
+	// It applies to all the containers in the deployments.
+	// +optional
+	ResourceRequirement *ResourceRequirement `json:"resourceRequirement,omitempty"`
 }
 
-type RegistrationConfiguration struct {
+// NodePlacement describes node scheduling configuration for the pods.
+type NodePlacement struct {
+	// NodeSelector defines which Nodes the Pods are scheduled on. The default is an empty list.
+	// +optional
+	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+
+	// Tolerations are attached by pods to tolerate any taint that matches
+	// the triple <key,value,effect> using the matching operator <operator>.
+	// The default is an empty list.
+	// +optional
+	Tolerations []v1.Toleration `json:"tolerations,omitempty"`
+}
+
+type RegistrationHubConfiguration struct {
+	// AutoApproveUser represents a list of users that can auto approve CSR and accept client. If the credential of the
+	// bootstrap-hub-kubeconfig matches to the users, the cluster created by the bootstrap-hub-kubeconfig will
+	// be auto-registered into the hub cluster. This takes effect only when ManagedClusterAutoApproval feature gate
+	// is enabled.
+	// +optional
+	AutoApproveUsers []string `json:"autoApproveUsers,omitempty"`
+
 	// FeatureGates represents the list of feature gates for registration
+	// If it is set empty, default feature gates will be used.
+	// If it is set, featuregate/Foo is an example of one item in FeatureGates:
+	//   1. If featuregate/Foo does not exist, registration-operator will discard it
+	//   2. If featuregate/Foo exists and is false by default. It is now possible to set featuregate/Foo=[false|true]
+	//   3. If featuregate/Foo exists and is true by default. If a cluster-admin upgrading from 1 to 2 wants to continue having featuregate/Foo=false,
+	//  	he can set featuregate/Foo=false before upgrading. Let's say the cluster-admin wants featuregate/Foo=false.
+	// +optional
+	FeatureGates []FeatureGate `json:"featureGates,omitempty"`
+}
+
+type WorkConfiguration struct {
+	// FeatureGates represents the list of feature gates for work
+	// If it is set empty, default feature gates will be used.
+	// If it is set, featuregate/Foo is an example of one item in FeatureGates:
+	//   1. If featuregate/Foo does not exist, registration-operator will discard it
+	//   2. If featuregate/Foo exists and is false by default. It is now possible to set featuregate/Foo=[false|true]
+	//   3. If featuregate/Foo exists and is true by default. If a cluster-admin upgrading from 1 to 2 wants to continue having featuregate/Foo=false,
+	//  	he can set featuregate/Foo=false before upgrading. Let's say the cluster-admin wants featuregate/Foo=false.
+	// +optional
+	FeatureGates []FeatureGate `json:"featureGates,omitempty"`
+
+	// WorkDriver represents the type of work driver. Possible values are "kube", "mqtt", or "grpc".
+	// If not provided, the default value is "kube".
+	// If set to non-"kube" drivers, the klusterlet need to use the same driver.
+	// and the driver configuration must be provided in a secret named "work-driver-config"
+	// in the namespace where the cluster manager is running, adhering to the following structure:
+	// config.yaml: |
+	//   <driver-config-in-yaml>
+	//
+	// For detailed driver configuration, please refer to the sdk-go documentation: https://github.com/open-cluster-management-io/sdk-go/blob/main/pkg/cloudevents/README.md#supported-protocols-and-drivers
+	//
+	// +optional
+	// +kubebuilder:default:=kube
+	// +kubebuilder:validation:Enum=kube;mqtt;grpc
+	WorkDriver WorkDriverType `json:"workDriver,omitempty"`
+}
+
+// WorkDriverType represents the type of work driver.
+type WorkDriverType string
+
+const (
+	// WorkDriverTypeKube is the work driver type for kube.
+	WorkDriverTypeKube WorkDriverType = "kube"
+	// WorkDriverTypeMqtt is the work driver type for mqtt.
+	WorkDriverTypeMqtt WorkDriverType = "mqtt"
+	// WorkDriverTypeGrpc is the work driver type for grpc.
+	WorkDriverTypeGrpc WorkDriverType = "grpc"
+)
+
+type AddOnManagerConfiguration struct {
+	// FeatureGates represents the list of feature gates for addon manager
 	// If it is set empty, default feature gates will be used.
 	// If it is set, featuregate/Foo is an example of one item in FeatureGates:
 	//   1. If featuregate/Foo does not exist, registration-operator will discard it
@@ -89,8 +179,9 @@ type FeatureGate struct {
 type FeatureGateModeType string
 
 const (
-	// Valid FeatureGateModeType value is Enable, Disable.
-	FeatureGateModeTypeEnable  FeatureGateModeType = "Enable"
+	// FeatureGateModeTypeEnable is the feature gate type to enable a feature.
+	FeatureGateModeTypeEnable FeatureGateModeType = "Enable"
+	// FeatureGateModeTypeDisable is the feature gate type to disable a feature.
 	FeatureGateModeTypeDisable FeatureGateModeType = "Disable"
 )
 
@@ -117,25 +208,12 @@ type WebhookConfiguration struct {
 
 	// Port represents the port of a webhook-server. The default value of Port is 443.
 	// +optional
-	// +default=443
 	// +kubebuilder:default=443
 	// +kubebuilder:validation:Maximum=65535
 	Port int32 `json:"port,omitempty"`
 }
 
-// KlusterletDeployOption describes the deploy options for klusterlet
-type KlusterletDeployOption struct {
-	// Mode can be Default or Hosted. It is Default mode if not specified
-	// In Default mode, all klusterlet related resources are deployed on the managed cluster.
-	// In Hosted mode, only crd and configurations are installed on the spoke/managed cluster. Controllers run in another
-	// cluster (defined as management-cluster) and connect to the mangaged cluster with the kubeconfig in secret of
-	// "external-managed-kubeconfig"(a kubeconfig of managed-cluster with cluster-admin permission).
-	// Note: Do not modify the Mode field once it's applied.
-	// +optional
-	Mode InstallMode `json:"mode"`
-}
-
-// ClusterManagerDeployOption describes the deploy options for cluster-manager
+// ClusterManagerDeployOption describes the deployment options for cluster-manager
 type ClusterManagerDeployOption struct {
 	// Mode can be Default or Hosted.
 	// In Default mode, the Hub is installed as a whole and all parts of Hub are deployed in the same cluster.
@@ -144,13 +222,12 @@ type ClusterManagerDeployOption struct {
 	// of hub-cluster with cluster-admin permission).
 	// Note: Do not modify the Mode field once it's applied.
 	// +required
-	// +default=Default
 	// +kubebuilder:validation:Required
 	// +kubebuilder:default=Default
 	// +kubebuilder:validation:Enum=Default;Hosted
 	Mode InstallMode `json:"mode,omitempty"`
 
-	// Hosted includes configurations we needs for clustermanager in the Hosted mode.
+	// Hosted includes configurations we need for clustermanager in the Hosted mode.
 	// +optional
 	Hosted *HostedClusterManagerConfiguration `json:"hosted,omitempty"`
 }
@@ -163,14 +240,15 @@ const (
 	// The cluster-manager will be deployed in the hub-cluster, the klusterlet will be deployed in the managed-cluster.
 	InstallModeDefault InstallMode = "Default"
 
-	// InstallModeDetached means deploying components outside.
-	// The cluster-manager will be deployed outside of the hub-cluster, the klusterlet will be deployed outside of the managed-cluster.
-	// DEPRECATED: please use Hosted instead.
-	InstallModeDetached InstallMode = "Detached"
-
 	// InstallModeHosted means deploying components outside.
-	// The cluster-manager will be deployed outside of the hub-cluster, the klusterlet will be deployed outside of the managed-cluster.
+	// The cluster-manager will be deployed outside the hub-cluster, the klusterlet will be deployed outside the managed-cluster.
 	InstallModeHosted InstallMode = "Hosted"
+
+	// InstallModeSingleton means deploying components as a single controller.
+	InstallModeSingleton InstallMode = "Singleton"
+
+	// InstallModeSingleton means deploying components as a single controller in hosted mode.
+	InstallModeSingletonHosted InstallMode = "SingletonHosted"
 )
 
 // ClusterManagerStatus represents the current status of the registration and work distribution controllers running on the hub.
@@ -262,155 +340,53 @@ type ClusterManagerList struct {
 	Items []ClusterManager `json:"items"`
 }
 
-// +genclient
-// +genclient:nonNamespaced
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-// +kubebuilder:subresource:status
-// +kubebuilder:resource:scope=Cluster
+const (
+	// The types of ClusterManager condition status.
+	// ConditionClusterManagerApplied is the ClusterManager condition status which means all components have been applied on the hub.
+	ConditionClusterManagerApplied = "Applied"
+	// ConditionHubRegistrationDegraded is the ClusterManager condition status which means the registration is not ready to serve on the hub.
+	ConditionHubRegistrationDegraded = "HubRegistrationDegraded"
+	// ConditionHubPlacementDegraded is the ClusterManager condition status which means the placement is not ready to serve on the hub.
+	ConditionHubPlacementDegraded = "HubPlacementDegraded"
+	// ConditionProgressing is the ClusterManager condition status which means the ClusterManager are in upgrading phase.
+	ConditionProgressing = "Progressing"
+	// ConditionMigrationSucceeded is the ClusterManager condition status which means the API migration is succeeded on the hub.
+	ConditionMigrationSucceeded = "MigrationSucceeded"
 
-// Klusterlet represents controllers to install the resources for a managed cluster.
-// When configured, the Klusterlet requires a secret named bootstrap-hub-kubeconfig in the
-// agent namespace to allow API requests to the hub for the registration protocol.
-// In Hosted mode, the Klusterlet requires an additional secret named external-managed-kubeconfig
-// in the agent namespace to allow API requests to the managed cluster for resources installation.
-type Klusterlet struct {
-	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata,omitempty"`
+	// ReasonClusterManagerApplied is the reason of the ConditionClusterManagerApplied condition to show all resources are applied.
+	ReasonClusterManagerApplied = "ClusterManagerApplied"
+	// ReasonRuntimeResourceApplyFailed is the reason of the ConditionClusterManagerApplied condition to show it is failed to apply deployments.
+	ReasonRuntimeResourceApplyFailed = "RuntimeResourceApplyFailed"
+	// ReasonServiceAccountSyncFailed is the reason of the ConditionClusterManagerApplied condition to show it is failed to apply serviceAccounts.
+	ReasonServiceAccountSyncFailed = "ServiceAccountSyncFailed"
+	// ReasonClusterManagerCRDApplyFailed is the reason of the ConditionClusterManagerApplied condition to show it is failed to apply CRDs.
+	ReasonClusterManagerCRDApplyFailed = "CRDApplyFailed"
+	// ReasonWebhookApplyFailed is the reason of the ConditionClusterManagerApplied condition to show it is failed to apply webhooks.
+	ReasonWebhookApplyFailed = "WebhookApplyFailed"
 
-	// Spec represents the desired deployment configuration of Klusterlet agent.
-	Spec KlusterletSpec `json:"spec,omitempty"`
+	// ReasonDeploymentRolling is the reason of the ConditionProgressing condition to show the deployed deployments are rolling.
+	ReasonDeploymentRolling = "ClusterManagerDeploymentRolling"
+	// ReasonUpToDate is the reason of the ConditionProgressing condition to show the deployed deployments are up-to-date.
+	ReasonUpToDate = "ClusterManagerUpToDate"
 
-	// Status represents the current status of Klusterlet agent.
-	Status KlusterletStatus `json:"status,omitempty"`
-}
+	// ReasonStorageVersionMigrationFailed is the reason of the ConditionMigrationSucceeded condition to show the API storageVersion migration is failed.
+	ReasonStorageVersionMigrationFailed = "StorageVersionMigrationFailed"
+	// ReasonStorageVersionMigrationProcessing is the reason of the ConditionMigrationSucceeded condition to show the API storageVersion migration is not completed.
+	ReasonStorageVersionMigrationProcessing = "StorageVersionMigrationProcessing"
+	// ReasonStorageVersionMigrationSucceed is the reason of the ConditionMigrationSucceeded condition to show the API storageVersion migration is succeeded.
+	ReasonStorageVersionMigrationSucceed = "StorageVersionMigrationSucceed"
 
-// KlusterletSpec represents the desired deployment configuration of Klusterlet agent.
-type KlusterletSpec struct {
-	// Namespace is the namespace to deploy the agent on the managed cluster.
-	// The namespace must have a prefix of "open-cluster-management-", and if it is not set,
-	// the namespace of "open-cluster-management-agent" is used to deploy agent.
-	// In addition, the add-ons are deployed to the namespace of "{Namespace}-addon".
-	// In the Hosted mode, this namespace still exists on the managed cluster to contain
-	// necessary resources, like service accounts, roles and rolebindings, while the agent
-	// is deployed to the namespace with the same name as klusterlet on the management cluster.
-	// +optional
-	// +kubebuilder:validation:MaxLength=63
-	// +kubebuilder:validation:Pattern=^open-cluster-management-[-a-z0-9]*[a-z0-9]$
-	Namespace string `json:"namespace,omitempty"`
+	// ReasonGetRegistrationDeploymentFailed is the reason of the ConditionRegistrationDegraded condition to show getting registration deployment failed.
+	ReasonGetRegistrationDeploymentFailed = "GetRegistrationDeploymentFailed"
+	// ReasonUnavailableRegistrationPod is the reason of the ConditionRegistrationDegraded condition to show the registration pods are unavailable.
+	ReasonUnavailableRegistrationPod = "UnavailableRegistrationPod"
+	// ReasonRegistrationFunctional is the reason of the ConditionRegistrationDegraded condition to show registration is functional.
+	ReasonRegistrationFunctional = "RegistrationFunctional"
 
-	// RegistrationImagePullSpec represents the desired image configuration of registration agent.
-	// quay.io/open-cluster-management.io/registration:latest will be used if unspecified.
-	// +optional
-	RegistrationImagePullSpec string `json:"registrationImagePullSpec,omitempty"`
-
-	// WorkImagePullSpec represents the desired image configuration of work agent.
-	// quay.io/open-cluster-management.io/work:latest will be used if unspecified.
-	// +optional
-	WorkImagePullSpec string `json:"workImagePullSpec,omitempty"`
-
-	// ClusterName is the name of the managed cluster to be created on hub.
-	// The Klusterlet agent generates a random name if it is not set, or discovers the appropriate cluster name on OpenShift.
-	// +optional
-	ClusterName string `json:"clusterName,omitempty"`
-
-	// ExternalServerURLs represents the a list of apiserver urls and ca bundles that is accessible externally
-	// If it is set empty, managed cluster has no externally accessible url that hub cluster can visit.
-	// +optional
-	ExternalServerURLs []ServerURL `json:"externalServerURLs,omitempty"`
-
-	// NodePlacement enables explicit control over the scheduling of the deployed pods.
-	// +optional
-	NodePlacement NodePlacement `json:"nodePlacement,omitempty"`
-
-	// DeployOption contains the options of deploying a klusterlet
-	// +optional
-	DeployOption KlusterletDeployOption `json:"deployOption,omitempty"`
-
-	// RegistrationConfiguration contains the configuration of registration
-	// +optional
-	RegistrationConfiguration *RegistrationConfiguration `json:"registrationConfiguration,omitempty"`
-
-	// HubApiServerHostAlias contains the host alias for hub api server.
-	// registration-agent and work-agent will use it to communicate with hub api server.
-	// +optional
-	HubApiServerHostAlias *HubApiServerHostAlias `json:"hubApiServerHostAlias,omitempty"`
-}
-
-// ServerURL represents the apiserver url and ca bundle that is accessible externally
-type ServerURL struct {
-	// URL is the url of apiserver endpoint of the managed cluster.
-	// +required
-	URL string `json:"url"`
-
-	// CABundle is the ca bundle to connect to apiserver of the managed cluster.
-	// System certs are used if it is not set.
-	// +optional
-	CABundle []byte `json:"caBundle,omitempty"`
-}
-
-// NodePlacement describes node scheduling configuration for the pods.
-type NodePlacement struct {
-	// NodeSelector defines which Nodes the Pods are scheduled on. The default is an empty list.
-	// +optional
-	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
-
-	// Tolerations is attached by pods to tolerate any taint that matches
-	// the triple <key,value,effect> using the matching operator <operator>.
-	// The default is an empty list.
-	// +optional
-	Tolerations []v1.Toleration `json:"tolerations,omitempty"`
-}
-
-// HubApiServerHostAlias holds the mapping between IP and hostname that will be injected as an entry in the
-// pod's hosts file.
-type HubApiServerHostAlias struct {
-	// IP address of the host file entry.
-	// +required
-	// +kubebuilder:validation:Required
-	// +kubebuilder:validation:Pattern=`^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$`
-	IP string `json:"ip"`
-
-	// Hostname for the above IP address.
-	// +required
-	// +kubebuilder:validation:Required
-	// +kubebuilder:validation:Pattern=`^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$`
-	Hostname string `json:"hostname"`
-}
-
-// KlusterletStatus represents the current status of Klusterlet agent.
-type KlusterletStatus struct {
-	// ObservedGeneration is the last generation change you've dealt with
-	// +optional
-	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
-
-	// Conditions contain the different condition statuses for this Klusterlet.
-	// Valid condition types are:
-	// Applied: Components have been applied in the managed cluster.
-	// Available: Components in the managed cluster are available and ready to serve.
-	// Progressing: Components in the managed cluster are in a transitioning state.
-	// Degraded: Components in the managed cluster do not match the desired configuration and only provide
-	// degraded service.
-	Conditions []metav1.Condition `json:"conditions"`
-
-	// Generations are used to determine when an item needs to be reconciled or has changed in a way that needs a reaction.
-	// +optional
-	Generations []GenerationStatus `json:"generations,omitempty"`
-
-	// RelatedResources are used to track the resources that are related to this Klusterlet.
-	// +optional
-	RelatedResources []RelatedResourceMeta `json:"relatedResources,omitempty"`
-}
-
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-
-// KlusterletList is a collection of Klusterlet agents.
-type KlusterletList struct {
-	metav1.TypeMeta `json:",inline"`
-	// Standard list metadata.
-	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds
-	// +optional
-	metav1.ListMeta `json:"metadata,omitempty"`
-
-	// Items is a list of Klusterlet agents.
-	Items []Klusterlet `json:"items"`
-}
+	// ReasonGetPlacementDeploymentFailed is the reason of the ConditionPlacementDegraded condition to show it is failed get placement deployment.
+	ReasonGetPlacementDeploymentFailed = "GetPlacementDeploymentFailed"
+	// ReasonUnavailablePlacementPod is the reason of the ConditionPlacementDegraded condition to show  the registration pods are unavailable.
+	ReasonUnavailablePlacementPod = "UnavailablePlacementPod"
+	// ReasonPlacementFunctional is the reason of the ConditionPlacementDegraded condition to show placement is functional.
+	ReasonPlacementFunctional = "PlacementFunctional"
+)

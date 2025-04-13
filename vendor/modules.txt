@@ -158,7 +158,7 @@ github.com/onsi/gomega/types
 # github.com/openshift/api v3.9.1-0.20191111211345-a27ff30ebf09+incompatible
 ## explicit
 github.com/openshift/api/config/v1
-# github.com/openshift/build-machinery-go v0.0.0-20220720161851-9b4f0386f6b0
+# github.com/openshift/build-machinery-go v0.0.0-20230306181456-d321ffa04533
 ## explicit; go 1.13
 github.com/openshift/build-machinery-go
 github.com/openshift/build-machinery-go/make
@@ -209,8 +209,8 @@ github.com/spf13/pflag
 ## explicit; go 1.17
 github.com/stolostron/applier/pkg/applier
 github.com/stolostron/applier/pkg/templateprocessor
-# github.com/stolostron/cluster-lifecycle-api v0.0.0-20220714081119-eae2fe1f05fd
-## explicit; go 1.18
+# github.com/stolostron/cluster-lifecycle-api v0.0.0-20240918064238-a5e71b599118
+## explicit; go 1.22.0
 github.com/stolostron/cluster-lifecycle-api/clusterinfo/v1beta1
 # github.com/stolostron/library-go v0.0.0-20220328023725-63d77a3ad428
 ## explicit; go 1.17
@@ -843,8 +843,8 @@ k8s.io/utils/pointer
 k8s.io/utils/ptr
 k8s.io/utils/strings/slices
 k8s.io/utils/trace
-# open-cluster-management.io/api v0.8.0
-## explicit; go 1.18
+# open-cluster-management.io/api v0.14.1-0.20240627145512-bd6f2229b53c
+## explicit; go 1.22.0
 open-cluster-management.io/api/addon/v1alpha1
 open-cluster-management.io/api/client/addon/clientset/versioned
 open-cluster-management.io/api/client/addon/clientset/versioned/scheme
@@ -854,14 +854,18 @@ open-cluster-management.io/api/client/cluster/clientset/versioned/scheme
 open-cluster-management.io/api/client/cluster/clientset/versioned/typed/cluster/v1
 open-cluster-management.io/api/client/cluster/clientset/versioned/typed/cluster/v1alpha1
 open-cluster-management.io/api/client/cluster/clientset/versioned/typed/cluster/v1beta1
+open-cluster-management.io/api/client/cluster/clientset/versioned/typed/cluster/v1beta2
 open-cluster-management.io/api/client/work/clientset/versioned
 open-cluster-management.io/api/client/work/clientset/versioned/scheme
 open-cluster-management.io/api/client/work/clientset/versioned/typed/work/v1
+open-cluster-management.io/api/client/work/clientset/versioned/typed/work/v1alpha1
 open-cluster-management.io/api/cluster/v1
 open-cluster-management.io/api/cluster/v1alpha1
 open-cluster-management.io/api/cluster/v1beta1
+open-cluster-management.io/api/cluster/v1beta2
 open-cluster-management.io/api/operator/v1
 open-cluster-management.io/api/work/v1
+open-cluster-management.io/api/work/v1alpha1
 # sigs.k8s.io/controller-runtime v0.19.3
 ## explicit; go 1.22.0
 sigs.k8s.io/controller-runtime
