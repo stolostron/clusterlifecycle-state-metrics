@@ -44,6 +44,7 @@ func (AppliedManifestWorkList) SwaggerDoc() map[string]string {
 var map_AppliedManifestWorkSpec = map[string]string{
 	"":                 "AppliedManifestWorkSpec represents the desired configuration of AppliedManifestWork",
 	"hubHash":          "HubHash represents the hash of the first hub kube apiserver to identify which hub this AppliedManifestWork links to.",
+	"agentID":          "AgentID represents the ID of the work agent who is to handle this AppliedManifestWork.",
 	"manifestWorkName": "ManifestWorkName represents the name of the related manifestwork on the hub.",
 }
 
@@ -52,8 +53,9 @@ func (AppliedManifestWorkSpec) SwaggerDoc() map[string]string {
 }
 
 var map_AppliedManifestWorkStatus = map[string]string{
-	"":                 "AppliedManifestWorkStatus represents the current status of AppliedManifestWork",
-	"appliedResources": "AppliedResources represents a list of resources defined within the manifestwork that are applied. Only resources with valid GroupVersionResource, namespace, and name are suitable. An item in this slice is deleted when there is no mapped manifest in manifestwork.Spec or by finalizer. The resource relating to the item will also be removed from managed cluster. The deleted resource may still be present until the finalizers for that resource are finished. However, the resource will not be undeleted, so it can be removed from this list and eventual consistency is preserved.",
+	"":                  "AppliedManifestWorkStatus represents the current status of AppliedManifestWork",
+	"appliedResources":  "AppliedResources represents a list of resources defined within the manifestwork that are applied. Only resources with valid GroupVersionResource, namespace, and name are suitable. An item in this slice is deleted when there is no mapped manifest in manifestwork.Spec or by finalizer. The resource relating to the item will also be removed from managed cluster. The deleted resource may still be present until the finalizers for that resource are finished. However, the resource will not be undeleted, so it can be removed from this list and eventual consistency is preserved.",
+	"evictionStartTime": "EvictionStartTime represents the current appliedmanifestwork will be evicted after a grace period. An appliedmanifestwork will be evicted from the managed cluster in the following two scenarios:\n  - the manifestwork of the current appliedmanifestwork is missing on the hub, or\n  - the appliedmanifestwork hub hash does not match the current hub hash of the work agent.",
 }
 
 func (AppliedManifestWorkStatus) SwaggerDoc() map[string]string {
@@ -91,12 +93,22 @@ var map_FieldValue = map[string]string{
 	"":        "FieldValue is the value of the status field. The value of the status field can only be integer, string or boolean.",
 	"type":    "Type represents the type of the value, it can be integer, string or boolean.",
 	"integer": "Integer is the integer value when type is integer.",
-	"string":  "String is the string value when when type is string.",
+	"string":  "String is the string value when type is string.",
 	"boolean": "Boolean is bool value when type is boolean.",
+	"jsonRaw": "JsonRaw is a json string when type is a list or object",
 }
 
 func (FieldValue) SwaggerDoc() map[string]string {
 	return map_FieldValue
+}
+
+var map_IgnoreField = map[string]string{
+	"condition": "Condition defines the condition that the fields should be ignored when apply the resource. Fields in JSONPaths are all ignored when condition is met, otherwise no fields is ignored in the apply operation.",
+	"jsonPaths": "JSONPaths defines the list of json path in the resource to be ignored",
+}
+
+func (IgnoreField) SwaggerDoc() map[string]string {
+	return map_IgnoreField
 }
 
 var map_JsonPath = map[string]string{
@@ -132,7 +144,7 @@ var map_ManifestConfigOption = map[string]string{
 	"":                   "ManifestConfigOption represents the configurations of a manifest defined in workload field.",
 	"resourceIdentifier": "ResourceIdentifier represents the group, resource, name and namespace of a resoure. iff this refers to a resource not created by this manifest work, the related rules will not be executed.",
 	"feedbackRules":      "FeedbackRules defines what resource status field should be returned. If it is not set or empty, no feedback rules will be honored.",
-	"updateStrategy":     "UpdateStrategy defines the strategy to update this manifest. UpdateStrategy is Update if it is not set, optional",
+	"updateStrategy":     "UpdateStrategy defines the strategy to update this manifest. UpdateStrategy is Update if it is not set.",
 }
 
 func (ManifestConfigOption) SwaggerDoc() map[string]string {
@@ -267,6 +279,7 @@ func (SelectivelyOrphan) SwaggerDoc() map[string]string {
 var map_ServerSideApplyConfig = map[string]string{
 	"force":        "Force represents to force apply the manifest.",
 	"fieldManager": "FieldManager is the manager to apply the resource. It is work-agent by default, but can be other name with work-agent as the prefix.",
+	"ignoreFields": "IgnoreFields defines a list of json paths in the resource that will not be updated on the spoke.",
 }
 
 func (ServerSideApplyConfig) SwaggerDoc() map[string]string {
@@ -284,8 +297,8 @@ func (StatusFeedbackResult) SwaggerDoc() map[string]string {
 
 var map_UpdateStrategy = map[string]string{
 	"":                "UpdateStrategy defines the strategy to update this manifest",
-	"type":            "type defines the strategy to update this manifest, default value is Update. Update type means to update resource by an update call. CreateOnly type means do not update resource based on current manifest. ServerSideApply type means to update resource using server side apply with work-controller as the field manager. If there is conflict, the related Applied condition of manifest will be in the status of False with the reason of ApplyConflict.",
-	"serverSideApply": "serverSideApply defines the configuration for server side apply. It is honored only when type of updateStrategy is ServerSideApply",
+	"type":            "type defines the strategy to update this manifest, default value is Update. Update type means to update resource by an update call. CreateOnly type means do not update resource based on current manifest. ServerSideApply type means to update resource using server side apply with work-controller as the field manager. If there is conflict, the related Applied condition of manifest will be in the status of False with the reason of ApplyConflict. ReadOnly type means the agent will only check the existence of the resource based on its metadata, statusFeedBackRules can still be used to get feedbackResults.",
+	"serverSideApply": "serverSideApply defines the configuration for server side apply. It is honored only when the type of the updateStrategy is ServerSideApply",
 }
 
 func (UpdateStrategy) SwaggerDoc() map[string]string {
