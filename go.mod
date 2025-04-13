@@ -9,7 +9,7 @@ require (
 	github.com/openshift/build-machinery-go v0.0.0-20220720161851-9b4f0386f6b0
 	github.com/openshift/client-go v0.0.0-20210916133943-9acee1a0fb83
 	github.com/prometheus/client_golang v1.19.1
-	github.com/stolostron/applier v0.0.0-20220328110401-26b0ea4f8e1e
+	github.com/stolostron/applier v1.2.5
 	github.com/stolostron/cluster-lifecycle-api v0.0.0-20220714081119-eae2fe1f05fd
 	github.com/stolostron/library-go v0.0.0-20220328023725-63d77a3ad428
 	golang.org/x/net v0.34.0
