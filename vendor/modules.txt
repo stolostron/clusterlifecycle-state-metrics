@@ -207,8 +207,8 @@ github.com/stolostron/applier/pkg/templateprocessor
 # github.com/stolostron/cluster-lifecycle-api v0.0.0-20220714081119-eae2fe1f05fd
 ## explicit; go 1.18
 github.com/stolostron/cluster-lifecycle-api/clusterinfo/v1beta1
-# github.com/stolostron/library-go v0.0.0-20220328023725-63d77a3ad428
-## explicit; go 1.17
+# github.com/stolostron/library-go v0.0.0-20230104093626-beceb342d8ed
+## explicit; go 1.18
 github.com/stolostron/library-go/pkg/apis/meta/v1/crd
 github.com/stolostron/library-go/pkg/apis/meta/v1/deployment
 github.com/stolostron/library-go/pkg/client
