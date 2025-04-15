@@ -2,6 +2,10 @@
 
 package v1alpha1
 
+type AddOnDeploymentConfigExpansion interface{}
+
+type AddOnTemplateExpansion interface{}
+
 type ClusterManagementAddOnExpansion interface{}
 
 type ManagedClusterAddOnExpansion interface{}
