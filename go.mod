@@ -13,7 +13,7 @@ replace golang/x/crypto => github.com/openshift/golang-crypto v0.33.1-0.20250310
 require (
 	github.com/onsi/ginkgo/v2 v2.9.1
 	github.com/onsi/gomega v1.27.4
-	github.com/openshift/api v3.9.1-0.20191111211345-a27ff30ebf09+incompatible
+	github.com/openshift/api f636181788a9
 	github.com/openshift/build-machinery-go v0.0.0-20220720161851-9b4f0386f6b0
 	github.com/openshift/client-go v0.0.0-20210916133943-9acee1a0fb83
 	github.com/prometheus/client_golang v1.12.2
