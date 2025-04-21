@@ -19,7 +19,7 @@ require (
 	github.com/prometheus/client_golang v1.12.2
 	github.com/stolostron/applier v0.0.0-20220328110401-26b0ea4f8e1e
 	github.com/stolostron/cluster-lifecycle-api v0.0.0-20220714081119-eae2fe1f05fd
-	github.com/stolostron/library-go v0.0.0-20220328023725-63d77a3ad428
+	github.com/stolostron/library-go v0.0.0-20230104093626-beceb342d8ed
 	golang.org/x/net v0.34.0
 	k8s.io/api v0.26.7
 	k8s.io/apimachinery v0.26.7
