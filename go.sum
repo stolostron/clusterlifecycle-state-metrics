@@ -557,8 +557,8 @@ github.com/stolostron/applier v0.0.0-20220328110401-26b0ea4f8e1e h1:x6ATB/nV2upG
 github.com/stolostron/applier v0.0.0-20220328110401-26b0ea4f8e1e/go.mod h1:yQFmn8ZrtaobaHXM8aO/8v95OdXIcgjjvzWBn9L/XXg=
 github.com/stolostron/cluster-lifecycle-api v0.0.0-20220714081119-eae2fe1f05fd h1:TitMXyGY/ld+hS6kjdHwcdR+Pl2UrtO812ehBTcu34Q=
 github.com/stolostron/cluster-lifecycle-api v0.0.0-20220714081119-eae2fe1f05fd/go.mod h1:pNeVzujoHsTHDloNHVfp1QPYlQy8MkXMuuZme96/x8M=
-github.com/stolostron/library-go v0.0.0-20220328023725-63d77a3ad428 h1:gvH8HA4cfsusfUFA2PqnkeZ24NZWYtucONDP+sbgSZM=
-github.com/stolostron/library-go v0.0.0-20220328023725-63d77a3ad428/go.mod h1:4Pgr/LeGllf2N4FIlwJmKToxDyNwsfAK7x4xtdc+J7M=
+github.com/stolostron/library-go v0.0.0-20230104093626-beceb342d8ed h1:BYMBL/iFGw+0Nmchaiac8+vMp05MW+s1wFAdCmV5K+4=
+github.com/stolostron/library-go v0.0.0-20230104093626-beceb342d8ed/go.mod h1:BbQ8BihpRXW6OaK6ZD1g28IkS8T6/DlYag9nJvivuq0=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
 github.com/stretchr/objx v0.1.1/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
 github.com/stretchr/objx v0.2.0/go.mod h1:qt09Ya8vawLte6SNmTgCsAVtYtaKzEcn8ATUoHMkEqE=
