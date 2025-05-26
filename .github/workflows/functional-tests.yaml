@@ -4,20 +4,24 @@ name: Go
 
 on:
   push:
-    branches: [ main, release-* ]
+    branches: [main, release-*]
+    paths-ignore:
+      - ".tekton/**"
   pull_request:
-    branches: [ main, release-* ]
+    branches: [main, release-*]
+    paths-ignore:
+      - ".tekton/**"
 
 jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+      - uses: actions/checkout@v2
 
-    - name: Set up Go
-      uses: actions/setup-go@v2
-      with:
-        go-version: 1.23
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.23
 
-    - name: Functional Tests
-      run: make functional-test-full
+      - name: Functional Tests
+        run: make functional-test-full
