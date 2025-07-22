@@ -18,7 +18,7 @@ var (
 	}
 )
 
-func GetManagedClusterWorkerCoresMetricFamilies(hubClusterID string) metric.FamilyGenerator {
+func GetManagedClusterWorkerCoresMetricFamilies(hubClusterID string, isHibernatingFn func(string) bool) metric.FamilyGenerator {
 	return metric.FamilyGenerator{
 		Name: descWorkerCoresName,
 		Type: metric.Gauge,
@@ -28,6 +28,11 @@ func GetManagedClusterWorkerCoresMetricFamilies(hubClusterID string) metric.Fami
 			clusterID := getClusterID(mc)
 
 			core_worker, _ := getCapacity(mc)
+
+			// set worker cores to 0 if the ClusterDeployment is in hibernating state.
+			if isHibernatingFn(mc.GetName()) {
+				core_worker = 0
+			}
 
 			if clusterID == "" {
 				klog.Infof("Not enough information available for %s", mc.GetName())
