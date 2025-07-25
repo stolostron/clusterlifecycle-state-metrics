@@ -18,8 +18,13 @@ import (
 	ocpclient "github.com/openshift/client-go/config/clientset/versioned"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/fields"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
+	"k8s.io/apimachinery/pkg/watch"
+	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/kube-state-metrics/pkg/metric"
@@ -53,11 +58,12 @@ type Builder struct {
 	restConfig        *rest.Config
 	kubeclient        kubernetes.Interface
 
-	clusterIdCache            *clusterIdCache
-	clusterTimestampCache     *clusterTimestampCache
-	composedClusterStore      *composedStore
-	composedAddOnStore        *composedStore
-	composedManifestWorkStore *composedStore
+	clusterIdCache               *clusterIdCache
+	clusterHibernatingStateCache *clusterHibernatingStateCache
+	clusterTimestampCache        *clusterTimestampCache
+	composedClusterStore         *composedStore
+	composedAddOnStore           *composedStore
+	composedManifestWorkStore    *composedStore
 
 	timestampMetricsEnabled bool
 }
@@ -65,12 +71,14 @@ type Builder struct {
 // NewBuilder returns a new builder.
 func NewBuilder(ctx context.Context) *Builder {
 	clusterIdCache := newClusterIdCache()
+	clusterHibernatingStateCache := newClusterHibernatingStateCache()
 	return &Builder{
-		ctx:                       ctx,
-		clusterIdCache:            clusterIdCache,
-		composedClusterStore:      newComposedStore(clusterIdCache),
-		composedAddOnStore:        newComposedStore(),
-		composedManifestWorkStore: newComposedStore(),
+		ctx:                          ctx,
+		clusterIdCache:               clusterIdCache,
+		clusterHibernatingStateCache: clusterHibernatingStateCache,
+		composedClusterStore:         newComposedStore(clusterIdCache),
+		composedAddOnStore:           newComposedStore(),
+		composedManifestWorkStore:    newComposedStore(),
 	}
 }
 
@@ -148,6 +156,7 @@ func (b *Builder) Build() []MetricsCollector {
 
 	// start watching resources
 	b.startWatchingManagedClusters()
+	b.startWatchingClusterDeployments()
 	b.startWatchingManagedClusterAddOns()
 	b.startWatchingManifestWorks()
 
@@ -173,7 +182,7 @@ func (b *Builder) buildManagedClusterCollector() MetricsCollector {
 		cluster.GetManagedClusterInfoMetricFamilies(hubClusterID, b.hubType),
 		cluster.GetManagedClusterLabelMetricFamilies(hubClusterID),
 		cluster.GetManagedClusterStatusMetricFamilies(),
-		cluster.GetManagedClusterWorkerCoresMetricFamilies(hubClusterID),
+		cluster.GetManagedClusterWorkerCoresMetricFamilies(hubClusterID, b.clusterHibernatingStateCache.IsHibernating),
 	}
 	if b.timestampMetricsEnabled && b.clusterTimestampCache != nil {
 		clusterFamilies = append(clusterFamilies,
@@ -371,6 +380,62 @@ func (b *Builder) startWatchingManifestWorks() {
 	reflector := cache.NewReflector(lw, &workv1.ManifestWork{}, b.composedManifestWorkStore, ResyncPeriod)
 
 	klog.Infof("Start watching ManifestWorks")
+	go reflector.Run(b.ctx.Done())
+}
+
+func (b *Builder) startWatchingClusterDeployments() {
+	dynamicClient, err := dynamic.NewForConfig(b.restConfig)
+	if err != nil {
+		klog.Fatalf("cannot create dynamic client: %v", err)
+	}
+
+	gvr := schema.GroupVersionResource{
+		Group:    "hive.openshift.io",
+		Version:  "v1",
+		Resource: "clusterdeployments",
+	}
+
+	// initialize hibernating state cache
+	clusterDeploymentList, err := dynamicClient.Resource(gvr).Namespace(metav1.NamespaceAll).List(b.ctx, metav1.ListOptions{})
+	if err != nil {
+		klog.Fatalf("cannot list clusterdeployments: %v", err)
+	}
+
+	clusterDeployments := []interface{}{}
+	for index := range clusterDeploymentList.Items {
+		clusterDeployments = append(clusterDeployments, &clusterDeploymentList.Items[index])
+	}
+	if err := b.clusterHibernatingStateCache.Replace(clusterDeployments, ""); err != nil {
+		klog.Fatalf("cannot initialize hibernating state cache: %v", err)
+	}
+	klog.Infof("Hibernating state cached for %d clusterdeployments", len(clusterDeployments))
+
+	clusterClient, err := clusterclient.NewForConfig(b.restConfig)
+	if err != nil {
+		klog.Fatalf("cannot create clusterclient: %v", err)
+	}
+	b.clusterHibernatingStateCache.AddOnHibernatingStateChangeFunc(func(clusterName string) error {
+		klog.Infof("Refresh the managed cluster metrics since the hibernating state of cluster %q is changed", clusterName)
+		cluster, err := clusterClient.ClusterV1().ManagedClusters().Get(b.ctx, clusterName, metav1.GetOptions{})
+		if err != nil {
+			return err
+		}
+
+		return b.composedClusterStore.Update(cluster)
+	})
+
+	// start watching clusterdeployments
+	lw := &cache.ListWatch{
+		ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
+			return dynamicClient.Resource(gvr).Namespace(metav1.NamespaceAll).List(b.ctx, options)
+		},
+		WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
+			return dynamicClient.Resource(gvr).Namespace(metav1.NamespaceAll).Watch(b.ctx, options)
+		},
+	}
+	reflector := cache.NewReflector(lw, &unstructured.Unstructured{}, b.clusterHibernatingStateCache, ResyncPeriod)
+
+	klog.Infof("Start watching ClusterDeployments")
 	go reflector.Run(b.ctx.Done())
 }
 
