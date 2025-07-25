@@ -57,9 +57,9 @@ func GetManagedClusterLabelMetricFamilies(hubClusterID string) metric.FamilyGene
 						modifiedKey = "_" + modifiedKey
 					}
 
-					// If the key was modified, log a warning
+					// If the key was converted, log a warning
 					if originalKey != modifiedKey {
-						klog.Warningf("Label key '%s' was modified to '%s'", originalKey, modifiedKey)
+						klog.Infof("Label key '%s' was converted to '%s' since it contains non-word characters or a first digit", originalKey, modifiedKey)
 					}
 
 					// Add the modified key and value to the label slices
