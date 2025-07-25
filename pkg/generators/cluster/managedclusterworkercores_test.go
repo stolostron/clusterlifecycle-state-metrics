@@ -87,6 +87,17 @@ func Test_getManagedClusterWorkerCoresMetricFamilies(t *testing.T) {
 			Want:        `acm_managed_cluster_worker_cores{managed_cluster_id="managed_cluster_id",hub_cluster_id="mycluster_id"} 4`,
 		},
 		{
+			Name:        "hibernating cluster with core_worker",
+			Obj:         mc,
+			MetricNames: []string{"acm_managed_cluster_worker_cores"},
+			Want:        `acm_managed_cluster_worker_cores{managed_cluster_id="managed_cluster_id",hub_cluster_id="mycluster_id"} 0`,
+			Func: metric.ComposeMetricGenFuncs(
+				[]metric.FamilyGenerator{GetManagedClusterWorkerCoresMetricFamilies("mycluster_id", func(clusterName string) bool {
+					return true
+				})},
+			),
+		},
+		{
 			Name:        "cluster with zero core_worker",
 			Obj:         mcWithZeroCapacity,
 			MetricNames: []string{"acm_managed_cluster_worker_cores"},
@@ -111,9 +122,13 @@ func Test_getManagedClusterWorkerCoresMetricFamilies(t *testing.T) {
 		},
 	}
 	for i, c := range tests {
-		c.Func = metric.ComposeMetricGenFuncs(
-			[]metric.FamilyGenerator{GetManagedClusterWorkerCoresMetricFamilies("mycluster_id")},
-		)
+		if c.Func == nil {
+			c.Func = metric.ComposeMetricGenFuncs(
+				[]metric.FamilyGenerator{GetManagedClusterWorkerCoresMetricFamilies("mycluster_id", func(clusterName string) bool {
+					return false
+				})},
+			)
+		}
 		if err := c.Run(); err != nil {
 			t.Errorf("unexpected collecting result in %v run:\n%s", i, err)
 		}

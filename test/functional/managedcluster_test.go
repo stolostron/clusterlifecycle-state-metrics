@@ -597,6 +597,40 @@ var _ = Describe("ManagedCluster Metrics", func() {
 			assertGetMetrics("acm_managed_cluster_worker_cores", clusterWorkerCoresUpdatedResponse)
 			assertRecordingRule("acm_managed_cluster_worker_cores:max", ruleExpr)
 		})
+
+		It("should reflect the change on the hibernating cluster", func() {
+			By("Updating status cluster-hive to have some worker cores", func() {
+				Expect(updateMCStatus("cluster-hive", mcv1.ManagedClusterStatus{
+					Capacity: mcv1.ResourceList{
+						resourceCoreWorker: *resource.NewQuantity(5, resource.DecimalSI),
+					},
+				})).Should(BeNil())
+			})
+
+			assertGetMetrics("acm_managed_cluster_worker_cores", clusterWorkerCoresUpdatedResponse)
+			assertRecordingRule("acm_managed_cluster_worker_cores:max", ruleExpr)
+
+			By("Updating cluster-hive to be hibernating", func() {
+				Expect(updateCDStatus("cluster-hive", "True")).Should(BeNil())
+			})
+
+			assertGetMetrics("acm_managed_cluster_worker_cores", clusterWorkerCoresResponse)
+			assertRecordingRule("acm_managed_cluster_worker_cores:max", ruleExpr)
+
+			By("Updating cluster-hive to be running with hibernating status false", func() {
+				Expect(updateCDStatus("cluster-hive", "False")).Should(BeNil())
+			})
+
+			assertGetMetrics("acm_managed_cluster_worker_cores", clusterWorkerCoresUpdatedResponse)
+			assertRecordingRule("acm_managed_cluster_worker_cores:max", ruleExpr)
+
+			By("Updating cluster-hive to be running with hibernating condition removed", func() {
+				Expect(updateCDStatus("cluster-hive", "")).Should(BeNil())
+			})
+
+			assertGetMetrics("acm_managed_cluster_worker_cores", clusterWorkerCoresUpdatedResponse)
+			assertRecordingRule("acm_managed_cluster_worker_cores:max", ruleExpr)
+		})
 	})
 })
 
@@ -671,6 +705,46 @@ func updateMCStatus(name string, status mcv1.ManagedClusterStatus) error {
 		return err
 	}
 	klog.Infof("UpdateMCStatus updated: %v", mcU)
+	return err
+}
+
+func updateCDStatus(name string, status string) error {
+	cdU, err := clientDynamic.Resource(gvrClusterdeployment).Namespace(name).
+		Get(context.TODO(), name, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+
+	var conditions []interface{}
+	if status != "" {
+		conditions = []interface{}{
+			map[string]interface{}{
+				"type":               "Hibernating",
+				"status":             status,
+				"lastTransitionTime": time.Now().Format(time.RFC3339),
+				"reason":             "test",
+				"message":            "test",
+			},
+		}
+	}
+
+	cdU.Object["status"] = map[string]interface{}{
+		"conditions": conditions,
+	}
+
+	_, err = clientDynamic.Resource(gvrClusterdeployment).Namespace(name).
+		UpdateStatus(context.TODO(), cdU, metav1.UpdateOptions{})
+	if err != nil {
+		klog.Error(err)
+		return err
+	}
+	cdU, err = clientDynamic.Resource(gvrClusterdeployment).Namespace(name).
+		Get(context.TODO(), name, metav1.GetOptions{})
+	if err != nil {
+		klog.Error(err)
+		return err
+	}
+	klog.Infof("UpdateCDStatus updated: %v", cdU)
 	return err
 }
 
