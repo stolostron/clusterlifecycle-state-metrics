@@ -1,0 +1,25 @@
+# Copyright Contributors to the Open Cluster Management project
+
+apiVersion: hive.openshift.io/v1
+kind: ClusterDeployment
+metadata:
+  name: cluster-hive
+  namespace: cluster-hive
+spec:
+  baseDomain: libvirt.tosin.red-chester.com
+  clusterName: cluster-hive
+  controlPlaneConfig:
+    servingCertificates: {}
+  installAttemptsLimit: 1
+  platform:
+    agentBareMetal:
+      agentSelector:
+        matchLabels:
+          bla: bla
+  provisioning:
+    installConfigSecretRef:
+      name: cluster-hive-install-config
+    sshPrivateKeySecretRef:
+      name: cluster-hive-ssh-private-key
+  pullSecretRef:
+    name: cluster-hive-pull-secret

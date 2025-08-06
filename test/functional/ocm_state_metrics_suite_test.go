@@ -36,9 +36,10 @@ var (
 	defaultClient     client.Client
 	clientDynamic     dynamic.Interface
 	clientApplier     *libgoapplier.Applier
-	gvrManagedcluster schema.GroupVersionResource
-	addOnClient       addonclient.Interface
-	workClient        workclient.Interface
+	gvrManagedcluster    schema.GroupVersionResource
+	gvrClusterdeployment schema.GroupVersionResource
+	addOnClient          addonclient.Interface
+	workClient           workclient.Interface
 )
 
 func init() {
@@ -48,6 +49,7 @@ func init() {
 
 var _ = BeforeSuite(func() {
 	gvrManagedcluster = schema.GroupVersionResource{Group: "cluster.open-cluster-management.io", Version: "v1", Resource: "managedclusters"}
+	gvrClusterdeployment = schema.GroupVersionResource{Group: "hive.openshift.io", Version: "v1", Resource: "clusterdeployments"}
 
 	setupHub()
 
