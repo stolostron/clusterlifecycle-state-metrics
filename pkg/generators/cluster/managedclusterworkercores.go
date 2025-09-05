@@ -55,7 +55,7 @@ core_worker=%d`,
 					Value:       float64(core_worker),
 				},
 			}}
-			klog.Infof("Returning %v", string(f.ByteSlice()))
+			klog.V(4).Infof("Returning %v", string(f.ByteSlice()))
 			return f
 		},
 	}

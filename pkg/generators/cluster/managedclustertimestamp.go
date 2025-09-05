@@ -43,7 +43,7 @@ func GetManagedClusterTimestampMetricFamilies(hubClusterID string,
 				values,
 				getClusterTimestamps,
 			)
-			klog.Infof("Returning %v", string(f.ByteSlice()))
+			klog.V(4).Infof("Returning %v", string(f.ByteSlice()))
 			return f
 		}),
 	}
