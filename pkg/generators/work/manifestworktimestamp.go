@@ -58,7 +58,7 @@ func GetManifestWorkTimestampMetricFamilies(getClusterIdFunc func(string) string
 					keys, values, generators.AppliedTimestamp))
 			}
 
-			klog.Infof("Returning %v", string(family.ByteSlice()))
+			klog.V(4).Infof("Returning %v", string(family.ByteSlice()))
 			return &family
 		},
 	}
