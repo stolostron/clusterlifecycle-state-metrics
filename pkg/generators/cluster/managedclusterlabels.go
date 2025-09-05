@@ -76,7 +76,7 @@ func GetManagedClusterLabelMetricFamilies(hubClusterID string) metric.FamilyGene
 				},
 			}}
 
-			klog.Infof("Returning %v", string(f.ByteSlice()))
+			klog.V(4).Infof("Returning %v", string(f.ByteSlice()))
 			return f
 		}),
 	}
