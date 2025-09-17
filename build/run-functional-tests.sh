@@ -36,7 +36,7 @@ fi
 if ! which gocovmerge > /dev/null; then
     echo "Installing gocovmerge..."
     pushd $(mktemp -d)
-    go install github.com/wadey/gocovmerge@latest
+    go install github.com/alexfalkowski/gocovmerge/v2@v2.14.0
     popd
 fi
 if ! which helm > /dev/null; then
