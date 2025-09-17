@@ -11,7 +11,7 @@ _ARCH=$(go env GOARCH)
 KubeBuilderVersion="2.3.0"
 
 if ! which patter > /dev/null; then      echo "Installing patter ..."; go get -u github.com/apg/patter; fi
-if ! which gocovmerge > /dev/null; then  echo "Installing gocovmerge..."; go get -u github.com/wadey/gocovmerge; fi
+if ! which gocovmerge > /dev/null; then  echo "Installing gocovmerge..."; go install github.com/alexfalkowski/gocovmerge/v2@v2.14.0; fi
 if ! which go-bindata > /dev/null; then
 	echo "Installing go-bindata..."
 	cd $(mktemp -d) && GOSUMDB=off go get -u github.com/go-bindata/go-bindata/...
