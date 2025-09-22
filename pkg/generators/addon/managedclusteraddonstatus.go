@@ -49,7 +49,7 @@ func GetManagedClusterAddOnStatusMetricFamilies(getClusterIdFunc func(string) st
 				requiredAddOnStatusConditions,
 				getAllowedAddOnConditionStatuses,
 			)
-			klog.Infof("Returning %v", string(f.ByteSlice()))
+			klog.V(4).Infof("Returning %v", string(f.ByteSlice()))
 			return &f
 		},
 	}
