@@ -15,6 +15,7 @@ RUN GOFLAGS="" go build ./cmd/clusterlifecycle-state-metrics; \
 FROM registry.access.redhat.com/ubi9/ubi-minimal:latest
 
 LABEL \
+      url="https://github.com/stolostron/clusterlifecycle-state-metrics" \
     name="clusterlifecycle-state-metrics" \
     com.redhat.component="clusterlifecycle-state-metrics" \
     description="Cluster Lifecycle State Metrics generates a number of clusters related metrics used \
