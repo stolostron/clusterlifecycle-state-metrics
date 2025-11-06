@@ -45,12 +45,12 @@ spec:
   pipelineRef:
     resolver: git
     params:
-      - name: url
-        value: "https://github.com/stolostron/konflux-build-catalog.git"
-      - name: revision
-        value: main
-      - name: pathInRepo
-        value: pipelines/common_mce_2.10.yaml
+    - name: url
+      value: "https://github.com/stolostron/konflux-build-catalog.git"
+    - name: revision
+      value: main
+    - name: pathInRepo
+      value: pipelines/common_mce_2.10.yaml
   taskRunTemplate:
     serviceAccountName: build-pipeline-clusterlifecycle-state-metrics-mce-210
   workspaces:
