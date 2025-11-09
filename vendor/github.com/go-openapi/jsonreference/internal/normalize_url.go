@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: Copyright (c) 2015-2025 go-swagger maintainers
+// SPDX-License-Identifier: Apache-2.0
+
 package internal
 
 import (
@@ -26,11 +29,16 @@ var rxDupSlashes = regexp.MustCompile(`/{2,}`)
 //   - FlagLowercaseHost
 //   - FlagRemoveDefaultPort
 //   - FlagRemoveDuplicateSlashes (and this was mixed in with the |)
+//
+// This also normalizes the URL into its urlencoded form by removing RawPath and RawFragment.
 func NormalizeURL(u *url.URL) {
 	lowercaseScheme(u)
 	lowercaseHost(u)
 	removeDefaultPort(u)
 	removeDuplicateSlashes(u)
+
+	u.RawPath = ""
+	u.RawFragment = ""
 }
 
 func lowercaseScheme(u *url.URL) {
