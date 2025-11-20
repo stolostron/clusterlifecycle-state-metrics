@@ -6,7 +6,9 @@ approvers:
 - hanqiuzh
 - chrisahl
 - haoqing0110
+# Temporarily added for konflux migration to facilitate release repo prow configuration updates. Will be removed later.
 - xuezhaojun
+- zhujian7
 reviewers:
 - itdove
 - jamestalton
