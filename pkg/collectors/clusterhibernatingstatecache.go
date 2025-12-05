@@ -32,6 +32,8 @@ func (c *clusterHibernatingStateCache) AddOnHibernatingStateChangeFunc(f func(cl
 }
 
 func (c *clusterHibernatingStateCache) IsHibernating(key string) bool {
+	c.mutex.RLock()
+	defer c.mutex.RUnlock()
 	hibernating, exists := c.hibernatingStates[key]
 	if !exists {
 		return false
@@ -76,13 +78,13 @@ func (c *clusterHibernatingStateCache) Add(obj interface{}) error {
 	newHibernatingState := isHibernating(cd)
 
 	c.mutex.Lock()
-	defer c.mutex.Unlock()
 
 	oldHibernatingState, exists := c.hibernatingStates[key]
 
 	switch {
 	case exists && oldHibernatingState == newHibernatingState:
 		// No change
+		c.mutex.Unlock()
 		return nil
 	case exists && oldHibernatingState != newHibernatingState:
 		// Changed
@@ -93,6 +95,7 @@ func (c *clusterHibernatingStateCache) Add(obj interface{}) error {
 	}
 
 	c.hibernatingStates[key] = newHibernatingState
+	c.mutex.Unlock()
 
 	for _, f := range c.onHibernatingStateChangeFuncs {
 		if err := f(key); err != nil {
