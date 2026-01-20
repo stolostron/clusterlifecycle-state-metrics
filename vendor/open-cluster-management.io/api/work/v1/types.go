@@ -1,3 +1,4 @@
+// Copyright Contributors to the Open Cluster Management project
 package v1
 
 import (
@@ -26,17 +27,23 @@ type ManifestWork struct {
 	Status ManifestWorkStatus `json:"status,omitempty"`
 }
 
+const (
+	// ManifestConfigSpecHashAnnotationKey is the annotation key to identify the configurations
+	// used by the manifestwork.
+	ManifestConfigSpecHashAnnotationKey = "open-cluster-management.io/config-spec-hash"
+)
+
 // ManifestWorkSpec represents a desired configuration of manifests to be deployed on the managed cluster.
 type ManifestWorkSpec struct {
-	// Workload represents the manifest workload to be deployed on a managed cluster.
+	// workload represents the manifest workload to be deployed on a managed cluster.
 	Workload ManifestsTemplate `json:"workload,omitempty"`
 
-	// DeleteOption represents deletion strategy when the manifestwork is deleted.
+	// deleteOption represents deletion strategy when the manifestwork is deleted.
 	// Foreground deletion strategy is applied to all the resource in this manifestwork if it is not set.
 	// +optional
 	DeleteOption *DeleteOption `json:"deleteOption,omitempty"`
 
-	// ManifestConfigs represents the configurations of manifests defined in workload field.
+	// manifestConfigs represents the configurations of manifests defined in workload field.
 	// +optional
 	ManifestConfigs []ManifestConfigOption `json:"manifestConfigs,omitempty"`
 
@@ -58,7 +65,7 @@ type Manifest struct {
 
 // ManifestsTemplate represents the manifest workload to be deployed on a managed cluster.
 type ManifestsTemplate struct {
-	// Manifests represents a list of kuberenetes resources to be deployed on a managed cluster.
+	// manifests represents a list of kubernetes resources to be deployed on a managed cluster.
 	// +optional
 	Manifests []Manifest `json:"manifests,omitempty"`
 }
@@ -76,6 +83,15 @@ type DeleteOption struct {
 
 	// selectivelyOrphan represents a list of resources following orphan deletion stratecy
 	SelectivelyOrphan *SelectivelyOrphan `json:"selectivelyOrphans,omitempty"`
+
+	// TTLSecondsAfterFinished limits the lifetime of a ManifestWork that has been marked Complete
+	// by one or more conditionRules set for its manifests. If this field is set, and
+	// the manifestwork has completed, then it is elligible to be automatically deleted.
+	// If this field is unset, the manifestwork won't be automatically deleted even afer completion.
+	// If this field is set to zero, the manfiestwork becomes elligible to be deleted immediately
+	// after completion.
+	// +optional
+	TTLSecondsAfterFinished *int64 `json:"ttlSecondsAfterFinished,omitempty"`
 }
 
 // ManifestConfigOption represents the configurations of a manifest defined in workload field.
@@ -92,10 +108,65 @@ type ManifestConfigOption struct {
 	FeedbackRules []FeedbackRule `json:"feedbackRules,omitempty"`
 
 	// UpdateStrategy defines the strategy to update this manifest. UpdateStrategy is Update
-	// if it is not set,
-	// optional
-	UpdateStrategy *UpdateStrategy `json:"updateStrategy"`
+	// if it is not set.
+	// +optional
+	UpdateStrategy *UpdateStrategy `json:"updateStrategy,omitempty"`
+
+	// ConditionRules defines how to set manifestwork conditions for a specific manifest.
+	// +listType:=map
+	// +listMapKey:=condition
+	// +optional
+	ConditionRules []ConditionRule `json:"conditionRules,omitempty"`
 }
+
+// +kubebuilder:validation:XValidation:rule="self.type != 'CEL' || self.condition != \"\"",message="Condition is required for CEL rules"
+type ConditionRule struct {
+	// Condition is the type of condition that is set based on this rule.
+	// Any condition is supported, but certain special conditions can be used to
+	// to control higher level behaviors of the manifestwork.
+	// If the condition is Complete, the manifest will no longer be updated once completed.
+	// +kubebuilder:validation:Required
+	// +required
+	Condition string `json:"condition"`
+
+	// Type defines how a manifest should be evaluated for a condition.
+	// It can be CEL, or WellKnownConditions.
+	// If the type is CEL, user should specify the celExpressions field
+	// If the type is WellKnownConditions, certain common types in k8s.io/api will be considered
+	// completed as defined by hardcoded rules.
+	// +kubebuilder:validation:Required
+	// +required
+	Type ConditionRuleType `json:"type"`
+
+	// CelExpressions defines the CEL expressions to be evaluated for the condition.
+	// Final result is the logical AND of all expressions.
+	// +optional
+	CelExpressions []string `json:"celExpressions"`
+
+	// Message is set on the condition created for this rule
+	// +optional
+	Message string `json:"message"`
+
+	// MessageExpression uses a CEL expression to generate a message for the condition
+	// Will override message if both are set and messageExpression returns a non-empty string.
+	// Variables:
+	// - object: The current instance of the manifest
+	// - result: Boolean result of the CEL expressions
+	// +optional
+	MessageExpression string `json:"messageExpression"`
+}
+
+// +kubebuilder:validation:Enum=WellKnownConditions;CEL
+type ConditionRuleType string
+
+const (
+	// WellKnownConditionsType represents a standard Complete condition for some common types, which
+	// is reflected with a hardcoded rule for types in k8s.io/api
+	WellKnownConditionsType ConditionRuleType = "WellKnownConditions"
+
+	// CelConditionExpressionsType enables user defined rules to set the status of the condition
+	CelConditionExpressionsType ConditionRuleType = "CEL"
+)
 
 // ManifestWorkExecutor is the executor that applies the resources to the managed cluster. i.e. the
 // work agent.
@@ -156,33 +227,48 @@ type UpdateStrategy struct {
 	// ServerSideApply type means to update resource using server side apply with work-controller as the field manager.
 	// If there is conflict, the related Applied condition of manifest will be in the status of False with the
 	// reason of ApplyConflict.
+	// ReadOnly type means the agent will only check the existence of the resource based on its metadata,
+	// statusFeedBackRules can still be used to get feedbackResults.
 	// +kubebuilder:default=Update
-	// +kubebuilder:validation:Enum=Update;CreateOnly;ServerSideApply
+	// +kubebuilder:validation:Enum=Update;CreateOnly;ServerSideApply;ReadOnly
 	// +kubebuilder:validation:Required
 	// +required
 	Type UpdateStrategyType `json:"type,omitempty"`
 
-	// serverSideApply defines the configuration for server side apply. It is honored only when
-	// type of updateStrategy is ServerSideApply
+	// serverSideApply defines the configuration for server side apply. It is honored only when the
+	// type of the updateStrategy is ServerSideApply
 	// +optional
 	ServerSideApply *ServerSideApplyConfig `json:"serverSideApply,omitempty"`
 }
 
 type UpdateStrategyType string
+type IgnoreFieldsCondition string
 
 const (
-	// Update type means to update resource by an update call.
+	// UpdateStrategyTypeUpdate means to update resource by an update call.
 	UpdateStrategyTypeUpdate UpdateStrategyType = "Update"
 
-	// CreateOnly type means do not update resource based on current manifest. This should be used only when
+	// UpdateStrategyTypeCreateOnly means do not update resource based on current manifest. This should be used only when
 	// ServerSideApply type is not support on the spoke, and the user on hub would like some other controller
 	// on the spoke to own the control of the resource.
 	UpdateStrategyTypeCreateOnly UpdateStrategyType = "CreateOnly"
 
-	// ServerSideApply type means to update resource using server side apply with work-controller as the field manager.
+	// UpdateStrategyTypeServerSideApply means to update resource using server side apply with work-controller as the field manager.
 	// If there is conflict, the related Applied condition of manifest will be in the status of False with the
 	// reason of ApplyConflict. This type allows another controller on the spoke to control certain field of the resource.
 	UpdateStrategyTypeServerSideApply UpdateStrategyType = "ServerSideApply"
+
+	// UpdateStrategyTypeReadOnly type means only check the existence of the resource based on the resource's metadata.
+	// If the statusFeedBackRules are set, the feedbackResult will also be returned.
+	// The resource will not be removed when the type is ReadOnly, and only resource metadata is required.
+	UpdateStrategyTypeReadOnly UpdateStrategyType = "ReadOnly"
+
+	// IgnoreFieldsConditionOnSpokeChange is the condition when resource fields is updated by another actor
+	// on the spoke cluster.
+	IgnoreFieldsConditionOnSpokeChange IgnoreFieldsCondition = "OnSpokeChange"
+
+	// IgnoreFieldsConditionOnSpokePresent is the condition when the resource exist on the spoke cluster.
+	IgnoreFieldsConditionOnSpokePresent IgnoreFieldsCondition = "OnSpokePresent"
 )
 
 type ServerSideApplyConfig struct {
@@ -196,6 +282,29 @@ type ServerSideApplyConfig struct {
 	// +kubebuilder:validation:Pattern=`^work-agent`
 	// +optional
 	FieldManager string `json:"fieldManager,omitempty"`
+
+	// IgnoreFields defines a list of json paths in the resource that will not be updated on the spoke.
+	// +listType:=map
+	// +listMapKey:=condition
+	// +optional
+	IgnoreFields []IgnoreField `json:"ignoreFields,omitempty"`
+}
+
+type IgnoreField struct {
+	// Condition defines the condition that the fields should be ignored when apply the resource.
+	// Fields in JSONPaths are all ignored when condition is met, otherwise no fields is ignored
+	// in the apply operation.
+	// +kubebuilder:default=OnSpokePresent
+	// +kubebuilder:validation:Enum=OnSpokePresent;OnSpokeChange
+	// +kubebuilder:validation:Required
+	// +required
+	Condition IgnoreFieldsCondition `json:"condition"`
+
+	// JSONPaths defines the list of json path in the resource to be ignored
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:MinItems=1
+	// +required
+	JSONPaths []string `json:"jsonPaths"`
 }
 
 // DefaultFieldManager is the default field manager of the manifestwork when the field manager is not set.
@@ -213,6 +322,8 @@ type FeedbackRule struct {
 	Type FeedBackType `json:"type"`
 
 	// JsonPaths defines the json path under status field to be synced.
+	// +listType:=map
+	// +listMapKey:=name
 	// +optional
 	JsonPaths []JsonPath `json:"jsonPaths,omitempty"`
 }
@@ -393,6 +504,25 @@ const (
 	// WorkDegraded represents that the current state of work does not match
 	// the desired state for a certain period.
 	WorkDegraded string = "Degraded"
+	// WorkComplete represents that the work has completed and should no longer
+	// be updated.
+	WorkComplete string = "Complete"
+	// WorkDeleting represents that the work is being deleted by the agent currently.
+	// This condition is added only when the work's deletion timestamp is not nil.
+	WorkDeleting = "Deleting"
+)
+
+// Work condition reasons
+const (
+	// WorkManifestsComplete represents that all completable manifests in the work
+	// have the Complete condition
+	WorkManifestsComplete string = "ManifestsComplete"
+	// WorkProgressingReasonApplying indicates resources are being applied
+	WorkProgressingReasonApplying string = "Applying"
+	// WorkProgressingReasonCompleted indicates all resources are applied and available
+	WorkProgressingReasonCompleted string = "Completed"
+	// WorkProgressingReasonFailed indicates the work failed to apply
+	WorkProgressingReasonFailed string = "Failed"
 )
 
 // ManifestCondition represents the conditions of the resources deployed on a
@@ -446,40 +576,73 @@ type FieldValue struct {
 	// +optional
 	Integer *int64 `json:"integer,omitempty"`
 
-	// String is the string value when when type is string.
+	// String is the string value when type is string.
 	// +optional
 	String *string `json:"string,omitempty"`
 
 	// Boolean is bool value when type is boolean.
 	// +optional
 	Boolean *bool `json:"boolean,omitempty"`
+
+	// JsonRaw is a json string when type is a list or object
+	// +kubebuilder:validation:MaxLength=1024
+	JsonRaw *string `json:"jsonRaw,omitempty"`
 }
 
-// +kubebuilder:validation:Enum=Integer;String;Boolean
+// +kubebuilder:validation:Enum=Integer;String;Boolean;JsonRaw
 type ValueType string
 
 const (
 	Integer ValueType = "Integer"
 	String  ValueType = "String"
 	Boolean ValueType = "Boolean"
+	JsonRaw ValueType = "JsonRaw"
 )
-
-// ManifestConditionType represents the condition type of a single
-// resource manifest deployed on the managed cluster.
-type ManifestConditionType string
 
 const (
 	// ManifestProgressing represents that the resource is being applied on the managed cluster
-	ManifestProgressing ManifestConditionType = "Progressing"
+	ManifestProgressing string = "Progressing"
 	// ManifestApplied represents that the resource object is applied
 	// on the managed cluster.
-	ManifestApplied ManifestConditionType = "Applied"
+	ManifestApplied string = "Applied"
 	// ManifestAvailable represents that the resource object exists
 	// on the managed cluster.
-	ManifestAvailable ManifestConditionType = "Available"
+	ManifestAvailable string = "Available"
 	// ManifestDegraded represents that the current state of resource object does not
 	// match the desired state for a certain period.
-	ManifestDegraded ManifestConditionType = "Degraded"
+	ManifestDegraded string = "Degraded"
+	// ManifestComplete represents that the resource has completed and should no longer
+	// be updated.
+	ManifestComplete string = "Complete"
+)
+
+// Manifest condition reasons
+//
+// All reasons set by condition rule evaluation are expected to be prefixed with "ConditionRule"
+// in order to determine which conditions were set by rules.
+const (
+	// ConditionRuleTrue is set when a rule is evaluated without error
+	ConditionRuleEvaluated string = "ConditionRuleEvaluated"
+	// ConditionRuleInvalid is set when a rule is invalid and cannot be evaluated
+	ConditionRuleInvalid string = "ConditionRuleInvalid"
+	// ConditionRuleExpressionError is set when a rule fails due to an invalid expression
+	ConditionRuleExpressionError string = "ConditionRuleExpressionError"
+	// ConditionRuleInternalError is set when rule evaluation results in an error not caused by the expression
+	ConditionRuleInternalError string = "ConditionRuleInternalError"
+)
+
+const (
+	// ManifestWorkFinalizer is the name of the finalizer added to manifestworks. It is used to ensure
+	// related appliedmanifestwork of a manifestwork are deleted before the manifestwork itself is deleted
+	ManifestWorkFinalizer = "cluster.open-cluster-management.io/manifest-work-cleanup"
+	// AppliedManifestWorkFinalizer is the name of the finalizer added to appliedmanifestwork. It is to
+	// ensure all resource relates to appliedmanifestwork is deleted before appliedmanifestwork itself
+	// is deleted.
+	AppliedManifestWorkFinalizer = "cluster.open-cluster-management.io/applied-manifest-work-cleanup"
+
+	// ObjectSpecHash is the key of the annotation on the applied resources. The value is the computed hash
+	// from the resource manifests in the manifestwork.
+	ObjectSpecHash = "open-cluster-management.io/object-hash"
 )
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -527,6 +690,9 @@ type AppliedManifestWorkSpec struct {
 	// +required
 	HubHash string `json:"hubHash"`
 
+	// AgentID represents the ID of the work agent who is to handle this AppliedManifestWork.
+	AgentID string `json:"agentID"`
+
 	// ManifestWorkName represents the name of the related manifestwork on the hub.
 	// +required
 	ManifestWorkName string `json:"manifestWorkName"`
@@ -542,6 +708,13 @@ type AppliedManifestWorkStatus struct {
 	// However, the resource will not be undeleted, so it can be removed from this list and eventual consistency is preserved.
 	// +optional
 	AppliedResources []AppliedManifestResourceMeta `json:"appliedResources,omitempty"`
+
+	// EvictionStartTime represents the current appliedmanifestwork will be evicted after a grace period.
+	// An appliedmanifestwork will be evicted from the managed cluster in the following two scenarios:
+	//   - the manifestwork of the current appliedmanifestwork is missing on the hub, or
+	//   - the appliedmanifestwork hub hash does not match the current hub hash of the work agent.
+	// +optional
+	EvictionStartTime *metav1.Time `json:"evictionStartTime,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

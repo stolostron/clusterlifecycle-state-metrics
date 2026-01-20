@@ -1,3 +1,4 @@
+// Copyright Contributors to the Open Cluster Management project
 package v1alpha1
 
 import (
@@ -34,6 +35,10 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&ClusterManagementAddOnList{},
 		&ManagedClusterAddOn{},
 		&ManagedClusterAddOnList{},
+		&AddOnDeploymentConfig{},
+		&AddOnDeploymentConfigList{},
+		&AddOnTemplate{},
+		&AddOnTemplateList{},
 	)
 	metav1.AddToGroupVersion(scheme, GroupVersion)
 	return nil
