@@ -1,3 +1,4 @@
+// Copyright Contributors to the Open Cluster Management project
 package v1beta1
 
 import metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -7,16 +8,15 @@ import metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 // +kubebuilder:resource:scope="Namespaced"
 // +kubebuilder:subresource:status
 
-// PlacementDecision indicates a decision from a placement
-// PlacementDecision should has a label cluster.open-cluster-management.io/placement={placement name}
-// to reference a certain placement.
+// PlacementDecision indicates a decision from a placement.
+// PlacementDecision must have a cluster.open-cluster-management.io/placement={placement name} label to reference a certain placement.
 //
 // If a placement has spec.numberOfClusters specified, the total number of decisions contained in
-// status.decisions of PlacementDecisions should always be NumberOfClusters; otherwise, the total
-// number of decisions should be the number of ManagedClusters which match the placement requirements.
+// the status.decisions of PlacementDecisions must be the same as NumberOfClusters. Otherwise, the
+// total number of decisions must equal the number of ManagedClusters that
+// match the placement requirements.
 //
-// Some of the decisions might be empty when there are no enough ManagedClusters meet the placement
-// requirements.
+// Some of the decisions might be empty when there are not enough ManagedClusters to meet the placement requirements.
 type PlacementDecision struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -26,14 +26,19 @@ type PlacementDecision struct {
 	Status PlacementDecisionStatus `json:"status,omitempty"`
 }
 
-//The placementDecsion label name holding the placement name
+// The placementDecsion labels
 const (
+	// Placement owner name.
 	PlacementLabel string = "cluster.open-cluster-management.io/placement"
+	// decision group index.
+	DecisionGroupIndexLabel string = "cluster.open-cluster-management.io/decision-group-index"
+	// decision group name.
+	DecisionGroupNameLabel string = "cluster.open-cluster-management.io/decision-group-name"
 )
 
 // PlacementDecisionStatus represents the current status of the PlacementDecision.
 type PlacementDecisionStatus struct {
-	// Decisions is a slice of decisions according to a placement
+	// decisions is a slice of decisions according to a placement
 	// The number of decisions should not be larger than 100
 	// +kubebuilder:validation:Required
 	// +required
@@ -43,13 +48,13 @@ type PlacementDecisionStatus struct {
 // ClusterDecision represents a decision from a placement
 // An empty ClusterDecision indicates it is not scheduled yet.
 type ClusterDecision struct {
-	// ClusterName is the name of the ManagedCluster. If it is not empty, its value should be unique cross all
+	// clusterName is the name of the ManagedCluster. If it is not empty, its value should be unique across all
 	// placement decisions for the Placement.
 	// +kubebuilder:validation:Required
 	// +required
 	ClusterName string `json:"clusterName"`
 
-	// Reason represents the reason why the ManagedCluster is selected.
+	// reason represents the reason why the ManagedCluster is selected.
 	// +kubebuilder:validation:Required
 	// +required
 	Reason string `json:"reason"`

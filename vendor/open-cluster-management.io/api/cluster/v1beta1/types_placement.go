@@ -1,7 +1,9 @@
+// Copyright Contributors to the Open Cluster Management project
 package v1beta1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	v1 "open-cluster-management.io/api/cluster/v1"
 )
 
@@ -18,19 +20,19 @@ import (
 //
 // Here is how the placement policy combines with other selection methods to determine a matching
 // list of ManagedClusters:
-// 1) Kubernetes clusters are registered with hub as cluster-scoped ManagedClusters;
-// 2) ManagedClusters are organized into cluster-scoped ManagedClusterSets;
-// 3) ManagedClusterSets are bound to workload namespaces;
-// 4) Namespace-scoped Placements specify a slice of ManagedClusterSets which select a working set
-//    of potential ManagedClusters;
-// 5) Then Placements subselect from that working set using label/claim selection.
+//  1. Kubernetes clusters are registered with hub as cluster-scoped ManagedClusters;
+//  2. ManagedClusters are organized into cluster-scoped ManagedClusterSets;
+//  3. ManagedClusterSets are bound to workload namespaces;
+//  4. Namespace-scoped Placements specify a slice of ManagedClusterSets which select a working set
+//     of potential ManagedClusters;
+//  5. Then Placements subselect from that working set using label/claim selection.
 //
-// No ManagedCluster will be selected if no ManagedClusterSet is bound to the placement
-// namespace. User is able to bind a ManagedClusterSet to a namespace by creating a
-// ManagedClusterSetBinding in that namespace if they have a RBAC rule to CREATE on the virtual
+// A ManagedCluster will not be selected if no ManagedClusterSet is bound to the placement
+// namespace. A user is able to bind a ManagedClusterSet to a namespace by creating a
+// ManagedClusterSetBinding in that namespace if they have an RBAC rule to CREATE on the virtual
 // subresource of `managedclustersets/bind`.
 //
-// A slice of PlacementDecisions with label cluster.open-cluster-management.io/placement={placement name}
+// A slice of PlacementDecisions with the label cluster.open-cluster-management.io/placement={placement name}
 // will be created to represent the ManagedClusters selected by this placement.
 //
 // If a ManagedCluster is selected and added into the PlacementDecisions, other components may
@@ -54,14 +56,14 @@ type Placement struct {
 // An empty PlacementSpec selects all ManagedClusters from the ManagedClusterSets bound to
 // the placement namespace. The containing fields are ANDed.
 type PlacementSpec struct {
-	// ClusterSets represent the ManagedClusterSets from which the ManagedClusters are selected.
+	// clusterSets represent the ManagedClusterSets from which the ManagedClusters are selected.
 	// If the slice is empty, ManagedClusters will be selected from the ManagedClusterSets bound to the placement
 	// namespace, otherwise ManagedClusters will be selected from the intersection of this slice and the
 	// ManagedClusterSets bound to the placement namespace.
 	// +optional
 	ClusterSets []string `json:"clusterSets,omitempty"`
 
-	// NumberOfClusters represents the desired number of ManagedClusters to be selected which meet the
+	// numberOfClusters represents the desired number of ManagedClusters to be selected which meet the
 	// placement requirements.
 	// 1) If not specified, all ManagedClusters which meet the placement requirements (including ClusterSets,
 	//    and Predicates) will be selected;
@@ -75,25 +77,97 @@ type PlacementSpec struct {
 	// +optional
 	NumberOfClusters *int32 `json:"numberOfClusters,omitempty"`
 
-	// Predicates represent a slice of predicates to select ManagedClusters. The predicates are ORed.
+	// predicates represent a slice of predicates to select ManagedClusters. The predicates are ORed.
 	// +optional
 	Predicates []ClusterPredicate `json:"predicates,omitempty"`
 
-	// PrioritizerPolicy defines the policy of the prioritizers.
+	// prioritizerPolicy defines the policy of the prioritizers.
 	// If this field is unset, then default prioritizer mode and configurations are used.
 	// Referring to PrioritizerPolicy to see more description about Mode and Configurations.
 	// +optional
 	PrioritizerPolicy PrioritizerPolicy `json:"prioritizerPolicy"`
 
-	// Tolerations are applied to placements, and allow (but do not require) the managed clusters with
+	// spreadPolicy defines how placement decisions should be distributed among a
+	// set of ManagedClusters.
+	// +optional
+	SpreadPolicy SpreadPolicy `json:"spreadPolicy,omitempty"`
+
+	// tolerations are applied to placements, and allow (but do not require) the managed clusters with
 	// certain taints to be selected by placements with matching tolerations.
 	// +optional
 	Tolerations []Toleration `json:"tolerations,omitempty"`
+
+	// decisionStrategy divides the created placement decisions into groups and defines the number of clusters per decision group.
+	// +optional
+	DecisionStrategy DecisionStrategy `json:"decisionStrategy,omitempty"`
+}
+
+// DecisionGroup define a subset of clusters that will be added to placementDecisions with groupName label.
+type DecisionGroup struct {
+	// groupName to set as the label value on created PlacementDecision
+	// resources using the label key cluster.open-cluster-management.io/decision-group-name.
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Pattern="^[a-zA-Z0-9][-A-Za-z0-9_.]{0,61}[a-zA-Z0-9]$"
+	// +required
+	GroupName string `json:"groupName,omitempty"`
+
+	// groupClusterSelector selects a subset of clusters by labels.
+	// +kubebuilder:validation:Required
+	// +required
+	ClusterSelector GroupClusterSelector `json:"groupClusterSelector,omitempty"`
+}
+
+// GroupClusterSelector represents the AND of the containing selectors for groupClusterSelector. An empty group cluster selector matches all objects.
+// A null group cluster selector matches no objects.
+type GroupClusterSelector struct {
+	// labelSelector represents a selector of ManagedClusters by label
+	// +optional
+	LabelSelector metav1.LabelSelector `json:"labelSelector,omitempty"`
+
+	// claimSelector represents a selector of ManagedClusters by clusterClaims in status
+	// +optional
+	ClaimSelector ClusterClaimSelector `json:"claimSelector,omitempty"`
+}
+
+// Group the created placementDecision into decision groups based on the number of clusters per decision group.
+type GroupStrategy struct {
+	// decisionGroups represents a list of predefined groups to put decision results.
+	// Decision groups will be constructed based on the DecisionGroups field at first. The clusters not included in the
+	// DecisionGroups will be divided to other decision groups afterwards. Each decision group should not have the number
+	// of clusters larger than the ClustersPerDecisionGroup.
+	// +optional
+	DecisionGroups []DecisionGroup `json:"decisionGroups,omitempty"`
+
+	// clustersPerDecisionGroup is a specific number or percentage of the total selected clusters.
+	// The specific number will divide the placementDecisions to decisionGroups each group has max number of clusters
+	// equal to that specific number.
+	// The percentage will divide the placementDecisions to decisionGroups each group has max number of clusters based
+	// on the total num of selected clusters and percentage.
+	// ex; for a total 100 clusters selected, ClustersPerDecisionGroup equal to 20% will divide the placement decision
+	// to 5 groups each group should have 20 clusters.
+	// Default is having all clusters in a single group.
+	//
+	// The predefined decisionGroups is expected to be a subset of the selected clusters and the number of items in each
+	// group SHOULD be less than ClustersPerDecisionGroup. Once the number of items exceeds the ClustersPerDecisionGroup,
+	// the decisionGroups will also be be divided into multiple decisionGroups with same GroupName but different GroupIndex.
+	//
+	// +kubebuilder:validation:XIntOrString
+	// +kubebuilder:validation:Pattern=`^((100|[1-9][0-9]{0,1})%|[1-9][0-9]*)$`
+	// +kubebuilder:default:="100%"
+	// +optional
+	ClustersPerDecisionGroup intstr.IntOrString `json:"clustersPerDecisionGroup,omitempty"`
+}
+
+// DecisionStrategy divide the created placement decision to groups and define number of clusters per decision group.
+type DecisionStrategy struct {
+	// groupStrategy defines strategies to divide selected clusters into decision groups.
+	// +optional
+	GroupStrategy GroupStrategy `json:"groupStrategy,omitempty"`
 }
 
 // ClusterPredicate represents a predicate to select ManagedClusters.
 type ClusterPredicate struct {
-	// RequiredClusterSelector represents a selector of ManagedClusters by label and claim. If specified,
+	// requiredClusterSelector represents a selector of ManagedClusters by label and claim. If specified,
 	// 1) Any ManagedCluster, which does not match the selector, should not be selected by this ClusterPredicate;
 	// 2) If a selected ManagedCluster (of this ClusterPredicate) ceases to match the selector (e.g. due to
 	//    an update) of any ClusterPredicate, it will be eventually removed from the placement decisions;
@@ -106,13 +180,23 @@ type ClusterPredicate struct {
 // ClusterSelector represents the AND of the containing selectors. An empty cluster selector matches all objects.
 // A null cluster selector matches no objects.
 type ClusterSelector struct {
-	// LabelSelector represents a selector of ManagedClusters by label
+	// labelSelector represents a selector of ManagedClusters by label
 	// +optional
 	LabelSelector metav1.LabelSelector `json:"labelSelector,omitempty"`
 
-	// ClaimSelector represents a selector of ManagedClusters by clusterClaims in status
+	// claimSelector represents a selector of ManagedClusters by clusterClaims in status
 	// +optional
 	ClaimSelector ClusterClaimSelector `json:"claimSelector,omitempty"`
+
+	// celSelector represents a selector of ManagedClusters by CEL expressions on ManagedCluster fields
+	// +optional
+	CelSelector ClusterCelSelector `json:"celSelector,omitempty"`
+}
+
+// ClusterCelSelector is a list of CEL expressions. The expressions are ANDed.
+type ClusterCelSelector struct {
+	// +optional
+	CelExpressions []string `json:"celExpressions,omitempty"`
 }
 
 // ClusterClaimSelector is a claim query over a set of ManagedClusters. An empty cluster claim
@@ -151,12 +235,12 @@ const (
 
 // PrioritizerConfig represents the configuration of prioritizer
 type PrioritizerConfig struct {
-	// ScoreCoordinate represents the configuration of the prioritizer and score source.
+	// scoreCoordinate represents the configuration of the prioritizer and score source.
 	// +kubebuilder:validation:Required
 	// +required
 	ScoreCoordinate *ScoreCoordinate `json:"scoreCoordinate,omitempty"`
 
-	// Weight defines the weight of the prioritizer score. The value must be ranged in [-10,10].
+	// weight defines the weight of the prioritizer score. The value must be ranged in [-10,10].
 	// Each prioritizer will calculate an integer score of a cluster in the range of [-100, 100].
 	// The final score of a cluster will be sum(weight * prioritizer_score).
 	// A higher weight indicates that the prioritizer weights more in the cluster selection,
@@ -171,7 +255,7 @@ type PrioritizerConfig struct {
 
 // ScoreCoordinate represents the configuration of the score type and score source
 type ScoreCoordinate struct {
-	// Type defines the type of the prioritizer score.
+	// type defines the type of the prioritizer score.
 	// Type is either "BuiltIn", "AddOn" or "", where "" is "BuiltIn" by default.
 	// When the type is "BuiltIn", need to specify a BuiltIn prioritizer name in BuiltIn.
 	// When the type is "AddOn", need to configure the score source in AddOn.
@@ -185,6 +269,7 @@ type ScoreCoordinate struct {
 	// 1) Balance: balance the decisions among the clusters.
 	// 2) Steady: ensure the existing decision is stabilized.
 	// 3) ResourceAllocatableCPU & ResourceAllocatableMemory: sort clusters based on the allocatable.
+	// 4) Spread: spread the workload evenly to topologies.
 	// +optional
 	BuiltIn string `json:"builtIn,omitempty"`
 
@@ -201,19 +286,82 @@ const (
 
 // AddOnScore represents the configuration of the addon score source.
 type AddOnScore struct {
-	// ResourceName defines the resource name of the AddOnPlacementScore.
+	// resourceName defines the resource name of the AddOnPlacementScore.
 	// The placement prioritizer selects AddOnPlacementScore CR by this name.
 	// +kubebuilder:validation:Required
 	// +required
 	ResourceName string `json:"resourceName"`
 
-	// ScoreName defines the score name inside AddOnPlacementScore.
-	// AddOnPlacementScore contains a list of score name and score value, ScoreName specify the score to be used by
+	// scoreName defines the score name inside AddOnPlacementScore.
+	// AddOnPlacementScore contains a list of score names and values; scoreName specifies the score to be used by
 	// the prioritizer.
 	// +kubebuilder:validation:Required
 	// +required
 	ScoreName string `json:"scoreName"`
 }
+
+// SpreadPolicy defines how the placement decision should be spread among the ManagedClusters.
+type SpreadPolicy struct {
+	// SpreadConstraints defines how the placement decision should be distributed among a set of ManagedClusters.
+	// The importance of the SpreadConstraintsTerms follows the natural order of their index in the slice.
+	// The scheduler first consider SpreadConstraintsTerms with smaller index then those with larger index
+	// to distribute the placement decision.
+	// +optional
+	// +kubebuilder:validation:MaxItems=8
+	SpreadConstraints []SpreadConstraintsTerm `json:"spreadConstraints,omitempty"`
+}
+
+// SpreadConstraintsTerm defines a terminology to spread placement decisions.
+type SpreadConstraintsTerm struct {
+	// TopologyKey is either a label key or a cluster claim name of ManagedClusters.
+	// +required
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Pattern=`^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9]$`
+	// +kubebuilder:validation:MaxLength=316
+	TopologyKey string `json:"topologyKey"`
+
+	// TopologyKeyType indicates the type of TopologyKey. It could be Label or Claim.
+	// +required
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Enum=Label;Claim
+	TopologyKeyType TopologyKeyType `json:"topologyKeyType"`
+
+	// MaxSkew represents the degree to which the workload may be unevenly distributed.
+	// Skew is the maximum difference between the number of selected ManagedClusters in a topology and the global minimum.
+	// The global minimum is the minimum number of selected ManagedClusters for the topologies within the same TopologyKey.
+	// The minimum possible value of MaxSkew is 1, and the default value is 1.
+	// +optional
+	// +kubebuilder:validation:Minimum=1
+	// +kubebuilder:default=1
+	MaxSkew int32 `json:"maxSkew"`
+
+	// WhenUnsatisfiable represents the action of the scheduler when MaxSkew cannot be satisfied.
+	// It could be DoNotSchedule or ScheduleAnyway. The default value is ScheduleAnyway.
+	// DoNotSchedule instructs the scheduler not to schedule more ManagedClusters when MaxSkew is not satisfied.
+	// ScheduleAnyway instructs the scheduler to keep scheduling even if MaxSkew is not satisfied.
+	// +optional
+	// +kubebuilder:validation:Enum=DoNotSchedule;ScheduleAnyway
+	// +kubebuilder:default=ScheduleAnyway
+	WhenUnsatisfiable UnsatisfiableMaxSkewAction `json:"whenUnsatisfiable"`
+}
+
+// TopologyKeyType represents the type of TopologyKey.
+type TopologyKeyType string
+
+const (
+	// Valid TopologyKeyType value is Claim, Label.
+	TopologyKeyTypeClaim TopologyKeyType = "Claim"
+	TopologyKeyTypeLabel TopologyKeyType = "Label"
+)
+
+// UnsatisfiableMaxSkewAction represents the action when MaxSkew cannot be satisfied.
+type UnsatisfiableMaxSkewAction string
+
+const (
+	// Valid UnsatisfiableMaxSkewAction value is DoNotSchedule, ScheduleAnyway.
+	DoNotSchedule  UnsatisfiableMaxSkewAction = "DoNotSchedule"
+	ScheduleAnyway UnsatisfiableMaxSkewAction = "ScheduleAnyway"
+)
 
 // Toleration represents the toleration object that can be attached to a placement.
 // The placement this Toleration is attached to tolerates any taint that matches
@@ -260,10 +408,34 @@ const (
 	TolerationOpEqual  TolerationOperator = "Equal"
 )
 
+// Present decision groups status based on the DecisionStrategy definition.
+type DecisionGroupStatus struct {
+	// Present the decision group index. If there is no decision strategy defined all placement decisions will be in group index 0
+	// +optional
+	DecisionGroupIndex int32 `json:"decisionGroupIndex"`
+
+	// Decision group name that is defined in the DecisionStrategy's DecisionGroup.
+	// +optional
+	DecisionGroupName string `json:"decisionGroupName"`
+
+	// List of placement decisions names associated with the decision group
+	// +optional
+	Decisions []string `json:"decisions"`
+
+	// Total number of clusters in the decision group. Clusters count is equal or less than the clusterPerDecisionGroups defined in the decision strategy.
+	// +kubebuilder:default:=0
+	// +optional
+	ClustersCount int32 `json:"clusterCount"`
+}
+
 type PlacementStatus struct {
-	// NumberOfSelectedClusters represents the number of selected ManagedClusters
+	// numberOfSelectedClusters represents the number of selected ManagedClusters
 	// +optional
 	NumberOfSelectedClusters int32 `json:"numberOfSelectedClusters"`
+
+	// List of decision groups determined by the placement and DecisionStrategy.
+	// +optional
+	DecisionGroups []DecisionGroupStatus `json:"decisionGroups"`
 
 	// Conditions contains the different condition status for this Placement.
 	// +optional
@@ -292,3 +464,10 @@ type PlacementList struct {
 	// Items is a list of Placements.
 	Items []Placement `json:"items"`
 }
+
+const (
+	// PlacementDisableAnnotation is used to disable scheduling for a placement.
+	// It is a experimental flag to let placement controller ignore this placement,
+	// so other placement consumers can chime in.
+	PlacementDisableAnnotation = "cluster.open-cluster-management.io/experimental-scheduling-disable"
+)

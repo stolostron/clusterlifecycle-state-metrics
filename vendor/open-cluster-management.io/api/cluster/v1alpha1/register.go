@@ -1,3 +1,4 @@
+// Copyright Contributors to the Open Cluster Management project
 package v1alpha1
 
 import (
@@ -32,16 +33,8 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 	scheme.AddKnownTypes(GroupVersion,
 		&AddOnPlacementScore{},
 		&AddOnPlacementScoreList{},
-		&ManagedClusterSet{},
-		&ManagedClusterSetList{},
-		&ManagedClusterSetBinding{},
-		&ManagedClusterSetBindingList{},
 		&ClusterClaim{},
 		&ClusterClaimList{},
-		&Placement{},
-		&PlacementList{},
-		&PlacementDecision{},
-		&PlacementDecisionList{},
 	)
 	metav1.AddToGroupVersion(scheme, GroupVersion)
 	return nil
