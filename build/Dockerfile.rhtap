@@ -15,7 +15,8 @@ RUN GOFLAGS="" go build ./cmd/clusterlifecycle-state-metrics; \
 FROM registry.access.redhat.com/ubi9/ubi-minimal:latest
 
 LABEL \
-    name="clusterlifecycle-state-metrics" \
+    name="multicluster-engine/clusterlifecycle-state-metrics-rhel9" \
+    cpe="cpe:/a:redhat:multicluster_engine:2.10::el9" \
     com.redhat.component="clusterlifecycle-state-metrics" \
     description="Cluster Lifecycle State Metrics generates a number of clusters related metrics used \
     for business analysis." \
