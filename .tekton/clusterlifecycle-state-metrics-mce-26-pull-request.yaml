@@ -43,7 +43,7 @@ spec:
       - name: revision
         value: main
       - name: pathInRepo
-        value: pipelines/common_mce_2.6.yaml
+        value: pipelines/common.yaml
   taskRunTemplate:
     serviceAccountName: build-pipeline-clusterlifecycle-state-metrics-mce-26
   workspaces:
