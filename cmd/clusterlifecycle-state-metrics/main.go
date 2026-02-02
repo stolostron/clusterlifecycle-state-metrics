@@ -102,6 +102,7 @@ func main() {
 }
 
 func start(opts *options.Options) {
+	klog.Info("Starting clusterlifecycle-state-metrics service")
 	ctx := context.TODO()
 	config, err := clientcmd.BuildConfigFromFlags(opts.Apiserver, opts.Kubeconfig)
 	if err != nil {
