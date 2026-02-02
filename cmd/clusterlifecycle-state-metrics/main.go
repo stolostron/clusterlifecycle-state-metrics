@@ -84,6 +84,7 @@ func main() {
 }
 
 func start(opts *options.Options) {
+	klog.Info("Initializing clusterlifecycle-state-metrics collectors")
 	collectorBuilder := ocollectors.NewBuilder(context.TODO())
 	collectorBuilder.WithApiserver(opts.Apiserver).WithKubeConfig(opts.Kubeconfig)
 	if len(opts.Collectors) == 0 {
