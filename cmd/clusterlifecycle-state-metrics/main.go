@@ -71,6 +71,8 @@ func (pl promLogger) Println(v ...interface{}) {
 func main() {
 	opts.Parse()
 
+	klog.V(4).Infof("clusterlifecycle-state-metrics starting with version: %s", version.GetVersion())
+
 	if opts.Version {
 		fmt.Printf("%#v\n", version.GetVersion())
 		os.Exit(0)
