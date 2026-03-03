@@ -19,6 +19,7 @@ test/e2e/resources/hub/kube
 kind_kubeconfig.yaml
 .DS_Store
 .idea/
+_output/
 
 # Test binary, built with `go test -c`
 *.test
