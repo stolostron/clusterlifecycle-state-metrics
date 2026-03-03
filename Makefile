@@ -25,9 +25,7 @@ export DOCKER_BUILDER    ?= docker
 
 export KUBECONFIG ?= ${HOME}/.kube/config
 
-export KUBEBUILDER_HOME := /usr/local/kubebuilder
-
-export PATH := ${PATH}:${KUBEBUILDER_HOME}/bin
+ENSURE_ENVTEST_SCRIPT := https://raw.githubusercontent.com/open-cluster-management-io/sdk-go/main/ci/envtest/ensure-envtest.sh
 
 BEFORE_SCRIPT := $(shell build/before-make.sh)
 
@@ -49,9 +47,14 @@ check: dependencies # check-copyright # remove copyright check since this failed
 check-copyright:
 	@build/check-copyright.sh
 
+.PHONY: envtest-setup
+envtest-setup:
+	$(eval export KUBEBUILDER_ASSETS=$(shell curl -fsSL $(ENSURE_ENVTEST_SCRIPT) | bash))
+	@echo "KUBEBUILDER_ASSETS=$(KUBEBUILDER_ASSETS)"
+
 .PHONY: test
 ## Runs go unit tests
-test: dependencies
+test: dependencies envtest-setup
 	@build/run-unit-tests.sh
 
 .PHONY: build-image
