@@ -30,3 +30,4 @@ kind_kubeconfig.yaml
 # vendor/
 build-harness
 build-harness-extensions
+_output/
