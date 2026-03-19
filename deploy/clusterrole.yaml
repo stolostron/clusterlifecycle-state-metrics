@@ -31,7 +31,11 @@ rules:
 # Allow to query the CVO on the Hub Cluster to get the ClusterId
 - apiGroups: ["config.openshift.io"]
   resources: ["clusterversions"]
-  verbs: ["get"]  
+  verbs: ["get"]
+# Allow to watch TLS security profile from APIServer CR
+- apiGroups: ["config.openshift.io"]
+  resources: ["apiservers"]
+  verbs: ["get","list","watch"]
 - apiGroups: ["authentication.k8s.io"]
   resources: ["tokenreviews"]
   verbs: ["create"]
