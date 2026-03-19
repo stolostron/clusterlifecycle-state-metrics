@@ -1,0 +1,6 @@
+apiVersion: config.openshift.io/v1
+kind: APIServer
+metadata:
+  name: cluster
+# TLS profile intentionally not set - will use default or can be modified by tests
+spec: {}

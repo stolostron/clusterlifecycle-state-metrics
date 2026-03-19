@@ -6,17 +6,16 @@ package main
 import (
 	"compress/gzip"
 	"context"
-	"crypto/tls"
 	"flag"
 	"fmt"
 	"io"
-	"log"
 	"net"
 	"net/http"
 	"net/http/pprof"
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -27,6 +26,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
+	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/klog/v2"
 	koptions "k8s.io/kube-state-metrics/pkg/options"
@@ -38,6 +38,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
+	"github.com/stolostron/cluster-lifecycle-api/helpers/tlsprofile"
 	"github.com/stolostron/clusterlifecycle-state-metrics/pkg/collectors"
 	"github.com/stolostron/clusterlifecycle-state-metrics/pkg/controllers"
 	"github.com/stolostron/clusterlifecycle-state-metrics/pkg/options"
@@ -102,7 +103,10 @@ func main() {
 }
 
 func start(opts *options.Options) {
-	ctx := context.TODO()
+	// Create a cancellable context for graceful shutdown
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	config, err := clientcmd.BuildConfigFromFlags(opts.Apiserver, opts.Kubeconfig)
 	if err != nil {
 		klog.Fatalf("cannot create config: %v", err)
@@ -119,6 +123,11 @@ func start(opts *options.Options) {
 
 	if timestampMetricsEnabled {
 		go startControllers(opts)
+	}
+
+	// Start TLS profile watcher to detect changes and trigger graceful restart via context cancellation
+	if err := tlsprofile.StartTLSProfileWatcher(ctx, config, cancel); err != nil {
+		klog.Fatalf("Failed to start TLS profile watcher: %v", err)
 	}
 
 	collectorBuilder := collectors.NewBuilder(ctx)
@@ -178,11 +187,29 @@ func start(opts *options.Options) {
 	if err := ocmMetricsRegistry.Register(prometheus.NewGoCollector()); err != nil {
 		panic(err)
 	}
-	go telemetryServer(ocmMetricsRegistry, opts.TelemetryHost, opts.HTTPTelemetryPort, opts.HTTPSTelemetryPort, opts.TLSCrtFile, opts.TLSKeyFile)
+	var wg sync.WaitGroup
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		telemetryServer(ctx, ocmMetricsRegistry, config, opts.TelemetryHost, opts.HTTPTelemetryPort, opts.HTTPSTelemetryPort, opts.TLSCrtFile, opts.TLSKeyFile)
+	}()
 
 	collectors := collectorBuilder.Build()
 
-	serveMetrics(collectors, opts.Host, opts.HTTPPort, opts.HTTPSPort, opts.TLSCrtFile, opts.TLSKeyFile, opts.EnableGZIPEncoding)
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		serveMetrics(ctx, collectors, config, opts.Host, opts.HTTPPort, opts.HTTPSPort, opts.TLSCrtFile, opts.TLSKeyFile, opts.EnableGZIPEncoding)
+	}()
+
+	// Wait for both servers to complete graceful shutdown
+	// (they handle ctx.Done() internally and shutdown when context is cancelled)
+	wg.Wait()
+
+	klog.Info("Servers shut down, exiting...")
+	// Exit cleanly so Kubernetes can restart the pod
+	os.Exit(0)
 }
 
 func startControllers(opts *options.Options) {
@@ -250,7 +277,9 @@ func startControllers(opts *options.Options) {
 }
 
 func telemetryServer(
+	ctx context.Context,
 	registry prometheus.Gatherer,
+	kubeConfig *rest.Config,
 	host string,
 	httpPort int,
 	httpsPort int,
@@ -283,34 +312,69 @@ func telemetryServer(
 			panic(err)
 		}
 	})
+	var servers []*http.Server
+
 	if tlsCrtFile != "" && tlsKeyFile != "" {
+		// Get TLS config from OpenShift cluster profile
+		tlsConfig, err := tlsprofile.GetTLSConfig(kubeConfig)
+		if err != nil {
+			klog.Fatalf("Failed to get TLS config: %v", err)
+		}
+
 		// Address to listen on for web interface and telemetry
 		listenAddress := net.JoinHostPort(host, strconv.Itoa(httpsPort))
-		s := &http.Server{
+		httpsServer := &http.Server{
 			Addr:      listenAddress,
 			Handler:   mux,
-			TLSConfig: &tls.Config{MinVersion: tls.VersionTLS12},
+			TLSConfig: tlsConfig,
 		}
+		servers = append(servers, httpsServer)
 
 		klog.Infof("Starting clusterlifecycle-state-metrics self metrics server: %s", listenAddress)
 		klog.Infof("Listening https: %s", listenAddress)
-		go func() { log.Fatal(s.ListenAndServeTLS(tlsCrtFile, tlsKeyFile)) }()
+		go func() {
+			if err := httpsServer.ListenAndServeTLS(tlsCrtFile, tlsKeyFile); err != nil && err != http.ErrServerClosed {
+				klog.Errorf("HTTPS telemetry server error: %v", err)
+			}
+		}()
 	}
+
 	// Address to listen on for web interface and telemetry
 	listenAddress := net.JoinHostPort(host, strconv.Itoa(httpPort))
-	s := &http.Server{
+	httpServer := &http.Server{
 		Addr:    listenAddress,
 		Handler: mux,
 	}
+	servers = append(servers, httpServer)
 
 	klog.Infof("Starting clusterlifecycle-state-metrics self metrics server: %s", listenAddress)
-
 	klog.Infof("Listening http: %s", listenAddress)
 
-	log.Fatal(s.ListenAndServe())
+	go func() {
+		if err := httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			klog.Errorf("HTTP telemetry server error: %v", err)
+		}
+	}()
+
+	// Wait for context cancellation, then shutdown gracefully
+	<-ctx.Done()
+	klog.Info("Shutting down telemetry servers...")
+
+	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer shutdownCancel()
+
+	for _, srv := range servers {
+		if err := srv.Shutdown(shutdownCtx); err != nil {
+			klog.Errorf("Error shutting down telemetry server: %v", err)
+		}
+	}
+	klog.Info("Telemetry servers stopped")
 }
 
-func serveMetrics(collectors []collectors.MetricsCollector,
+func serveMetrics(
+	ctx context.Context,
+	collectors []collectors.MetricsCollector,
+	kubeConfig *rest.Config,
 	host string,
 	httpPort int,
 	httpsPort int,
@@ -351,30 +415,63 @@ func serveMetrics(collectors []collectors.MetricsCollector,
 		}
 	})
 
+	var servers []*http.Server
+
 	if tlsCrtFile != "" && tlsKeyFile != "" {
+		// Get TLS config from OpenShift cluster profile
+		tlsConfig, err := tlsprofile.GetTLSConfig(kubeConfig)
+		if err != nil {
+			klog.Fatalf("Failed to get TLS config: %v", err)
+		}
+
 		// Address to listen on for web interface and telemetry
 		listenAddress := net.JoinHostPort(host, strconv.Itoa(httpsPort))
-		s := &http.Server{
+		httpsServer := &http.Server{
 			Addr:      listenAddress,
 			Handler:   mux,
-			TLSConfig: &tls.Config{MinVersion: tls.VersionTLS12},
+			TLSConfig: tlsConfig,
 		}
+		servers = append(servers, httpsServer)
 
 		klog.Infof("Starting metrics server: %s", listenAddress)
 		klog.Infof("Listening https: %s", listenAddress)
-		go func() { log.Fatal(s.ListenAndServeTLS(tlsCrtFile, tlsKeyFile)) }()
+		go func() {
+			if err := httpsServer.ListenAndServeTLS(tlsCrtFile, tlsKeyFile); err != nil && err != http.ErrServerClosed {
+				klog.Errorf("HTTPS metrics server error: %v", err)
+			}
+		}()
 	}
+
 	// Address to listen on for web interface and telemetry
 	listenAddress := net.JoinHostPort(host, strconv.Itoa(httpPort))
-	s := &http.Server{
+	httpServer := &http.Server{
 		Addr:    listenAddress,
 		Handler: mux,
 	}
+	servers = append(servers, httpServer)
 
 	klog.Infof("Starting metrics server: %s", listenAddress)
-
 	klog.Infof("Listening http: %s", listenAddress)
-	log.Fatal(s.ListenAndServe())
+
+	go func() {
+		if err := httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			klog.Errorf("HTTP metrics server error: %v", err)
+		}
+	}()
+
+	// Wait for context cancellation, then shutdown gracefully
+	<-ctx.Done()
+	klog.Info("Shutting down metrics servers...")
+
+	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer shutdownCancel()
+
+	for _, srv := range servers {
+		if err := srv.Shutdown(shutdownCtx); err != nil {
+			klog.Errorf("Error shutting down metrics server: %v", err)
+		}
+	}
+	klog.Info("Metrics servers stopped")
 }
 
 type metricHandler struct {

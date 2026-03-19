@@ -218,6 +218,12 @@ type OCPDistributionInfo struct {
 	// Controller will sync this field to managedcluster's ManagedClusterClientConfigs
 	// +optional
 	ManagedClusterClientConfig ClientConfig `json:"managedClusterClientConfig,omitempty"`
+
+	// LastAppliedAPIServerURL is a valid URI with scheme 'https', address and optionally
+	// a port (defaulting to 443). it can be used by components like the web console to
+	// tell users where to find the Kubernetes API.
+	// This is the api server url that has been applied to the managedcluster resource successfully
+	LastAppliedAPIServerURL string `json:"lastAppliedAPIServerURL"`
 }
 
 // DistributionType is type of distribution
@@ -247,6 +253,8 @@ const (
 	KubeVendorIKS KubeVendorType = "IKS"
 	// KubeVendorOSD OpenShiftDedicated
 	KubeVendorOSD KubeVendorType = "OpenShiftDedicated"
+	// KubeVendorMicroShift MicroShift
+	KubeVendorMicroShift KubeVendorType = "MicroShift"
 	// KubeVendorOther other (unable to auto detect)
 	KubeVendorOther KubeVendorType = "Other"
 )
@@ -277,6 +285,8 @@ const (
 	CloudVendorAlibabaCloud = "AlibabaCloud"
 	// CloudVendorBareMetal BareMetal
 	CloudVendorBareMetal = "BareMetal"
+	// CloudVendorNutanix Nutanix
+	CloudVendorNutanix CloudVendorType = "Nutanix"
 	// CloudVendorOther other (unable to auto detect)
 	CloudVendorOther CloudVendorType = "Other"
 )
@@ -297,7 +307,14 @@ const (
 	LabelClusterID   = "clusterID"
 	LabelManagedBy   = "managed-by"
 	AutoDetect       = "auto-detect"
-	OCPVersion       = "openshiftVersion"
+	// OCPVersion is the full version of OCP cluster, like 4.11.3
+	OCPVersion = "openshiftVersion"
+	// OCPVersionMajor is the major version of OCP cluster, like 4
+	OCPVersionMajor = "openshiftVersion-major"
+	// OCPVersionMajorMinor is the version of OCP cluster without patch, like 4.11
+	OCPVersionMajorMinor = "openshiftVersion-major-minor"
+	// MicroShiftVersion is the version of MicroShift
+	MicroShiftVersion = "microshiftVersion"
 )
 
 // +genclient
