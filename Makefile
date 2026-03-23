@@ -54,7 +54,7 @@ envtest-setup:
 
 .PHONY: test
 ## Runs go unit tests
-test: envtest-setup
+test: dependencies envtest-setup
 	@build/run-unit-tests.sh
 
 .PHONY: build-image
