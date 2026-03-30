@@ -53,7 +53,23 @@ func Test_getManagedClusterLabelMetricFamilies(t *testing.T) {
 				mciv1beta1.LabelClusterID: "managed_cluster_id",
 				"5g-dev01-cluster":        "value1",
 				"55g//dev01__cluster":     "value2",
-				"_5g-dev01_cluster":       "value3",
+			},
+		},
+		Status: mcv1.ManagedClusterStatus{
+			Capacity:      mcv1.ResourceList{},
+			ClusterClaims: []mcv1.ManagedClusterClaim{},
+			Conditions:    []metav1.Condition{},
+		},
+	}
+
+	mc4 := &mcv1.ManagedCluster{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "test-cluster-duplicate-labels",
+			Labels: map[string]string{
+				mciv1beta1.LabelClusterID: "managed_cluster_id",
+				"cluster-elm-sa-name":     "ymo",
+				"cluster.elm.sa/name":     "ymo",
+				"cloud":                   "gcp",
 			},
 		},
 		Status: mcv1.ManagedClusterStatus{
@@ -80,7 +96,13 @@ func Test_getManagedClusterLabelMetricFamilies(t *testing.T) {
 			Name:        "test cluster3 label",
 			Obj:         mc3,
 			MetricNames: []string{"acm_managed_cluster_labels"},
-			Want:        `acm_managed_cluster_labels{managed_cluster_id="managed_cluster_id",hub_cluster_id="hub_cluster_id",_5g_dev01_cluster="value1",_55g_dev01__cluster="value2",_5g_dev01_cluster="value3"} 1`,
+			Want:        `acm_managed_cluster_labels{managed_cluster_id="managed_cluster_id",hub_cluster_id="hub_cluster_id",_5g_dev01_cluster="value1",_55g_dev01__cluster="value2"} 1`,
+		},
+		{
+			Name:        "test cluster with duplicate labels after conversion",
+			Obj:         mc4,
+			MetricNames: []string{"acm_managed_cluster_labels"},
+			Want:        `acm_managed_cluster_labels{managed_cluster_id="managed_cluster_id",hub_cluster_id="hub_cluster_id",cluster_elm_sa_name="ymo",cloud="gcp"} 1`,
 		},
 	}
 

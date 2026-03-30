@@ -41,6 +41,12 @@ func GetManagedClusterLabelMetricFamilies(hubClusterID string) metric.FamilyGene
 			nonWordRegex := regexp.MustCompile(`[^\w]+`) // Regex to check non-word characters
 			firstDigitRegex := regexp.MustCompile(`^\d`) // Regex to check if the first character is a digit
 
+			// Use a map to track already-used label keys for O(1) duplicate detection
+			usedKeys := make(map[string]bool, len(mc.Labels)+len(descManagedClusterLabelDefaultLabel))
+			for _, key := range descManagedClusterLabelDefaultLabel {
+				usedKeys[key] = true
+			}
+
 			for key, value := range mc.Labels {
 				// Ignore the clusterID label since it is being set within the hub and managed cluster IDs
 				if key != "clusterID" {
@@ -57,6 +63,13 @@ func GetManagedClusterLabelMetricFamilies(hubClusterID string) metric.FamilyGene
 						modifiedKey = "_" + modifiedKey
 					}
 
+					// Check for duplicate label names to prevent invalid Prometheus metrics
+					if usedKeys[modifiedKey] {
+						klog.Warningf("Skipping label '%s' (would convert to '%s') - conflicts with existing label. This may indicate duplicate labels on ManagedCluster '%s'",
+							originalKey, modifiedKey, mc.GetName())
+						continue // Skip this label to avoid Prometheus duplicate label error
+					}
+
 					// If the key was converted, log a warning
 					if originalKey != modifiedKey {
 						klog.Infof("Label key '%s' was converted to '%s' since it contains non-word characters or a first digit", originalKey, modifiedKey)
@@ -65,6 +78,7 @@ func GetManagedClusterLabelMetricFamilies(hubClusterID string) metric.FamilyGene
 					// Add the modified key and value to the label slices
 					labelsKeys = append(labelsKeys, modifiedKey)
 					labelsValues = append(labelsValues, value)
+					usedKeys[modifiedKey] = true
 				}
 			}
 
