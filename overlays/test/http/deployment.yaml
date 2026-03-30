@@ -15,10 +15,17 @@ spec:
         args:
           - "--http-port=8080"
           - "--http-telemetry-port=8081"
+          - "--https-port=8443"
+          - "--https-telemetry-port=8444"
+          - "--tls-crt-file=/etc/tls/tls.crt"
+          - "--tls-key-file=/etc/tls/tls.key"
           - "--hub-type=mce"
         volumeMounts:
         - mountPath: /tmp/coverage
-          name: coverage-dir  
+          name: coverage-dir
+        - mountPath: /etc/tls
+          name: tls-certs
+          readOnly: true  
       volumes:
       - name: coverage-dir
         hostPath:
@@ -26,6 +33,9 @@ spec:
           path: /tmp/coverage
           # this field is optional
           type: Directory
+      - name: tls-certs
+        secret:
+          secretName: clusterlifecycle-state-metrics-tls
       - name: certs
         secret:
           secretName: multiclusterhub-operator-pull-secret

@@ -153,6 +153,7 @@ install-fake-crds:
 	kubectl apply -f test/functional/resources/crds/managedclusteraddons_crd.yaml
 	kubectl apply -f test/functional/resources/crds/manifestworks_crd.yaml
 	kubectl apply -f test/functional/resources/crds/clusterversions_crd.yaml
+	kubectl apply -f test/functional/resources/crds/apiservers_crd.yaml
 	kubectl apply -f test/functional/resources/crds/servicemonitor_crd.yaml
 	kubectl apply -f test/functional/resources/crds/prometheusrules_crd.yaml
 	@sleep 10 
@@ -163,8 +164,19 @@ kind-cluster-setup: install-fake-crds
 	kubectl apply -f test/functional/resources/namespace_osm.yaml
 	kubectl apply -f test/functional/resources/namespace_ocm.yaml
 	kubectl apply -f test/functional/resources/clusterversions_cr.yaml
+	@echo "Creating TLS certificate for HTTPS endpoints"
+	@kubectl create namespace multicluster-engine --dry-run=client -o yaml | kubectl apply -f -
+	@openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+		-keyout /tmp/tls.key -out /tmp/tls.crt \
+		-subj "/CN=clusterlifecycle-state-metrics/O=clusterlifecycle-state-metrics" \
+		-addext "subjectAltName=DNS:metrics.localhost,DNS:telemetry.localhost,DNS:clusterlifecycle-state-metrics.multicluster-engine.svc,DNS:localhost" 2>/dev/null || true
+	@kubectl create secret tls clusterlifecycle-state-metrics-tls \
+		--cert=/tmp/tls.crt --key=/tmp/tls.key \
+		-n multicluster-engine --dry-run=client -o yaml | kubectl apply -f -
 	@echo "Install ingress NGNIX"
 	kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/master/deploy/static/provider/kind/deploy.yaml
+	@echo "Enable SSL passthrough for TLS tests"
+	kubectl patch deployment ingress-nginx-controller -n ingress-nginx --type='json' -p='[{"op": "add", "path": "/spec/template/spec/containers/0/args/-", "value": "--enable-ssl-passthrough"}]'
 	@echo "Wait ingress NGNIX ready"
 	kubectl wait --namespace ingress-nginx --for=condition=ready pod --selector=app.kubernetes.io/component=controller --timeout=180s
 	kubectl delete ValidatingWebhookCOnfiguration ingress-nginx-admission
