@@ -8,8 +8,8 @@ COPY . .
 RUN chmod g+w . && \
     git config --global --add safe.directory "$PWD"
 
-RUN GOFLAGS="" go build ./cmd/clusterlifecycle-state-metrics; \
-    GOFLAGS="" go test -covermode=atomic -coverpkg=github.com/stolostron/clusterlifecycle-state-metrics/pkg/... \
+RUN CGO_ENABLED=1 GOEXPERIMENT=strictfipsruntime GOFLAGS="" go build ./cmd/clusterlifecycle-state-metrics; \
+    CGO_ENABLED=1 GOEXPERIMENT=strictfipsruntime GOFLAGS="" go test -covermode=atomic -coverpkg=github.com/stolostron/clusterlifecycle-state-metrics/pkg/... \
     -c -tags testrunmain ./cmd/clusterlifecycle-state-metrics -o clusterlifecycle-state-metrics-coverage
 
 FROM registry.access.redhat.com/ubi9/ubi-minimal:latest
