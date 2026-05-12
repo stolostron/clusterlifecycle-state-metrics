@@ -1,18 +1,11 @@
-approvers:
-- itdove
-- jamestalton
-- leena-jawale
-- jnpacker
-- hanqiuzh
-- chrisahl
-- haoqing0110
-- xuezhaojun
 reviewers:
-- itdove
-- jamestalton
-- leena-jawale
-- jnpacker
-- hanqiuzh
-- chrisahl
-- haoqing0110
-- xuezhaojun
+- dhaiducek
+- tesshuflower
+- rokej
+- mikeshng
+
+approvers:
+- dhaiducek
+- tesshuflower
+- rokej
+- mikeshng
