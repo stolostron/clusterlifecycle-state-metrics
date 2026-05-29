@@ -12,7 +12,7 @@ require (
 	github.com/stolostron/applier v0.0.0-20220328110401-26b0ea4f8e1e
 	github.com/stolostron/cluster-lifecycle-api v0.0.0-20260330032750-43755d6ceb09
 	github.com/stolostron/library-go v0.0.0-20220328023725-63d77a3ad428
-	golang.org/x/net v0.54.0
+	golang.org/x/net v0.55.0
 	k8s.io/api v0.35.3
 	k8s.io/apimachinery v0.35.3
 	k8s.io/client-go v0.35.3
