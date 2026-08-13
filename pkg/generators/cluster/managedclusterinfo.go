@@ -45,6 +45,7 @@ var (
 	descClusterInfoHelp          = "Managed cluster information"
 	descClusterInfoDefaultLabels = []string{"hub_cluster_id",
 		"managed_cluster_id",
+		"managed_cluster_name",
 		"vendor",
 		"cloud",
 		"service_name",
@@ -101,6 +102,7 @@ product=%s`,
 			}
 			labelsValues := []string{hubClusterID,
 				clusterID,
+				mc.GetName(),
 				kubeVendor,
 				cloudVendor,
 				serviceName,
