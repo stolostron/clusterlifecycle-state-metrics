@@ -17,11 +17,10 @@ limitations under the License.
 package spec3
 
 import (
-	"encoding/json"
+	"encoding/json/jsontext"
+	jsonv2 "encoding/json/v2"
 
-	"github.com/go-openapi/swag"
 	"k8s.io/kube-openapi/pkg/internal"
-	jsonv2 "k8s.io/kube-openapi/pkg/internal/third_party/go-json-experiment/json"
 	"k8s.io/kube-openapi/pkg/validation/spec"
 )
 
@@ -35,34 +34,30 @@ type Operation struct {
 
 // MarshalJSON is a custom marshal function that knows how to encode Operation as JSON
 func (o *Operation) MarshalJSON() ([]byte, error) {
-	b1, err := json.Marshal(o.OperationProps)
-	if err != nil {
-		return nil, err
+	return internal.DeterministicMarshal(o)
+}
+
+func (o *Operation) MarshalJSONTo(enc *jsontext.Encoder) error {
+	var x struct {
+		Extensions     spec.Extensions        `json:",embed"`
+		OperationProps operationPropsOmitZero `json:",embed"`
 	}
-	b2, err := json.Marshal(o.VendorExtensible)
-	if err != nil {
-		return nil, err
-	}
-	return swag.ConcatJSON(b1, b2), nil
+	x.Extensions = internal.SanitizeExtensions(o.Extensions)
+	x.OperationProps = operationPropsOmitZero(o.OperationProps)
+	return jsonv2.MarshalEncode(enc, x)
 }
 
 // UnmarshalJSON hydrates this items instance with the data from JSON
 func (o *Operation) UnmarshalJSON(data []byte) error {
-	if internal.UseOptimizedJSONUnmarshalingV3 {
-		return jsonv2.Unmarshal(data, o)
-	}
-	if err := json.Unmarshal(data, &o.OperationProps); err != nil {
-		return err
-	}
-	return json.Unmarshal(data, &o.VendorExtensible)
+	return jsonv2.Unmarshal(data, o)
 }
 
-func (o *Operation) UnmarshalNextJSON(opts jsonv2.UnmarshalOptions, dec *jsonv2.Decoder) error {
+func (o *Operation) UnmarshalJSONFrom(dec *jsontext.Decoder) error {
 	var x struct {
-		spec.Extensions
+		Extensions spec.Extensions `json:",embed"`
 		OperationProps
 	}
-	if err := opts.UnmarshalNext(dec, &x); err != nil {
+	if err := jsonv2.UnmarshalDecode(dec, &x); err != nil {
 		return err
 	}
 	o.Extensions = internal.SanitizeExtensions(x.Extensions)
@@ -94,4 +89,18 @@ type OperationProps struct {
 	SecurityRequirement []map[string][]string `json:"security,omitempty"`
 	// Servers contains an alternative server array to service this operation
 	Servers []*Server `json:"servers,omitempty"`
+}
+
+type operationPropsOmitZero struct {
+	Tags                []string               `json:"tags,omitempty"`
+	Summary             string                 `json:"summary,omitempty"`
+	Description         string                 `json:"description,omitempty"`
+	ExternalDocs        *ExternalDocumentation `json:"externalDocs,omitzero"`
+	OperationId         string                 `json:"operationId,omitempty"`
+	Parameters          []*Parameter           `json:"parameters,omitempty"`
+	RequestBody         *RequestBody           `json:"requestBody,omitzero"`
+	Responses           *Responses             `json:"responses,omitzero"`
+	Deprecated          bool                   `json:"deprecated,omitzero"`
+	SecurityRequirement []map[string][]string  `json:"security,omitempty"`
+	Servers             []*Server              `json:"servers,omitempty"`
 }

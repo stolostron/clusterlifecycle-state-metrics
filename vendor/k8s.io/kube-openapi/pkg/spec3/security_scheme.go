@@ -18,8 +18,12 @@ package spec3
 
 import (
 	"encoding/json"
+	"encoding/json/jsontext"
+	jsonv2 "encoding/json/v2"
 
 	"github.com/go-openapi/swag"
+
+	"k8s.io/kube-openapi/pkg/internal"
 	"k8s.io/kube-openapi/pkg/validation/spec"
 )
 
@@ -32,19 +36,19 @@ type SecurityScheme struct {
 
 // MarshalJSON is a custom marshal function that knows how to encode SecurityScheme as JSON
 func (s *SecurityScheme) MarshalJSON() ([]byte, error) {
-	b1, err := json.Marshal(s.SecuritySchemeProps)
-	if err != nil {
-		return nil, err
+	return internal.DeterministicMarshal(s)
+}
+
+func (s *SecurityScheme) MarshalJSONTo(enc *jsontext.Encoder) error {
+	var x struct {
+		Ref                 string `json:"$ref,omitempty"`
+		SecuritySchemeProps `json:",embed"`
+		Extensions          spec.Extensions `json:",embed"`
 	}
-	b2, err := json.Marshal(s.VendorExtensible)
-	if err != nil {
-		return nil, err
-	}
-	b3, err := json.Marshal(s.Refable)
-	if err != nil {
-		return nil, err
-	}
-	return swag.ConcatJSON(b1, b2, b3), nil
+	x.Ref = s.Refable.Ref.String()
+	x.Extensions = internal.SanitizeExtensions(s.Extensions)
+	x.SecuritySchemeProps = s.SecuritySchemeProps
+	return jsonv2.MarshalEncode(enc, x)
 }
 
 // UnmarshalJSON hydrates this items instance with the data from JSON

@@ -17,11 +17,10 @@ limitations under the License.
 package spec3
 
 import (
-	"encoding/json"
+	"encoding/json/jsontext"
+	jsonv2 "encoding/json/v2"
 
-	"github.com/go-openapi/swag"
 	"k8s.io/kube-openapi/pkg/internal"
-	jsonv2 "k8s.io/kube-openapi/pkg/internal/third_party/go-json-experiment/json"
 	"k8s.io/kube-openapi/pkg/validation/spec"
 )
 
@@ -32,36 +31,29 @@ type Encoding struct {
 
 // MarshalJSON is a custom marshal function that knows how to encode Encoding as JSON
 func (e *Encoding) MarshalJSON() ([]byte, error) {
-	b1, err := json.Marshal(e.EncodingProps)
-	if err != nil {
-		return nil, err
+	return internal.DeterministicMarshal(e)
+}
+
+func (e *Encoding) MarshalJSONTo(enc *jsontext.Encoder) error {
+	var x struct {
+		EncodingProps encodingPropsOmitZero `json:",embed"`
+		Extensions    spec.Extensions       `json:",embed"`
 	}
-	b2, err := json.Marshal(e.VendorExtensible)
-	if err != nil {
-		return nil, err
-	}
-	return swag.ConcatJSON(b1, b2), nil
+	x.Extensions = internal.SanitizeExtensions(e.Extensions)
+	x.EncodingProps = encodingPropsOmitZero(e.EncodingProps)
+	return jsonv2.MarshalEncode(enc, x)
 }
 
 func (e *Encoding) UnmarshalJSON(data []byte) error {
-	if internal.UseOptimizedJSONUnmarshalingV3 {
-		return jsonv2.Unmarshal(data, e)
-	}
-	if err := json.Unmarshal(data, &e.EncodingProps); err != nil {
-		return err
-	}
-	if err := json.Unmarshal(data, &e.VendorExtensible); err != nil {
-		return err
-	}
-	return nil
+	return jsonv2.Unmarshal(data, e)
 }
 
-func (e *Encoding) UnmarshalNextJSON(opts jsonv2.UnmarshalOptions, dec *jsonv2.Decoder) error {
+func (e *Encoding) UnmarshalJSONFrom(dec *jsontext.Decoder) error {
 	var x struct {
-		spec.Extensions
+		Extensions spec.Extensions `json:",embed"`
 		EncodingProps
 	}
-	if err := opts.UnmarshalNext(dec, &x); err != nil {
+	if err := jsonv2.UnmarshalDecode(dec, &x); err != nil {
 		return err
 	}
 
@@ -81,4 +73,12 @@ type EncodingProps struct {
 	Explode bool `json:"explode,omitempty"`
 	// AllowReserved determines whether the parameter value SHOULD allow reserved characters, as defined by RFC3986
 	AllowReserved bool `json:"allowReserved,omitempty"`
+}
+
+type encodingPropsOmitZero struct {
+	ContentType   string             `json:"contentType,omitempty"`
+	Headers       map[string]*Header `json:"headers,omitempty"`
+	Style         string             `json:"style,omitempty"`
+	Explode       bool               `json:"explode,omitzero"`
+	AllowReserved bool               `json:"allowReserved,omitzero"`
 }
