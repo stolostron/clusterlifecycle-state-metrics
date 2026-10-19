@@ -1,15 +1,6 @@
-# dario.cat/mergo v1.0.1
-## explicit; go 1.13
-dario.cat/mergo
-# github.com/Masterminds/goutils v1.1.1
-## explicit
-github.com/Masterminds/goutils
 # github.com/Masterminds/semver/v3 v3.5.0
 ## explicit; go 1.21
 github.com/Masterminds/semver/v3
-# github.com/Masterminds/sprig/v3 v3.3.0
-## explicit; go 1.21
-github.com/Masterminds/sprig/v3
 # github.com/beorn7/perks v1.0.1
 ## explicit; go 1.11
 github.com/beorn7/perks/quantile
@@ -23,6 +14,8 @@ github.com/davecgh/go-spew/spew
 ## explicit; go 1.13
 github.com/emicklei/go-restful/v3
 github.com/emicklei/go-restful/v3/log
+# github.com/evanphx/json-patch v4.12.0+incompatible
+## explicit
 # github.com/evanphx/json-patch/v5 v5.9.11
 ## explicit; go 1.18
 github.com/evanphx/json-patch/v5
@@ -34,9 +27,6 @@ github.com/fsnotify/fsnotify/internal
 # github.com/fxamacker/cbor/v2 v2.9.4
 ## explicit; go 1.20
 github.com/fxamacker/cbor/v2
-# github.com/ghodss/yaml v1.0.1-0.20220118164431-d8423dcdf344
-## explicit
-github.com/ghodss/yaml
 # github.com/go-logr/logr v1.4.4
 ## explicit; go 1.18
 github.com/go-logr/logr
@@ -118,18 +108,9 @@ github.com/google/pprof/profile
 # github.com/google/uuid v1.6.0
 ## explicit
 github.com/google/uuid
-# github.com/huandu/xstrings v1.6.0
-## explicit; go 1.12
-github.com/huandu/xstrings
 # github.com/json-iterator/go v1.1.12
 ## explicit; go 1.12
 github.com/json-iterator/go
-# github.com/mitchellh/copystructure v1.2.0
-## explicit; go 1.15
-github.com/mitchellh/copystructure
-# github.com/mitchellh/reflectwalk v1.0.2
-## explicit
-github.com/mitchellh/reflectwalk
 # github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd
 ## explicit
 github.com/modern-go/concurrent
@@ -234,20 +215,9 @@ github.com/prometheus/common/model
 github.com/prometheus/procfs
 github.com/prometheus/procfs/internal/fs
 github.com/prometheus/procfs/internal/parsers
-# github.com/shopspring/decimal v1.4.0
-## explicit; go 1.10
-github.com/shopspring/decimal
-# github.com/spf13/cast v1.10.0
-## explicit; go 1.21.0
-github.com/spf13/cast
-github.com/spf13/cast/internal
 # github.com/spf13/pflag v1.0.10
 ## explicit; go 1.12
 github.com/spf13/pflag
-# github.com/stolostron/applier v0.0.0-20220328110401-26b0ea4f8e1e
-## explicit; go 1.17
-github.com/stolostron/applier/pkg/applier
-github.com/stolostron/applier/pkg/templateprocessor
 # github.com/stolostron/cluster-lifecycle-api v0.0.0-20260330032750-43755d6ceb09
 ## explicit; go 1.25.0
 github.com/stolostron/cluster-lifecycle-api/clusterinfo/v1beta1
@@ -258,7 +228,6 @@ github.com/stolostron/library-go/pkg/apis/meta/v1/crd
 github.com/stolostron/library-go/pkg/apis/meta/v1/deployment
 github.com/stolostron/library-go/pkg/client
 github.com/stolostron/library-go/pkg/config
-github.com/stolostron/library-go/pkg/templateprocessor
 # github.com/x448/float16 v0.8.4
 ## explicit; go 1.11
 github.com/x448/float16
@@ -282,12 +251,6 @@ go.yaml.in/yaml/v2
 # go.yaml.in/yaml/v3 v3.0.5
 ## explicit; go 1.16
 go.yaml.in/yaml/v3
-# golang.org/x/crypto v0.58.0
-## explicit; go 1.26.0
-golang.org/x/crypto/bcrypt
-golang.org/x/crypto/blowfish
-golang.org/x/crypto/pbkdf2
-golang.org/x/crypto/scrypt
 # golang.org/x/mod v0.42.0
 ## explicit; go 1.26.0
 golang.org/x/mod/semver
@@ -405,9 +368,6 @@ gopkg.in/evanphx/json-patch.v4
 # gopkg.in/inf.v0 v0.9.1
 ## explicit
 gopkg.in/inf.v0
-# gopkg.in/yaml.v2 v2.4.0
-## explicit; go 1.15
-gopkg.in/yaml.v2
 # k8s.io/api v0.35.9
 ## explicit; go 1.25.0
 k8s.io/api/admission/v1

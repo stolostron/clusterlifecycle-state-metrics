@@ -161,11 +161,10 @@ install-fake-crds:
 .PHONY: kind-cluster-setup
 kind-cluster-setup: install-fake-crds
 	@echo installing fake resources
-	kubectl apply -f test/functional/resources/namespace_osm.yaml
-	kubectl apply -f test/functional/resources/namespace_ocm.yaml
+	-kubectl create namespace multicluster-engine
+	-kubectl create namespace openshift-monitoring
 	kubectl apply -f test/functional/resources/clusterversions_cr.yaml
 	@echo "Creating TLS certificate for HTTPS endpoints"
-	@kubectl create namespace multicluster-engine --dry-run=client -o yaml | kubectl apply -f -
 	@openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
 		-keyout /tmp/tls.key -out /tmp/tls.crt \
 		-subj "/CN=clusterlifecycle-state-metrics/O=clusterlifecycle-state-metrics" \
@@ -178,8 +177,12 @@ kind-cluster-setup: install-fake-crds
 	@echo "Enable SSL passthrough for TLS tests"
 	kubectl patch deployment ingress-nginx-controller -n ingress-nginx --type='json' -p='[{"op": "add", "path": "/spec/template/spec/containers/0/args/-", "value": "--enable-ssl-passthrough"}]'
 	@echo "Wait ingress NGNIX ready"
-	kubectl wait --namespace ingress-nginx --for=condition=ready pod --selector=app.kubernetes.io/component=controller --timeout=180s
+	kubectl rollout status deployment/ingress-nginx-controller -n ingress-nginx --timeout=180s
 	kubectl delete ValidatingWebhookCOnfiguration ingress-nginx-admission
+	-kubectl create namespace local-cluster
+	-kubectl create namespace cluster-import
+	-kubectl create namespace cluster-hive
+	kubectl apply -f test/functional/resources/cr
 
 .PHONY: functional-test
 functional-test:
