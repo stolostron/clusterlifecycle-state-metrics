@@ -146,16 +146,7 @@ undeploy:
 .PHONY: install-fake-crds
 install-fake-crds:
 	@echo installing crds
-	kubectl apply -f test/functional/resources/crds/certificates_crd.yaml
-	kubectl apply -f test/functional/resources/crds/clusterdeployments_crd.yaml
-	kubectl apply -f test/functional/resources/crds/issuers_crd.yaml
-	kubectl apply -f test/functional/resources/crds/managedclusters_crd.yaml
-	kubectl apply -f test/functional/resources/crds/managedclusteraddons_crd.yaml
-	kubectl apply -f test/functional/resources/crds/manifestworks_crd.yaml
-	kubectl apply -f test/functional/resources/crds/clusterversions_crd.yaml
-	kubectl apply -f test/functional/resources/crds/apiservers_crd.yaml
-	kubectl apply -f test/functional/resources/crds/servicemonitor_crd.yaml
-	kubectl apply -f test/functional/resources/crds/prometheusrules_crd.yaml
+	kubectl apply -f test/functional/resources/crds/
 	@sleep 10 
 
 .PHONY: kind-cluster-setup

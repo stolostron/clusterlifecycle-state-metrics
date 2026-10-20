@@ -9,15 +9,17 @@ package functional
 import (
 	"context"
 	"crypto/tls"
+	"errors"
 	"fmt"
+	"net"
 	"net/http"
+	"strings"
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	configv1 "github.com/openshift/api/config/v1"
 	configclient "github.com/openshift/client-go/config/clientset/versioned"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/klog"
 
@@ -25,18 +27,22 @@ import (
 )
 
 const (
-	metricsHTTPSPort    = "https://metrics.localhost/metrics"
-	telemetryHTTPSPort  = "https://telemetry.localhost/metrics"
-	apiServerName       = "cluster"
-	podRestartTimeout   = 120 * time.Second
-	tlsHandshakeTimeout = 30 * time.Second
+	apiServerName     = "cluster"
+	metricsNamespace  = "multicluster-engine"
+	metricsAppLabel   = "app=clusterlifecycle-state-metrics"
+	metricsContainer  = "clusterlifecycle-state-metrics"
+	podRestartTimeout = 120 * time.Second
 )
 
 var _ = Describe("TLS Profile Functional Tests", func() {
+	const (
+		metricsHTTPSPort    = "https://metrics.localhost/metrics"
+		telemetryHTTPSPort  = "https://telemetry.localhost/metrics"
+		tlsHandshakeTimeout = 30 * time.Second
+	)
+
 	var (
-		configClient     configclient.Interface
-		originalProfile  *configv1.TLSSecurityProfile
-		apiServerExists  bool
+		configClient configclient.Interface
 	)
 
 	BeforeEach(func() {
@@ -46,40 +52,20 @@ var _ = Describe("TLS Profile Functional Tests", func() {
 
 		configClient, err = configclient.NewForConfig(config)
 		Expect(err).To(BeNil())
-
-		// Check if running on OpenShift and save original profile
-		apiServer, err := configClient.ConfigV1().APIServers().Get(context.TODO(), apiServerName, metav1.GetOptions{})
-		if err != nil {
-			if apierrors.IsNotFound(err) {
-				apiServerExists = false
-				klog.Info("APIServer CR not found - will create one for testing")
-			} else {
-				Fail(fmt.Sprintf("Failed to get APIServer CR: %v", err))
-			}
-		} else {
-			apiServerExists = true
-			if apiServer.Spec.TLSSecurityProfile != nil {
-				originalProfile = apiServer.Spec.TLSSecurityProfile.DeepCopy()
-			}
-			klog.Infof("Found existing APIServer CR with TLS profile: %v", apiServer.Spec.TLSSecurityProfile)
-		}
 	})
 
 	AfterEach(func() {
-		if apiServerExists && originalProfile != nil {
+		apiServer, err := configClient.ConfigV1().APIServers().Get(context.TODO(), apiServerName, metav1.GetOptions{})
+		if err != nil {
+			Fail(fmt.Sprintf("Failed to get APIServer CR: %v", err))
+		}
+		if apiServer.Spec.TLSSecurityProfile != nil {
+			previous, err := currentMetricsContainer()
+			Expect(err).To(BeNil())
 			// Restore original TLS profile
-			apiServer, err := configClient.ConfigV1().APIServers().Get(context.TODO(), apiServerName, metav1.GetOptions{})
-			if err == nil {
-				apiServer.Spec.TLSSecurityProfile = originalProfile
-				_, err = configClient.ConfigV1().APIServers().Update(context.TODO(), apiServer, metav1.UpdateOptions{})
-				if err != nil {
-					klog.Warningf("Failed to restore original TLS profile: %v", err)
-				} else {
-					klog.Info("Restored original TLS profile")
-					// Wait for pod restart with original settings
-					time.Sleep(10 * time.Second)
-				}
-			}
+			err = updateAPIServerProfile(configClient, nil)
+			Expect(err).To(BeNil())
+			waitForMetricsPodRestart(previous)
 		}
 	})
 
@@ -90,11 +76,14 @@ var _ = Describe("TLS Profile Functional Tests", func() {
 				Type: configv1.TLSProfileIntermediateType,
 			}
 
-			err := createOrUpdateAPIServerProfile(configClient, intermediateProfile)
+			previous, err := currentMetricsContainer()
+			Expect(err).To(BeNil())
+
+			err = updateAPIServerProfile(configClient, intermediateProfile)
 			Expect(err).To(BeNil())
 
 			klog.Info("Set TLS profile to Intermediate (TLS 1.2), waiting for pod restart...")
-			time.Sleep(15 * time.Second)
+			waitForMetricsPodRestart(previous)
 
 			// Verify both HTTPS endpoints honor the TLS 1.2 minimum
 			By("Checking metrics endpoint on port 8443")
@@ -106,6 +95,11 @@ var _ = Describe("TLS Profile Functional Tests", func() {
 			Eventually(func() error {
 				return verifyTLSEndpoint(telemetryHTTPSPort, tls.VersionTLS12, tls.VersionTLS13)
 			}, tlsHandshakeTimeout, 2*time.Second).Should(Succeed())
+
+			By("Verifying TLS 1.2 clients are accepted")
+			Eventually(func() error {
+				return verifyTLSResponse(metricsHTTPSPort, tls.VersionTLS12, true)
+			}, tlsHandshakeTimeout, 2*time.Second).Should(Succeed())
 		})
 
 		It("Should apply Modern TLS profile (TLS 1.3) to HTTPS endpoints", func() {
@@ -114,11 +108,14 @@ var _ = Describe("TLS Profile Functional Tests", func() {
 				Type: configv1.TLSProfileModernType,
 			}
 
-			err := createOrUpdateAPIServerProfile(configClient, modernProfile)
+			previous, err := currentMetricsContainer()
+			Expect(err).To(BeNil())
+
+			err = updateAPIServerProfile(configClient, modernProfile)
 			Expect(err).To(BeNil())
 
 			klog.Info("Set TLS profile to Modern (TLS 1.3), waiting for pod restart...")
-			time.Sleep(15 * time.Second)
+			waitForMetricsPodRestart(previous)
 
 			// Verify both HTTPS endpoints require TLS 1.3
 			By("Checking metrics endpoint requires TLS 1.3")
@@ -131,10 +128,10 @@ var _ = Describe("TLS Profile Functional Tests", func() {
 				return verifyTLSEndpoint(telemetryHTTPSPort, tls.VersionTLS13, tls.VersionTLS13)
 			}, tlsHandshakeTimeout, 2*time.Second).Should(Succeed())
 
-			// Verify TLS 1.2 clients are rejected
 			By("Verifying TLS 1.2 clients are rejected")
-			err = verifyTLSRejected(metricsHTTPSPort, tls.VersionTLS12)
-			Expect(err).To(HaveOccurred(), "TLS 1.2 should be rejected when Modern profile is active")
+			Eventually(func() error {
+				return verifyTLSResponse(metricsHTTPSPort, tls.VersionTLS12, false)
+			}, tlsHandshakeTimeout, 2*time.Second).Should(Succeed())
 		})
 
 		It("Should apply Custom TLS profile with specific settings", func() {
@@ -152,11 +149,14 @@ var _ = Describe("TLS Profile Functional Tests", func() {
 				},
 			}
 
-			err := createOrUpdateAPIServerProfile(configClient, customProfile)
+			previous, err := currentMetricsContainer()
+			Expect(err).To(BeNil())
+
+			err = updateAPIServerProfile(configClient, customProfile)
 			Expect(err).To(BeNil())
 
 			klog.Info("Set TLS profile to Custom (TLS 1.2 with specific ciphers), waiting for pod restart...")
-			time.Sleep(15 * time.Second)
+			waitForMetricsPodRestart(previous)
 
 			// Verify endpoints use TLS 1.2 minimum
 			By("Checking custom TLS settings are applied")
@@ -172,6 +172,11 @@ var _ = Describe("TLS Profile Functional Tests", func() {
 					tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
 				})
 			}, tlsHandshakeTimeout, 2*time.Second).Should(Succeed())
+
+			By("Verifying TLS 1.2 clients are accepted")
+			Eventually(func() error {
+				return verifyTLSResponse(metricsHTTPSPort, tls.VersionTLS12, true)
+			}, tlsHandshakeTimeout, 2*time.Second).Should(Succeed())
 		})
 	})
 
@@ -182,59 +187,58 @@ var _ = Describe("TLS Profile Functional Tests", func() {
 				Type: configv1.TLSProfileIntermediateType,
 			}
 
-			err := createOrUpdateAPIServerProfile(configClient, intermediateProfile)
+			previous, err := currentMetricsContainer()
 			Expect(err).To(BeNil())
+
+			err = updateAPIServerProfile(configClient, intermediateProfile)
+			Expect(err).To(BeNil())
+			waitForMetricsPodRestart(previous)
 
 			klog.Info("Set initial profile to Intermediate, waiting for stability...")
-			time.Sleep(15 * time.Second)
 
 			// Verify Intermediate is active
-			err = verifyTLSEndpoint(metricsHTTPSPort, tls.VersionTLS12, tls.VersionTLS13)
-			Expect(err).To(BeNil())
+			Eventually(func() error {
+				return verifyTLSEndpoint(metricsHTTPSPort, tls.VersionTLS12, tls.VersionTLS13)
+			}, podRestartTimeout, 5*time.Second).Should(Succeed())
+
+			By("Verifying TLS 1.2 clients are accepted")
+			Eventually(func() error {
+				return verifyTLSResponse(metricsHTTPSPort, tls.VersionTLS12, true)
+			}, tlsHandshakeTimeout, 2*time.Second).Should(Succeed())
 
 			// Change to Modern profile
 			modernProfile := &configv1.TLSSecurityProfile{
 				Type: configv1.TLSProfileModernType,
 			}
 
-			klog.Info("Changing TLS profile to Modern...")
-			err = createOrUpdateAPIServerProfile(configClient, modernProfile)
+			previous, err = currentMetricsContainer()
 			Expect(err).To(BeNil())
 
-			// Pod should restart and apply new profile
-			klog.Info("Waiting for pod to restart with new profile...")
-			time.Sleep(20 * time.Second)
+			klog.Info("Changing TLS profile to Modern...")
+			err = updateAPIServerProfile(configClient, modernProfile)
+			Expect(err).To(BeNil())
+			waitForMetricsPodRestart(previous)
 
 			// Verify Modern profile is now active (TLS 1.3)
 			By("Verifying Modern profile is active after change")
 			Eventually(func() error {
 				return verifyTLSEndpoint(metricsHTTPSPort, tls.VersionTLS13, tls.VersionTLS13)
 			}, podRestartTimeout, 5*time.Second).Should(Succeed())
+
+			By("Verifying TLS 1.2 clients are rejected")
+			Eventually(func() error {
+				return verifyTLSResponse(metricsHTTPSPort, tls.VersionTLS12, false)
+			}, tlsHandshakeTimeout, 2*time.Second).Should(Succeed())
 		})
 	})
 })
 
-// createOrUpdateAPIServerProfile creates or updates the APIServer CR with the specified TLS profile
-func createOrUpdateAPIServerProfile(configClient configclient.Interface, profile *configv1.TLSSecurityProfile) error {
+// updateAPIServerProfile updates the APIServer CR with the specified TLS profile
+func updateAPIServerProfile(configClient configclient.Interface, profile *configv1.TLSSecurityProfile) error {
 	apiServer, err := configClient.ConfigV1().APIServers().Get(context.TODO(), apiServerName, metav1.GetOptions{})
 	if err != nil {
-		if apierrors.IsNotFound(err) {
-			// Create new APIServer CR
-			apiServer = &configv1.APIServer{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: apiServerName,
-				},
-				Spec: configv1.APIServerSpec{
-					TLSSecurityProfile: profile,
-				},
-			}
-			_, err = configClient.ConfigV1().APIServers().Create(context.TODO(), apiServer, metav1.CreateOptions{})
-			return err
-		}
 		return err
 	}
-
-	// Update existing APIServer CR
 	apiServer.Spec.TLSSecurityProfile = profile
 	_, err = configClient.ConfigV1().APIServers().Update(context.TODO(), apiServer, metav1.UpdateOptions{})
 	return err
@@ -290,8 +294,28 @@ func verifyTLSEndpoint(endpoint string, minVersion, maxVersion uint16) error {
 	return nil
 }
 
-// verifyTLSRejected verifies that a connection with the specified TLS version is rejected
-func verifyTLSRejected(endpoint string, tlsVersion uint16) error {
+func tlsHandshakeRejected(err error) bool {
+	var header tls.RecordHeaderError
+	if errors.As(err, &header) {
+		return true
+	}
+
+	var op *net.OpError
+	if errors.As(err, &op) && op.Op == "remote error" {
+		return true
+	}
+
+	// The client can also fail locally, before an alert arrives:
+	// "tls: server selected unsupported protocol version 303".
+	message := err.Error()
+	return strings.Contains(message, "tls: protocol version") ||
+		strings.Contains(message, "tls: handshake failure") ||
+		strings.Contains(message, "tls: server selected unsupported")
+}
+
+// verifyTLSResponse verifies that a connection with the specified TLS version
+// is accepted or rejected, and that the HTTP response agrees with the error.
+func verifyTLSResponse(endpoint string, tlsVersion uint16, accept bool) error {
 	// #nosec G402 -- InsecureSkipVerify and low TLS versions are acceptable in tests
 	tlsConfig := &tls.Config{
 		InsecureSkipVerify: true,
@@ -306,11 +330,38 @@ func verifyTLSRejected(endpoint string, tlsVersion uint16) error {
 		Timeout: 10 * time.Second,
 	}
 
-	_, err := client.Get(endpoint)
+	response, err := client.Get(endpoint)
+	if response != nil {
+		defer response.Body.Close()
+	}
+
+	// http.Client returns a response with a nil error, or an error with a nil
+	// response. A TLS handshake failure is the latter. Both or neither means
+	// the result cannot be attributed to the handshake.
+	if err == nil && response == nil {
+		return fmt.Errorf("TLS version 0x%04x returned neither a response nor an error", tlsVersion)
+	}
+	if err != nil && response != nil {
+		return fmt.Errorf("TLS version 0x%04x returned both status %d and error: %v", tlsVersion, response.StatusCode, err)
+	}
+
+	if accept {
+		if err != nil {
+			return fmt.Errorf("expected TLS handshake to succeed with version 0x%04x, but it failed: %v", tlsVersion, err)
+		}
+		if response.StatusCode != http.StatusOK {
+			return fmt.Errorf("expected TLS handshake to succeed with version 0x%04x, but it returned status %d", tlsVersion, response.StatusCode)
+		}
+		klog.Infof("✓ TLS version 0x%04x correctly accepted", tlsVersion)
+		return nil
+	}
+
 	if err == nil {
 		return fmt.Errorf("expected TLS handshake to fail with version 0x%04x, but it succeeded", tlsVersion)
 	}
-
+	if !tlsHandshakeRejected(err) {
+		return fmt.Errorf("TLS version 0x%04x failed before the handshake: %w", tlsVersion, err)
+	}
 	klog.Infof("✓ TLS version 0x%04x correctly rejected: %v", tlsVersion, err)
 	return nil
 }
@@ -397,4 +448,85 @@ func verifyTLSCipher(endpoint string, allowedCiphers []uint16) error {
 
 	klog.Infof("Server supports %d/%d allowed ciphers", len(supportedCiphers), len(allowedCiphers))
 	return nil
+}
+
+type metricsPodState struct {
+	name        string
+	uid         string
+	containerID string
+	ready       bool
+	running     bool
+	detail      string
+}
+
+// waitForMetricsPodRestart waits until the metrics container has exited and a
+// replacement is ready. The process exits on a TLS profile change so it can
+// reload TLS config. Kubelet backs off those restarts (10s, 20s, 40s, ... up
+// to 300s) and this suite changes the profile often enough to exceed
+// podRestartTimeout. Once the same pod's container has exited, delete it so
+// the deployment starts a new pod immediately.
+func waitForMetricsPodRestart(previous metricsPodState) {
+	replacedPod := false
+	Eventually(func(g Gomega) {
+		current, err := currentMetricsContainer()
+		if err == nil && !replacedPod && current.uid == previous.uid && !current.running {
+			klog.Infof("Metrics container exited (%s); deleting pod to avoid kubelet restart backoff", current.detail)
+			err := kubeClient.CoreV1().Pods(metricsNamespace).Delete(context.TODO(), current.name, metav1.DeleteOptions{})
+			g.Expect(err).ToNot(HaveOccurred())
+			replacedPod = true
+		}
+		g.Expect(err).To(BeNil())
+		g.Expect(current.ready).To(BeTrue(), "metrics pod should be ready: %s", current.detail)
+		g.Expect(current.containerID).NotTo(Equal(previous.containerID), "metrics container was not replaced: %s", current.detail)
+	}, podRestartTimeout, 5*time.Second).Should(Succeed())
+}
+
+func currentMetricsContainer() (metricsPodState, error) {
+	var state metricsPodState
+	podList, err := kubeClient.CoreV1().Pods(metricsNamespace).List(context.TODO(), metav1.ListOptions{
+		LabelSelector: metricsAppLabel,
+	})
+	if err != nil {
+		return state, err
+	}
+
+	selected := -1
+	for i := range podList.Items {
+		if podList.Items[i].DeletionTimestamp != nil {
+			continue
+		}
+		if selected >= 0 {
+			return state, fmt.Errorf("found multiple pods in namespace %s with label %s", metricsNamespace, metricsAppLabel)
+		}
+		selected = i
+	}
+	if selected < 0 {
+		return state, fmt.Errorf("no pod found in namespace %s with label %s", metricsNamespace, metricsAppLabel)
+	}
+
+	pod := &podList.Items[selected]
+	for _, status := range pod.Status.ContainerStatuses {
+		if status.Name != metricsContainer {
+			continue
+		}
+		waiting := ""
+		if status.State.Waiting != nil {
+			waiting = status.State.Waiting.Reason
+		}
+		terminated := ""
+		if status.State.Terminated != nil {
+			terminated = fmt.Sprintf("%s/%d", status.State.Terminated.Reason, status.State.Terminated.ExitCode)
+		}
+		return metricsPodState{
+			name:        pod.Name,
+			uid:         string(pod.UID),
+			containerID: status.ContainerID,
+			ready:       status.Ready && status.State.Running != nil,
+			running:     status.State.Running != nil,
+			detail: fmt.Sprintf("pod=%s containerID=%s ready=%t restarts=%d waiting=%s terminated=%s",
+				pod.Name, status.ContainerID, status.Ready, status.RestartCount, waiting, terminated),
+		}, nil
+	}
+
+	return state, fmt.Errorf("container %s not found in pod %s/%s", metricsContainer, pod.Namespace, pod.Name)
 }
