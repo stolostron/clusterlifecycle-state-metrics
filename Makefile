@@ -187,7 +187,7 @@ kind-cluster-setup: install-fake-crds
 .PHONY: functional-test
 functional-test:
 	@echo executing test
-	ginkgo -tags functional -v --slow-spec-threshold=30s test/functional -- -v=5
+	ginkgo -tags functional -v test/functional -- -v=5
 
 .PHONY: functional-test-full
 # functional-test-full: 

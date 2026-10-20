@@ -17,25 +17,25 @@ export FUNCT_TEST_COVERAGE="${CURR_FOLDER_PATH}/../test/functional/coverage"
 
 if ! which kubectl > /dev/null; then
     echo "installing kubectl"
-    curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/$(uname | awk '{print tolower($0)}')/amd64/kubectl && chmod +x kubectl && sudo mv kubectl /usr/local/bin/
+    curl -O "https://dl.k8s.io/release/$(curl -s https://dl.k8s.io/release/stable.txt)/bin/$(uname | awk '{print tolower($0)}')/amd64/kubectl" && chmod +x kubectl && sudo mv kubectl /usr/local/bin/
 fi
 if ! which kind > /dev/null; then
     echo "installing kind"
-    curl -Lo ./kind https://github.com/kubernetes-sigs/kind/releases/download/v0.16.0/kind-$(uname)-amd64
+    curl -o ./kind "https://github.com/kubernetes-sigs/kind/releases/download/v0.33.0/kind-$(uname)-amd64"
     chmod +x ./kind
     sudo mv ./kind /usr/local/bin/kind
 fi
 if ! which ginkgo > /dev/null; then
     echo "Installing ginkgo ..."
-    go install github.com/onsi/ginkgo/v2/ginkgo@v2.9.1
+    go install "github.com/onsi/ginkgo/v2/ginkgo@$(go list -mod=readonly -m all | awk '/github.com\/onsi\/ginkgo\/v/ {print $2}')"
 fi
 if ! which gocovmerge > /dev/null; then
     echo "Installing gocovmerge..."
-    go install github.com/alexfalkowski/gocovmerge/v2@v2.14.0
+    go install github.com/alexfalkowski/gocovmerge/v2@v2.33.0
 fi
 if ! which helm > /dev/null; then
     echo "Installing helm..."
-    curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+    curl -fsS -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-4
     chmod 700 get_helm.sh
     ./get_helm.sh
     rm get_helm.sh
@@ -122,8 +122,8 @@ for dir in overlays/test/* ; do
   set +e
   make functional-test
   ERR=$?
-  if [ $ERR != 0 ]; then
-    POD_NAMES=`kubectl get pods -n multicluster-engine -oname | grep clusterlifecycle-state-metrics`
+  if [[ $ERR != 0 ]]; then
+    POD_NAMES=$(kubectl get pods -n multicluster-engine -oname | grep clusterlifecycle-state-metrics)
     for p in $POD_NAMES; do
       echo "-----------------------${p}------------------------------"
       echo "$p" | xargs -L 1 kubectl logs -n multicluster-engine
@@ -148,7 +148,7 @@ sleep 20
 
 ls $FUNCT_TEST_COVERAGE
 
-if [ `find $FUNCT_TEST_COVERAGE -prune -empty 2>/dev/null` ]; then
+if [[ "$(find $FUNCT_TEST_COVERAGE -prune -empty 2>/dev/null)" ]]; then
   echo "no coverage files found. skipping"
 else
   echo "merging coverage files"
