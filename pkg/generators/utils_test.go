@@ -153,6 +153,42 @@ func Test_BuildStatusConditionMetricFamily(t *testing.T) {
 	}
 }
 
+func TestBuildStatusConditionMetricFamilyDoesNotAliasCallerSlices(t *testing.T) {
+	keys := make([]string, 1, 4)
+	keys[0] = "name"
+	values := make([]string, 1, 4)
+	values[0] = "cluster1"
+
+	family := BuildStatusConditionMetricFamily(
+		[]metav1.Condition{{Type: "Available", Status: metav1.ConditionTrue}},
+		keys,
+		values,
+		nil,
+		func(string) []metav1.ConditionStatus {
+			return []metav1.ConditionStatus{metav1.ConditionTrue, metav1.ConditionFalse}
+		},
+	)
+
+	if len(keys) != 1 || keys[0] != "name" {
+		t.Fatalf("caller label keys were mutated: %#v", keys)
+	}
+	if len(values) != 1 || values[0] != "cluster1" {
+		t.Fatalf("caller label values were mutated: %#v", values)
+	}
+
+	wantStatuses := []string{"true", "false"}
+	if len(family.Metrics) != len(wantStatuses) {
+		t.Fatalf("got %d metrics, want %d", len(family.Metrics), len(wantStatuses))
+	}
+	for i, status := range wantStatuses {
+		got := family.Metrics[i].LabelValues
+		want := []string{"cluster1", "Available", status}
+		if !reflect.DeepEqual(got, want) {
+			t.Errorf("metric %d label values = %#v, want %#v", i, got, want)
+		}
+	}
+}
+
 type metricBuilder struct {
 	metric metric.Metric
 }

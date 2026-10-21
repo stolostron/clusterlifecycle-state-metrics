@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
+	promcollectors "github.com/prometheus/client_golang/prometheus/collectors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -56,6 +57,10 @@ const (
 	hubTypeStolostron       = "stolostron"
 
 	configMapName = "clusterlifecycle-state-metrics-config"
+
+	// Match controller-runtime's HTTP server: bound header reads so a client
+	// cannot hold a connection open without sending a request.
+	httpReadHeaderTimeout = 32 * time.Second
 )
 
 var (
@@ -80,7 +85,7 @@ func init() {
 
 	// init schema
 	_ = clientgoscheme.AddToScheme(scheme)
-	_ = workv1.AddToScheme(scheme)
+	_ = workv1.Install(scheme)
 }
 
 func (pl promLogger) Println(v ...interface{}) {
@@ -181,10 +186,10 @@ func start(opts *options.Options) {
 	if err := ocmMetricsRegistry.Register(collectors.ScrapeErrorTotalMetric); err != nil {
 		panic(err)
 	}
-	if err := ocmMetricsRegistry.Register(prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{})); err != nil {
+	if err := ocmMetricsRegistry.Register(promcollectors.NewProcessCollector(promcollectors.ProcessCollectorOpts{})); err != nil {
 		panic(err)
 	}
-	if err := ocmMetricsRegistry.Register(prometheus.NewGoCollector()); err != nil {
+	if err := ocmMetricsRegistry.Register(promcollectors.NewGoCollector()); err != nil {
 		panic(err)
 	}
 	var wg sync.WaitGroup
@@ -208,8 +213,6 @@ func start(opts *options.Options) {
 	wg.Wait()
 
 	klog.Info("Servers shut down, exiting...")
-	// Exit cleanly so Kubernetes can restart the pod
-	os.Exit(0)
 }
 
 func startControllers(opts *options.Options) {
@@ -324,9 +327,10 @@ func telemetryServer(
 		// Address to listen on for web interface and telemetry
 		listenAddress := net.JoinHostPort(host, strconv.Itoa(httpsPort))
 		httpsServer := &http.Server{
-			Addr:      listenAddress,
-			Handler:   mux,
-			TLSConfig: tlsConfig,
+			Addr:              listenAddress,
+			Handler:           mux,
+			TLSConfig:         tlsConfig,
+			ReadHeaderTimeout: httpReadHeaderTimeout,
 		}
 		servers = append(servers, httpsServer)
 
@@ -342,8 +346,9 @@ func telemetryServer(
 	// Address to listen on for web interface and telemetry
 	listenAddress := net.JoinHostPort(host, strconv.Itoa(httpPort))
 	httpServer := &http.Server{
-		Addr:    listenAddress,
-		Handler: mux,
+		Addr:              listenAddress,
+		Handler:           mux,
+		ReadHeaderTimeout: httpReadHeaderTimeout,
 	}
 	servers = append(servers, httpServer)
 
@@ -427,9 +432,10 @@ func serveMetrics(
 		// Address to listen on for web interface and telemetry
 		listenAddress := net.JoinHostPort(host, strconv.Itoa(httpsPort))
 		httpsServer := &http.Server{
-			Addr:      listenAddress,
-			Handler:   mux,
-			TLSConfig: tlsConfig,
+			Addr:              listenAddress,
+			Handler:           mux,
+			TLSConfig:         tlsConfig,
+			ReadHeaderTimeout: httpReadHeaderTimeout,
 		}
 		servers = append(servers, httpsServer)
 
@@ -445,8 +451,9 @@ func serveMetrics(
 	// Address to listen on for web interface and telemetry
 	listenAddress := net.JoinHostPort(host, strconv.Itoa(httpPort))
 	httpServer := &http.Server{
-		Addr:    listenAddress,
-		Handler: mux,
+		Addr:              listenAddress,
+		Handler:           mux,
+		ReadHeaderTimeout: httpReadHeaderTimeout,
 	}
 	servers = append(servers, httpServer)
 
@@ -524,7 +531,7 @@ func isTimestampMetricsEnabled(ctx context.Context, clientset *kubernetes.Client
 	}
 
 	// Get the ConfigMap
-	cm, err := clientset.CoreV1().ConfigMaps(namespace).Get(context.TODO(), configMapName, metav1.GetOptions{})
+	cm, err := clientset.CoreV1().ConfigMaps(namespace).Get(ctx, configMapName, metav1.GetOptions{})
 	if errors.IsNotFound(err) {
 		return false, nil
 	} else if err != nil {

@@ -102,7 +102,7 @@ func getClusterTimestamps(clusterName string, workStatus workv1.ManifestWorkStat
 }
 
 func getClusterTimestampsByFeedbackRules(feedbackValues []workv1.FeedbackValue) (map[string]float64, error) {
-	var status bool = false
+	status := false
 	var message, lastTransitionTime string
 	for _, fb := range feedbackValues {
 		if fb.Name == "ReadyToApply-status" && fb.Value.String != nil {

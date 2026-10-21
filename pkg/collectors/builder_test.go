@@ -6,7 +6,6 @@ package collectors
 import (
 	"bytes"
 	"context"
-	"os"
 	"reflect"
 	"testing"
 
@@ -15,16 +14,12 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/clientcmd"
-	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	koptions "k8s.io/kube-state-metrics/pkg/options"
 	"k8s.io/kube-state-metrics/pkg/whiteblacklist"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 
 	ocpclientfake "github.com/openshift/client-go/config/clientset/versioned/fake"
 	"k8s.io/client-go/kubernetes/fake"
-	kubeclientfake "k8s.io/client-go/kubernetes/fake"
 )
 
 var (
@@ -277,23 +272,11 @@ func TestBuilder_Build(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, _, err = envTest.ControlPlane.KubeCtl().Run("create", "ns", "imported-cluster")
+
+	ocpClient, err := ocpclient.NewForConfig(envTest.Config)
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	kubeconfigFile, err := os.CreateTemp("", "ut-kubeconfig-")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer os.Remove(kubeconfigFile.Name())
-
-	err = writeKubeconfigFile(envTest.Config, kubeconfigFile.Name())
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	ocpClient, _ := ocpclient.NewForConfig(envTest.Config)
 
 	version := &ocinfrav1.ClusterVersion{
 		ObjectMeta: metav1.ObjectMeta{
@@ -313,7 +296,6 @@ func TestBuilder_Build(t *testing.T) {
 
 	w, _ := whiteblacklist.New(map[string]struct{}{}, map[string]struct{}{})
 	type fields struct {
-		kubeconfig        string
 		namespaces        koptions.NamespaceList
 		ctx               context.Context
 		enabledCollectors []string
@@ -327,7 +309,6 @@ func TestBuilder_Build(t *testing.T) {
 		{
 			name: "no collector enabled",
 			fields: fields{
-				kubeconfig:     kubeconfigFile.Name(),
 				namespaces:     koptions.NamespaceList{},
 				ctx:            ctx,
 				whiteBlackList: w,
@@ -336,7 +317,6 @@ func TestBuilder_Build(t *testing.T) {
 		{
 			name: "managedclusters enabled",
 			fields: fields{
-				kubeconfig:        kubeconfigFile.Name(),
 				namespaces:        koptions.NamespaceList{},
 				ctx:               ctx,
 				enabledCollectors: []string{"managedclusters"},
@@ -347,7 +327,6 @@ func TestBuilder_Build(t *testing.T) {
 		{
 			name: "all collectors enabled",
 			fields: fields{
-				kubeconfig:        kubeconfigFile.Name(),
 				namespaces:        koptions.NamespaceList{},
 				ctx:               ctx,
 				enabledCollectors: []string{"managedclusters", "managedclusteraddons", "manifestworks"},
@@ -381,28 +360,6 @@ func TestBuilder_Build(t *testing.T) {
 			}
 		})
 	}
-}
-
-func writeKubeconfigFile(restConfig *rest.Config, kubeconfigFileName string) error {
-	kubeconfig := clientcmdapi.Config{
-		Clusters: map[string]*clientcmdapi.Cluster{"default-cluster": {
-			Server:                   restConfig.Host,
-			InsecureSkipTLSVerify:    false,
-			CertificateAuthorityData: restConfig.CAData,
-		}},
-		AuthInfos: map[string]*clientcmdapi.AuthInfo{"default-auth": {
-			ClientCertificateData: restConfig.CertData,
-			ClientKeyData:         restConfig.KeyData,
-		}},
-		Contexts: map[string]*clientcmdapi.Context{"default-context": {
-			Cluster:   "default-cluster",
-			AuthInfo:  "default-auth",
-			Namespace: "default",
-		}},
-		CurrentContext: "default-context",
-	}
-
-	return clientcmd.WriteToFile(kubeconfig, kubeconfigFileName)
 }
 
 func Test_getHubClusterID(t *testing.T) {
@@ -443,7 +400,7 @@ func Test_getHubClusterID(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			fakeOcpClient := ocpclientfake.NewSimpleClientset(tt.clusterVersion)
-			fakeKubeClient := kubeclientfake.NewSimpleClientset(tt.ns)
+			fakeKubeClient := fake.NewSimpleClientset(tt.ns)
 			if got := getHubClusterID(fakeOcpClient, fakeKubeClient); got != tt.want {
 				t.Errorf("getHubClusterID() = %v, want %v", got, tt.want)
 			}
