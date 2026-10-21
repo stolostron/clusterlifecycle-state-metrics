@@ -10,13 +10,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 )
 
-const (
-	/* #nosec */
-	kubeConfigFileBasic = "../../../test/unit/tmp/envtest/kubeconfig/basic"
-	kubeConfigFileT     = "../../../test/unit/tmp/envtest/kubeconfig/token"
-	kubeConfigFileCerts = "../../../test/unit/tmp/envtest/kubeconfig/certs"
-)
-
 var envTests map[string]*envtest.Environment
 
 func TestMain(m *testing.M) {

@@ -4,6 +4,7 @@
 package collectors
 
 import (
+	"context"
 	"sort"
 	"strings"
 	"time"
@@ -31,7 +32,6 @@ import (
 	metricsstore "k8s.io/kube-state-metrics/pkg/metrics_store"
 	"k8s.io/kube-state-metrics/pkg/options"
 
-	"golang.org/x/net/context"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/klog/v2"
 

@@ -11,7 +11,6 @@ require (
 	github.com/prometheus/client_golang v1.24.1
 	github.com/stolostron/cluster-lifecycle-api v0.0.0-20260330032750-43755d6ceb09
 	github.com/stolostron/library-go v0.0.0-20230104093626-beceb342d8ed
-	golang.org/x/net v0.61.0
 	k8s.io/api v0.35.9
 	k8s.io/apimachinery v0.35.9
 	k8s.io/client-go v0.35.9
@@ -70,6 +69,7 @@ require (
 	go.yaml.in/yaml/v2 v2.4.4 // indirect
 	go.yaml.in/yaml/v3 v3.0.5 // indirect
 	golang.org/x/mod v0.42.0 // indirect
+	golang.org/x/net v0.61.0 // indirect
 	golang.org/x/oauth2 v0.37.0 // indirect
 	golang.org/x/sync v0.24.0 // indirect
 	golang.org/x/sys v0.49.0 // indirect

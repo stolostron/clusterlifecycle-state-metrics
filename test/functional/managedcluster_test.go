@@ -11,11 +11,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"reflect"
 	"regexp"
-	"sort"
 	"strings"
 	"time"
 
@@ -99,17 +98,6 @@ acm_managed_cluster_worker_cores{hub_cluster_id="787e5a35-c911-4341-a2e7-65c4151
 acm_managed_cluster_worker_cores{hub_cluster_id="787e5a35-c911-4341-a2e7-65c415147aeb",managed_cluster_id="local_cluster_id"} 0`
 )
 
-const (
-	masterLabel = "node-role.kubernetes.io/master"
-	workerLabel = "node-role.kubernetes.io/worker"
-
-	resourceSocket       mcv1.ResourceName = "socket"
-	resourceCore         mcv1.ResourceName = "core"
-	resourceCoreWorker   mcv1.ResourceName = "core_worker"
-	resourceSocketWorker mcv1.ResourceName = "socket_worker"
-	resourceCPUWorker    mcv1.ResourceName = "cpu_worker"
-)
-
 type QueryResult struct {
 	Status string `json:"status"`
 	Data   struct {
@@ -141,6 +129,11 @@ type QueryResult struct {
 }
 
 var _ = Describe("ManagedCluster Metrics", func() {
+	const (
+		resourceCoreWorker   mcv1.ResourceName = "core_worker"
+		resourceSocketWorker mcv1.ResourceName = "socket_worker"
+	)
+
 	BeforeEach(func() {
 		SetDefaultEventuallyTimeout(60 * time.Second)
 		SetDefaultEventuallyPollingInterval(1 * time.Second)
@@ -636,9 +629,12 @@ var _ = Describe("ManagedCluster Metrics", func() {
 
 func getMetric(metricName string) (resp *http.Response, bodyString string, err error) {
 	resp, err = http.Get("http://localhost/clusterlifecycle-state-metrics/metrics")
+	if err != nil {
+		return nil, "", err
+	}
 	defer resp.Body.Close()
 	if resp.StatusCode == http.StatusOK {
-		bodyBytes, err := ioutil.ReadAll(resp.Body)
+		bodyBytes, err := io.ReadAll(resp.Body)
 		if err != nil {
 			klog.Fatal(err)
 		}
@@ -662,9 +658,12 @@ func queryMetrics(promQL string) (resp *http.Response, bodyString string, err er
 	promURL := "http://localhost/prometheus-k8s/api/v1/query?query=" + promQL
 	klog.Infof("queryMetrics: %s", promURL)
 	resp, err = http.Get(promURL)
+	if err != nil {
+		return nil, "", err
+	}
 	defer resp.Body.Close()
 	if resp.StatusCode == http.StatusOK {
-		bodyBytes, err := ioutil.ReadAll(resp.Body)
+		bodyBytes, err := io.ReadAll(resp.Body)
 		if err != nil {
 			klog.Fatal(err)
 		}
@@ -685,7 +684,7 @@ func updateMCStatus(name string, status mcv1.ManagedClusterStatus) error {
 		return err
 	}
 	m := make(map[string]interface{})
-	json.Unmarshal(b, &m)
+	err = json.Unmarshal(b, &m)
 	if err != nil {
 		klog.Error(err)
 		return err
@@ -746,33 +745,4 @@ func updateCDStatus(name string, status string) error {
 	}
 	klog.Infof("UpdateCDStatus updated: %v", cdU)
 	return err
-}
-
-func sortLines(input string) string {
-	var sorted sort.StringSlice
-
-	sorted = strings.Split(input, "\n") // convert to slice
-
-	// just for fun
-	//fmt.Println("Sorted: ", sort.StringsAreSorted(sorted))
-
-	sorted = unique(sorted)
-
-	sorted.Sort()
-
-	//fmt.Println("Sorted: ", sort.StringsAreSorted(sorted))
-
-	return strings.Join(sorted, "\n")
-}
-
-func unique(s []string) []string {
-	keys := make(map[string]bool)
-	list := []string{}
-	for _, entry := range s {
-		if _, value := keys[entry]; !value {
-			keys[entry] = true
-			list = append(list, entry)
-		}
-	}
-	return list
 }
