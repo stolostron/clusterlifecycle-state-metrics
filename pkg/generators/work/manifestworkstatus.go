@@ -33,7 +33,7 @@ func GetManifestWorkStatusMetricFamilies(getClusterIdFunc func(string) string) m
 				return &metric.Family{Metrics: []*metric.Metric{}}
 			}
 
-			klog.Infof("Hanlde ManifestWork %s/%s", mw.Namespace, mw.Name)
+			klog.Infof("Handle ManifestWork %s/%s", mw.Namespace, mw.Name)
 			keys := []string{"manifestwork"}
 			values := []string{mw.Name}
 			if clusterId := getClusterIdFunc(mw.Namespace); len(clusterId) > 0 {

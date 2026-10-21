@@ -35,7 +35,7 @@ func GetManifestWorkTimestampMetricFamilies(getClusterIdFunc func(string) string
 				return &metric.Family{Metrics: []*metric.Metric{}}
 			}
 
-			klog.Infof("Hanlde ManifestWork %s/%s", mw.Namespace, mw.Name)
+			klog.Infof("Handle ManifestWork %s/%s", mw.Namespace, mw.Name)
 			keys := []string{"manifestwork", "managed_cluster_name"}
 			values := []string{mw.Name, mw.Namespace}
 			if len(hostedcluster) != 0 {
