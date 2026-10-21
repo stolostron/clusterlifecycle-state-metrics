@@ -39,7 +39,7 @@ func (r *manifestworkReconciler) Reconcile(ctx context.Context, req ctrl.Request
 	logger := log.FromContext(ctx)
 
 	omw := &workv1.ManifestWork{}
-	err := r.Client.Get(ctx, req.NamespacedName, omw)
+	err := r.Get(ctx, req.NamespacedName, omw)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			return ctrl.Result{}, nil
@@ -90,7 +90,7 @@ func (r *manifestworkReconciler) updateAnnotations(ctx context.Context,
 	}
 	mw.Annotations[key] = value
 
-	if err := r.Client.Patch(ctx, mw, patch); err != nil {
+	if err := r.Patch(ctx, mw, patch); err != nil {
 		return err
 	}
 

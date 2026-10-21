@@ -8,7 +8,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
-	clusterv1 "open-cluster-management.io/api/cluster/v1"
 	workv1 "open-cluster-management.io/api/work/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
@@ -22,7 +21,9 @@ var (
 )
 
 func init() {
-	testscheme.AddKnownTypes(clusterv1.SchemeGroupVersion, &workv1.ManifestWork{})
+	if err := workv1.Install(testscheme); err != nil {
+		panic(err)
+	}
 }
 
 func TestReconcile(t *testing.T) {

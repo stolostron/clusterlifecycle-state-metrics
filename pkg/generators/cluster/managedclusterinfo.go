@@ -65,8 +65,8 @@ func GetManagedClusterInfoMetricFamilies(hubClusterID, hub_type string) metric.F
 		Help: descClusterInfoHelp,
 		GenerateFunc: wrapManagedClusterInfoFunc(func(mc *mcv1.ManagedCluster) metric.Family {
 			klog.Infof("Wrap %s", mc.GetName())
-			kubeVendor := mc.ObjectMeta.Labels[mciv1beta1.LabelKubeVendor]
-			cloudVendor := mc.ObjectMeta.Labels[mciv1beta1.LabelCloudVendor]
+			kubeVendor := mc.Labels[mciv1beta1.LabelKubeVendor]
+			cloudVendor := mc.Labels[mciv1beta1.LabelCloudVendor]
 
 			clusterID := getClusterID(mc)
 			version := getVersion(mc)
@@ -129,15 +129,15 @@ product=%s`,
 }
 
 func getClusterID(mc *mcv1.ManagedCluster) string {
-	kubeVendor := mc.ObjectMeta.Labels[mciv1beta1.LabelKubeVendor]
-	clusterID := mc.ObjectMeta.Labels[mciv1beta1.LabelClusterID]
+	kubeVendor := mc.Labels[mciv1beta1.LabelKubeVendor]
+	clusterID := mc.Labels[mciv1beta1.LabelClusterID]
 
 	// Cluster ID is not available on non-OCP thus use the name
 	if clusterID == "" && (kubeVendor != string(mciv1beta1.KubeVendorOpenShift)) {
 		clusterID = mc.GetName()
 	}
 	// ClusterID is not available on OCP 3.x thus use the name
-	if clusterID == "" && (kubeVendor == string(mciv1beta1.KubeVendorOpenShift)) && mc.ObjectMeta.Labels[mciv1beta1.OCPVersion] == "3" {
+	if clusterID == "" && (kubeVendor == string(mciv1beta1.KubeVendorOpenShift)) && mc.Labels[mciv1beta1.OCPVersion] == "3" {
 		clusterID = mc.GetName()
 	}
 
@@ -145,7 +145,7 @@ func getClusterID(mc *mcv1.ManagedCluster) string {
 }
 
 func getVersion(mc *mcv1.ManagedCluster) string {
-	kubeVendor := mc.ObjectMeta.Labels[mciv1beta1.LabelKubeVendor]
+	kubeVendor := mc.Labels[mciv1beta1.LabelKubeVendor]
 	version := ""
 
 	if kubeVendor == "" {
@@ -154,7 +154,7 @@ func getVersion(mc *mcv1.ManagedCluster) string {
 
 	switch kubeVendor {
 	case string(mciv1beta1.KubeVendorOpenShift):
-		version = mc.ObjectMeta.Labels[mciv1beta1.OCPVersion]
+		version = mc.Labels[mciv1beta1.OCPVersion]
 	default:
 		for _, c := range mc.Status.ClusterClaims {
 			if c.Name == "kubeversion.open-cluster-management.io" {

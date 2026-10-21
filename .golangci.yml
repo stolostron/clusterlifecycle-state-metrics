@@ -61,6 +61,11 @@ linters:
           - errcheck
           - maligned
         path: _test\.go$|^tests/|^samples/
+      # Prometheus text fixtures are one sample per line. Wrapping them makes
+      # the expected scrape output harder to compare than a longer line.
+      - linters:
+          - lll
+        path: _test\.go$
       - path: (.+)\.go$
         text: composite literal uses unkeyed fields
     paths:

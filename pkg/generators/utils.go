@@ -4,6 +4,7 @@
 package generators
 
 import (
+	"slices"
 	"strings"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -12,7 +13,11 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
-func BuildStatusConditionMetricFamily(conditions []metav1.Condition, labelKeys, labelValues, requiredConditionTypes []string, getAllowedConditionStatuses func(conditionType string) []metav1.ConditionStatus) metric.Family {
+func BuildStatusConditionMetricFamily(
+	conditions []metav1.Condition,
+	labelKeys, labelValues, requiredConditionTypes []string,
+	getAllowedConditionStatuses func(conditionType string) []metav1.ConditionStatus,
+) metric.Family {
 	family := metric.Family{}
 	missingConditionTypes := sets.NewString(requiredConditionTypes...)
 
@@ -32,12 +37,22 @@ func BuildStatusConditionMetricFamily(conditions []metav1.Condition, labelKeys, 
 	return family
 }
 
-func buildStatusConditionMetrics(conditionType string, conditionStatus metav1.ConditionStatus, keys, values []string, allowedConditionStatuses []metav1.ConditionStatus) []*metric.Metric {
-	labelKeys := append(keys, "condition", "status")
+func buildStatusConditionMetrics(
+	conditionType string,
+	conditionStatus metav1.ConditionStatus,
+	keys, values []string,
+	allowedConditionStatuses []metav1.ConditionStatus,
+) []*metric.Metric {
+	// Copy before appending. append reuses a slice's backing array when it has
+	// spare capacity, which would overwrite the caller's labels and make every
+	// metric in this loop share the last status value.
+	labelKeys := slices.Clone(keys)
+	labelKeys = append(labelKeys, "condition", "status")
 
 	metrics := []*metric.Metric{}
 	for _, status := range allowedConditionStatuses {
-		labelValues := append(values, conditionType, strings.ToLower(string(status)))
+		labelValues := slices.Clone(values)
+		labelValues = append(labelValues, conditionType, strings.ToLower(string(status)))
 		metric := &metric.Metric{
 			LabelKeys:   labelKeys,
 			LabelValues: labelValues,

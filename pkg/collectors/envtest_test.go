@@ -29,7 +29,7 @@ func setupEnvTestByName(name string) (envTest *envtest.Environment) {
 	if e, ok := envTests[name]; ok {
 		return e
 	}
-	//Create an envTest
+	// Create an envTest
 	envTest = &envtest.Environment{
 		CRDDirectoryPaths: []string{
 			filepath.Join(

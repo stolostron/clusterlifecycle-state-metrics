@@ -94,7 +94,7 @@ func (b *Builder) WithRestConfig(restConfig *rest.Config) *Builder {
 
 func (b *Builder) WithTimestampMetricsEnabled(timestampMetricsEnabled bool) *Builder {
 	b.timestampMetricsEnabled = timestampMetricsEnabled
-	klog.InfoS("set timetamp metrics enabled", "enabled", timestampMetricsEnabled)
+	klog.InfoS("set timestamp metrics enabled", "enabled", timestampMetricsEnabled)
 	if timestampMetricsEnabled && b.clusterTimestampCache == nil {
 		clusterTimestampCache := newClusterTimestampCache()
 		b.composedManifestWorkStore.AddStore(clusterTimestampCache)
@@ -110,11 +110,10 @@ func (b *Builder) WithHubType(hubType string) *Builder {
 
 // WithEnabledCollectors sets the enabledCollectors property of a Builder.
 func (b *Builder) WithEnabledCollectors(c []string) *Builder {
-	copy := []string{}
-	copy = append(copy, c...)
-	sort.Strings(copy)
+	enabled := append([]string{}, c...)
+	sort.Strings(enabled)
 
-	b.enabledCollectors = copy
+	b.enabledCollectors = enabled
 	return b
 }
 
@@ -292,7 +291,7 @@ func (b *Builder) startWatchingManagedClusters() {
 	klog.Infof("Cluster ID cached for %d managed clusters", len(clusters))
 
 	if b.timestampMetricsEnabled && b.clusterTimestampCache != nil {
-		// refresh the managed cluster store once the timestamp of a certian cluster is changed
+		// refresh the managed cluster store once the timestamp of a certain cluster is changed
 		b.clusterTimestampCache.AddOnTimestampChangeFunc(func(clusterName string) error {
 			klog.Infof("Refresh the managed cluster metrics since the timestamp of cluster %q is changed", clusterName)
 			cluster, err := clusterClient.ClusterV1().ManagedClusters().Get(b.ctx, clusterName, metav1.GetOptions{})
@@ -322,7 +321,7 @@ func (b *Builder) startWatchingManagedClusterAddOns() {
 		klog.Fatalf("cannot create addonclient: %v", err)
 	}
 
-	// refresh the addon store once the cluster ID of a certian cluster is changed
+	// refresh the addon store once the cluster ID of a certain cluster is changed
 	b.clusterIdCache.AddOnClusterIdChangeFunc(func(clusterName string) error {
 		klog.Infof("Refresh the addon metrics since the cluster ID of cluster %q is changed", clusterName)
 		addons, err := addOnClient.AddonV1alpha1().ManagedClusterAddOns(clusterName).List(b.ctx, metav1.ListOptions{})
@@ -358,7 +357,7 @@ func (b *Builder) startWatchingManifestWorks() {
 		klog.Fatalf("cannot create workclient: %v", err)
 	}
 
-	// refresh the manifestwork store once the cluster ID of a certian cluster is changed
+	// refresh the manifestwork store once the cluster ID of a certain cluster is changed
 	b.clusterIdCache.AddOnClusterIdChangeFunc(func(clusterName string) error {
 		klog.Infof("Refresh the manifestwork metrics since the cluster ID of cluster %q is changed", clusterName)
 		works, err := workClient.WorkV1().ManifestWorks(clusterName).List(b.ctx, metav1.ListOptions{})
@@ -426,10 +425,10 @@ func (b *Builder) startWatchingClusterDeployments() {
 
 	// start watching clusterdeployments
 	lw := &cache.ListWatch{
-		ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
+		ListWithContextFunc: func(ctx context.Context, options metav1.ListOptions) (runtime.Object, error) {
 			return dynamicClient.Resource(gvr).Namespace(metav1.NamespaceAll).List(b.ctx, options)
 		},
-		WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
+		WatchFuncWithContext: func(ctx context.Context, options metav1.ListOptions) (watch.Interface, error) {
 			return dynamicClient.Resource(gvr).Namespace(metav1.NamespaceAll).Watch(b.ctx, options)
 		},
 	}
