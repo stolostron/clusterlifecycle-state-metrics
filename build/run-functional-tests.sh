@@ -15,6 +15,7 @@ export DOCKER_IMAGE_AND_TAG=${1}
 export FUNCT_TEST_TMPDIR="${CURR_FOLDER_PATH}/../test/functional/tmp"
 export FUNCT_TEST_COVERAGE="${CURR_FOLDER_PATH}/../test/functional/coverage"
 
+echo "::group::Install dependencies"
 if ! which kubectl > /dev/null; then
     echo "installing kubectl"
     curl -O "https://dl.k8s.io/release/$(curl -s https://dl.k8s.io/release/stable.txt)/bin/$(uname | awk '{print tolower($0)}')/amd64/kubectl" && chmod +x kubectl && sudo mv kubectl /usr/local/bin/
@@ -40,7 +41,9 @@ if ! which helm > /dev/null; then
     ./get_helm.sh
     rm get_helm.sh
 fi
+echo "::endgroup::"
 
+echo "::group::Set up test cluster"
 echo "setting up test tmp folder"
 [ -d "$FUNCT_TEST_TMPDIR" ] && rm -r "$FUNCT_TEST_TMPDIR"
 mkdir -p "$FUNCT_TEST_TMPDIR"
@@ -95,9 +98,12 @@ kind load docker-image ${DOCKER_IMAGE_AND_TAG} --name=$CLUSTER_NAME -v 99 || ech
 echo "install cluster"
 # setup cluster
 make kind-cluster-setup
+echo "::endgroup::"
+
 for dir in overlays/test/* ; do
   echo ">>>>>>>>>>>>>>>Executing test: $dir"
 
+  echo "::group::Deploy controller and prerequisites"
   # install clusterlifecycle-state-metrics
   echo "install managedcluster-import-controller"
   kubectl apply -k "$dir" --dry-run=client -o yaml | sed "s|REPLACE_IMAGE|${DOCKER_IMAGE_AND_TAG}|g" | kubectl apply -f -
@@ -115,19 +121,20 @@ for dir in overlays/test/* ; do
   # patch image
   echo "Wait rollout"
   kubectl rollout status -n multicluster-engine deployment clusterlifecycle-state-metrics --timeout=180s
-
-  # exit 1
+  echo "::endgroup::"
 
   echo "run functional test..."
   set +e
   make functional-test
   ERR=$?
   if [[ $ERR != 0 ]]; then
+    echo "::group::clusterlifecycle-state-metrics logs"
     POD_NAMES=$(kubectl get pods -n multicluster-engine -oname | grep clusterlifecycle-state-metrics)
     for p in $POD_NAMES; do
       echo "-----------------------${p}------------------------------"
       echo "$p" | xargs -L 1 kubectl logs -n multicluster-engine
     done;
+    echo "::endgroup::"
     echo "Error: $ERR"
     exit $ERR
   fi

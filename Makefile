@@ -180,10 +180,12 @@ functional-test:
 	@echo executing test
 	ginkgo -tags functional -v test/functional -- -v=5
 
-.PHONY: functional-test-full
-# functional-test-full: 
-functional-test-full: build-image-coverage
+.PHONY: functional-test-coverage
+functional-test-coverage:
 	@build/run-functional-tests.sh ${DOCKER_IMAGE_COVERAGE}:latest
+
+.PHONY: functional-test-full
+functional-test-full: build-image-coverage functional-test-coverage
 
 .PHONY: functional-test-full-clean
 functional-test-full-clean:
