@@ -25,6 +25,7 @@ export DOCKER_BUILDER    ?= docker
 
 export KUBECONFIG ?= ${HOME}/.kube/config
 
+GOBIN := $(PROJECT_DIR)/build/_output/bin
 ENSURE_ENVTEST_SCRIPT := https://raw.githubusercontent.com/open-cluster-management-io/sdk-go/main/ci/envtest/ensure-envtest.sh
 
 BEFORE_SCRIPT := $(shell build/before-make.sh)
@@ -87,11 +88,20 @@ run-coverage:
 	go test -v -covermode=atomic -coverpkg=github.com/stolostron/clusterlifecycle-state-metrics/pkg/... -tags testrunmain ./cmd/clusterlifecycle-state-metrics -args --http-port=8080 --http-telemetry-port=8081 --csm-kubeconfig=${KUBECONFIG}
 	# -args -port 8080 -telemetry-port 8081 -kubeconfig ${KUBECONFIG}
 
+.PHONY: lint-dependencies
+## Install dependencies for linter
+lint-dependencies:
+	GOBIN=$(GOBIN) go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.15.0
+
+.PHONY: fmt
+## Run formatter against go files
+fmt:
+	go fmt ./...
+
 .PHONY: lint
-## Runs linter against go files
-lint:
-	@echo "Running linting tool ..."
-	@GOGC=25 golangci-lint run --timeout 5m
+## Run linter against go files
+lint: lint-dependencies fmt
+	$(GOBIN)/golangci-lint run
 
 ############################################################
 # deploy section
