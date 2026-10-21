@@ -1,0 +1,6 @@
+{
+  "go.buildTags": "functional",
+  "gopls": {
+    "build.buildFlags": ["-tags=functional"]
+  }
+}
