@@ -32,7 +32,7 @@ func GetManagedClusterAddOnStatusMetricFamilies(getClusterIdFunc func(string) st
 				return &metric.Family{Metrics: []*metric.Metric{}}
 			}
 
-			klog.Infof("Hanlde ManagedClusterAddOn %s/%s", addon.Namespace, addon.Name)
+			klog.Infof("Handle ManagedClusterAddOn %s/%s", addon.Namespace, addon.Name)
 			keys := []string{"addon_name"}
 			values := []string{addon.Name}
 			if clusterId := getClusterIdFunc(addon.Namespace); len(clusterId) > 0 {

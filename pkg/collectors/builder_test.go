@@ -5,14 +5,13 @@ package collectors
 
 import (
 	"bytes"
-	"io/ioutil"
+	"context"
 	"os"
 	"reflect"
 	"testing"
 
 	ocinfrav1 "github.com/openshift/api/config/v1"
 	ocpclient "github.com/openshift/client-go/config/clientset/versioned"
-	"golang.org/x/net/context"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -283,7 +282,7 @@ func TestBuilder_Build(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	kubeconfigFile, err := ioutil.TempFile("", "ut-kubeconfig-")
+	kubeconfigFile, err := os.CreateTemp("", "ut-kubeconfig-")
 	if err != nil {
 		t.Fatal(err)
 	}

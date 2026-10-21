@@ -53,10 +53,6 @@ acm_manifestwork_status_condition{manifestwork="test-work1",managed_cluster_id="
 acm_manifestwork_status_condition{manifestwork="test-work1",managed_cluster_id="local_cluster_id",managed_cluster_name="local-cluster",condition="Available",status="true"} 0
 acm_manifestwork_status_condition{manifestwork="test-work1",managed_cluster_id="local_cluster_id",managed_cluster_name="local-cluster",condition="Available",status="false"} 0
 acm_manifestwork_status_condition{manifestwork="test-work1",managed_cluster_id="local_cluster_id",managed_cluster_name="local-cluster",condition="Available",status="unknown"} 1`
-
-	workCountResponse = `# HELP acm_manifestwork_count ManifestWork count
-# TYPE acm_manifestwork_count gauge
-acm_manifestwork_count 4`
 )
 
 var _ = Describe("ManifestWork Metrics", func() {

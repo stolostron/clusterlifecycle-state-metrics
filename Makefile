@@ -146,26 +146,16 @@ undeploy:
 .PHONY: install-fake-crds
 install-fake-crds:
 	@echo installing crds
-	kubectl apply -f test/functional/resources/crds/certificates_crd.yaml
-	kubectl apply -f test/functional/resources/crds/clusterdeployments_crd.yaml
-	kubectl apply -f test/functional/resources/crds/issuers_crd.yaml
-	kubectl apply -f test/functional/resources/crds/managedclusters_crd.yaml
-	kubectl apply -f test/functional/resources/crds/managedclusteraddons_crd.yaml
-	kubectl apply -f test/functional/resources/crds/manifestworks_crd.yaml
-	kubectl apply -f test/functional/resources/crds/clusterversions_crd.yaml
-	kubectl apply -f test/functional/resources/crds/apiservers_crd.yaml
-	kubectl apply -f test/functional/resources/crds/servicemonitor_crd.yaml
-	kubectl apply -f test/functional/resources/crds/prometheusrules_crd.yaml
+	kubectl apply -f test/functional/resources/crds/
 	@sleep 10 
 
 .PHONY: kind-cluster-setup
 kind-cluster-setup: install-fake-crds
 	@echo installing fake resources
-	kubectl apply -f test/functional/resources/namespace_osm.yaml
-	kubectl apply -f test/functional/resources/namespace_ocm.yaml
+	-kubectl create namespace multicluster-engine
+	-kubectl create namespace openshift-monitoring
 	kubectl apply -f test/functional/resources/clusterversions_cr.yaml
 	@echo "Creating TLS certificate for HTTPS endpoints"
-	@kubectl create namespace multicluster-engine --dry-run=client -o yaml | kubectl apply -f -
 	@openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
 		-keyout /tmp/tls.key -out /tmp/tls.crt \
 		-subj "/CN=clusterlifecycle-state-metrics/O=clusterlifecycle-state-metrics" \
@@ -178,18 +168,24 @@ kind-cluster-setup: install-fake-crds
 	@echo "Enable SSL passthrough for TLS tests"
 	kubectl patch deployment ingress-nginx-controller -n ingress-nginx --type='json' -p='[{"op": "add", "path": "/spec/template/spec/containers/0/args/-", "value": "--enable-ssl-passthrough"}]'
 	@echo "Wait ingress NGNIX ready"
-	kubectl wait --namespace ingress-nginx --for=condition=ready pod --selector=app.kubernetes.io/component=controller --timeout=180s
+	kubectl rollout status deployment/ingress-nginx-controller -n ingress-nginx --timeout=180s
 	kubectl delete ValidatingWebhookCOnfiguration ingress-nginx-admission
+	-kubectl create namespace local-cluster
+	-kubectl create namespace cluster-import
+	-kubectl create namespace cluster-hive
+	kubectl apply -f test/functional/resources/cr
 
 .PHONY: functional-test
 functional-test:
 	@echo executing test
-	ginkgo -tags functional -v --slow-spec-threshold=30s test/functional -- -v=5
+	ginkgo -tags functional -v test/functional -- -v=5
+
+.PHONY: functional-test-coverage
+functional-test-coverage:
+	@build/run-functional-tests.sh ${DOCKER_IMAGE_COVERAGE}:latest
 
 .PHONY: functional-test-full
-# functional-test-full: 
-functional-test-full: build-image-coverage
-	@build/run-functional-tests.sh ${DOCKER_IMAGE_COVERAGE}:latest
+functional-test-full: build-image-coverage functional-test-coverage
 
 .PHONY: functional-test-full-clean
 functional-test-full-clean:
