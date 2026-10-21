@@ -190,24 +190,24 @@ var _ = Describe("ManagedCluster Metrics", func() {
 	assertRecordingRule := func(record, expr string) {
 		var re = regexp.MustCompile(`[0-9]{10}\.[0-9]{3}`)
 		By("Querying recording rule ...", func() {
-			Eventually(func() bool {
+			Eventually(func(g Gomega) {
 				resp, recordBody, err := queryMetrics(record)
-				if err != nil || resp.StatusCode != http.StatusOK {
-					return false
-				}
+				g.Expect(err).To(BeNil())
+				g.Expect(resp.StatusCode).To(Equal(http.StatusOK))
+
 				recordBody = strings.ReplaceAll(recordBody, fmt.Sprintf("\"__name__\":\"%s\",", record), "")
 				recordBody = re.ReplaceAllString(recordBody, `0000000000.000`)
 				klog.Infof("Querying record %s response: %s", record, recordBody)
 
 				resp, exprBody, err := queryMetrics(expr)
-				if err != nil || resp.StatusCode != http.StatusOK {
-					return false
-				}
+				g.Expect(err).To(BeNil())
+				g.Expect(resp.StatusCode).To(Equal(http.StatusOK))
+
 				exprBody = re.ReplaceAllString(exprBody, `0000000000.000`)
 				klog.Infof("Querying with expr %s response: %s", expr, exprBody)
 
-				return recordBody == exprBody
-			}).Should(BeTrue())
+				g.Expect(recordBody).To(Equal(exprBody))
+			}).Should(Succeed())
 		})
 	}
 

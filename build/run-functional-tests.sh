@@ -6,7 +6,10 @@
 set -e
 # set -x
 
-CURR_FOLDER_PATH="$( cd "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
+CURR_FOLDER_PATH="$(
+  cd "$(dirname "$0")" >/dev/null 2>&1
+  pwd -P
+)"
 KIND_KUBECONFIG="${CURR_FOLDER_PATH}/../kind_kubeconfig.yaml"
 CLUSTER_NAME=${PROJECT_NAME}-functional-test
 export KUBECONFIG=${KIND_KUBECONFIG}
@@ -16,30 +19,30 @@ export FUNCT_TEST_TMPDIR="${CURR_FOLDER_PATH}/../test/functional/tmp"
 export FUNCT_TEST_COVERAGE="${CURR_FOLDER_PATH}/../test/functional/coverage"
 
 echo "::group::Install dependencies"
-if ! which kubectl > /dev/null; then
-    echo "installing kubectl"
-    curl -O "https://dl.k8s.io/release/$(curl -s https://dl.k8s.io/release/stable.txt)/bin/$(uname | awk '{print tolower($0)}')/amd64/kubectl" && chmod +x kubectl && sudo mv kubectl /usr/local/bin/
+if ! which kubectl >/dev/null; then
+  echo "installing kubectl"
+  curl -O "https://dl.k8s.io/release/$(curl -s https://dl.k8s.io/release/stable.txt)/bin/$(uname | awk '{print tolower($0)}')/amd64/kubectl" && chmod +x kubectl && sudo mv kubectl /usr/local/bin/
 fi
-if ! which kind > /dev/null; then
-    echo "installing kind"
-    curl -o ./kind "https://github.com/kubernetes-sigs/kind/releases/download/v0.33.0/kind-$(uname)-amd64"
-    chmod +x ./kind
-    sudo mv ./kind /usr/local/bin/kind
+if ! which kind >/dev/null; then
+  echo "installing kind"
+  curl -o ./kind "https://github.com/kubernetes-sigs/kind/releases/download/v0.33.0/kind-$(uname)-amd64"
+  chmod +x ./kind
+  sudo mv ./kind /usr/local/bin/kind
 fi
-if ! which ginkgo > /dev/null; then
-    echo "Installing ginkgo ..."
-    go install "github.com/onsi/ginkgo/v2/ginkgo@$(go list -mod=readonly -m all | awk '/github.com\/onsi\/ginkgo\/v/ {print $2}')"
+if ! which ginkgo >/dev/null; then
+  echo "Installing ginkgo ..."
+  go install "github.com/onsi/ginkgo/v2/ginkgo@$(go list -mod=readonly -m all | awk '/github.com\/onsi\/ginkgo\/v/ {print $2}')"
 fi
-if ! which gocovmerge > /dev/null; then
-    echo "Installing gocovmerge..."
-    go install github.com/alexfalkowski/gocovmerge/v2@v2.33.0
+if ! which gocovmerge >/dev/null; then
+  echo "Installing gocovmerge..."
+  go install github.com/alexfalkowski/gocovmerge/v2@v2.33.0
 fi
-if ! which helm > /dev/null; then
-    echo "Installing helm..."
-    curl -fsS -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-4
-    chmod 700 get_helm.sh
-    ./get_helm.sh
-    rm get_helm.sh
+if ! which helm >/dev/null; then
+  echo "Installing helm..."
+  curl -fsS -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-4
+  chmod 700 get_helm.sh
+  ./get_helm.sh
+  rm get_helm.sh
 fi
 echo "::endgroup::"
 
@@ -56,7 +59,7 @@ mkdir -p "${FUNCT_TEST_COVERAGE}"
 
 echo "generating kind configfile"
 
-cat << EOF > "${FUNCT_TEST_TMPDIR}/kind-config/kind-config.yaml"
+cat <<EOF >"${FUNCT_TEST_TMPDIR}/kind-config/kind-config.yaml"
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
 nodes:
@@ -90,7 +93,7 @@ echo "creating cluster"
 kind create cluster --name $CLUSTER_NAME --config "${FUNCT_TEST_TMPDIR}/kind-config/kind-config.yaml"
 
 # setup kubeconfig
-kind get kubeconfig --name $CLUSTER_NAME > ${KIND_KUBECONFIG}
+kind get kubeconfig --name $CLUSTER_NAME >${KIND_KUBECONFIG}
 
 # load image if possible
 kind load docker-image ${DOCKER_IMAGE_AND_TAG} --name=$CLUSTER_NAME -v 99 || echo "failed to load image locally, will use imagePullSecret"
@@ -100,7 +103,7 @@ echo "install cluster"
 make kind-cluster-setup
 echo "::endgroup::"
 
-for dir in overlays/test/* ; do
+for dir in overlays/test/*; do
   echo ">>>>>>>>>>>>>>>Executing test: $dir"
 
   echo "::group::Deploy controller and prerequisites"
@@ -113,6 +116,8 @@ for dir in overlays/test/* ; do
   helm repo add stable https://charts.helm.sh/stable
   helm repo update
   helm install prometheus prometheus-community/kube-prometheus-stack --namespace openshift-monitoring
+  echo "wait for prometheus to be ready"
+  kubectl rollout status -n openshift-monitoring deployment -l release=prometheus --timeout=180s
   kubectl apply -f test/functional/resources/ingress_prometheus.yaml
 
   echo "Create ingress for functional test"
@@ -120,7 +125,22 @@ for dir in overlays/test/* ; do
 
   # patch image
   echo "Wait rollout"
-  kubectl rollout status -n multicluster-engine deployment clusterlifecycle-state-metrics --timeout=180s
+  if ! kubectl rollout status -n multicluster-engine deployment clusterlifecycle-state-metrics --timeout=180s; then
+    kubectl describe pods -n multicluster-engine -l app=clusterlifecycle-state-metrics
+    exit 1
+  fi
+
+  echo "wait for Prometheus to scrape clusterlifecycle-state-metrics"
+  deadline=$((SECONDS + 180))
+  until curl -sfG "http://localhost/prometheus-k8s/api/v1/query" \
+    --data-urlencode 'query=up{job="clusterlifecycle-state-metrics"}' |
+    grep -q '"value":\[.*,"1"\]'; do
+    if ((SECONDS > deadline)); then
+      echo "timed out waiting for a successful scrape"
+      exit 1
+    fi
+    sleep 2
+  done
   echo "::endgroup::"
 
   echo "run functional test..."
@@ -133,7 +153,7 @@ for dir in overlays/test/* ; do
     for p in $POD_NAMES; do
       echo "-----------------------${p}------------------------------"
       echo "$p" | xargs -L 1 kubectl logs -n multicluster-engine
-    done;
+    done
     echo "::endgroup::"
     echo "Error: $ERR"
     exit $ERR
@@ -142,7 +162,7 @@ for dir in overlays/test/* ; do
 
   echo "remove deployment"
   kubectl delete --wait=true -k "$dir"
-done;
+done
 
 echo "Wait 20 sec for copy to coverage files to external storage if setup"
 sleep 20
@@ -160,7 +180,7 @@ if [[ "$(find $FUNCT_TEST_COVERAGE -prune -empty 2>/dev/null)" ]]; then
 else
   echo "merging coverage files"
 
-  gocovmerge "${FUNCT_TEST_COVERAGE}/"* >> "${FUNCT_TEST_COVERAGE}/cover-functional.out"
+  gocovmerge "${FUNCT_TEST_COVERAGE}/"* >>"${FUNCT_TEST_COVERAGE}/cover-functional.out"
   COVERAGE=$(go tool cover -func="${FUNCT_TEST_COVERAGE}/cover-functional.out" | grep "total:" | awk '{ print $3 }' | sed 's/[][()><%]/ /g')
   echo "-------------------------------------------------------------------------"
   echo "TOTAL COVERAGE IS ${COVERAGE}%"
