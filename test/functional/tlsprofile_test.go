@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"slices"
 	"strings"
 	"time"
 
@@ -32,12 +33,13 @@ const (
 	metricsAppLabel   = "app=clusterlifecycle-state-metrics"
 	metricsContainer  = "clusterlifecycle-state-metrics"
 	podRestartTimeout = 120 * time.Second
+
+	metricsHTTPSPort   = "https://metrics.localhost/metrics"
+	telemetryHTTPSPort = "https://telemetry.localhost/metrics"
 )
 
 var _ = Describe("TLS Profile Functional Tests", func() {
 	const (
-		metricsHTTPSPort    = "https://metrics.localhost/metrics"
-		telemetryHTTPSPort  = "https://telemetry.localhost/metrics"
 		tlsHandshakeTimeout = 30 * time.Second
 	)
 
@@ -88,17 +90,20 @@ var _ = Describe("TLS Profile Functional Tests", func() {
 			// Verify both HTTPS endpoints honor the TLS 1.2 minimum
 			By("Checking metrics endpoint on port 8443")
 			Eventually(func() error {
-				return verifyTLSEndpoint(metricsHTTPSPort, tls.VersionTLS12, tls.VersionTLS13)
+				return verifyTLSEndpoint(metricsHTTPSPort, tls.VersionTLS12)
 			}, podRestartTimeout, 5*time.Second).Should(Succeed())
 
 			By("Checking telemetry endpoint on port 8444")
 			Eventually(func() error {
-				return verifyTLSEndpoint(telemetryHTTPSPort, tls.VersionTLS12, tls.VersionTLS13)
+				return verifyTLSEndpoint(telemetryHTTPSPort, tls.VersionTLS12)
 			}, tlsHandshakeTimeout, 2*time.Second).Should(Succeed())
 
 			By("Verifying TLS 1.2 clients are accepted")
 			Eventually(func() error {
-				return verifyTLSResponse(metricsHTTPSPort, tls.VersionTLS12, true)
+				return verifyTLS12Response(metricsHTTPSPort, true)
+			}, tlsHandshakeTimeout, 2*time.Second).Should(Succeed())
+			Eventually(func() error {
+				return verifyTLS12Response(telemetryHTTPSPort, true)
 			}, tlsHandshakeTimeout, 2*time.Second).Should(Succeed())
 		})
 
@@ -120,17 +125,20 @@ var _ = Describe("TLS Profile Functional Tests", func() {
 			// Verify both HTTPS endpoints require TLS 1.3
 			By("Checking metrics endpoint requires TLS 1.3")
 			Eventually(func() error {
-				return verifyTLSEndpoint(metricsHTTPSPort, tls.VersionTLS13, tls.VersionTLS13)
+				return verifyTLSEndpoint(metricsHTTPSPort, tls.VersionTLS13)
 			}, podRestartTimeout, 5*time.Second).Should(Succeed())
 
 			By("Checking telemetry endpoint requires TLS 1.3")
 			Eventually(func() error {
-				return verifyTLSEndpoint(telemetryHTTPSPort, tls.VersionTLS13, tls.VersionTLS13)
+				return verifyTLSEndpoint(telemetryHTTPSPort, tls.VersionTLS13)
 			}, tlsHandshakeTimeout, 2*time.Second).Should(Succeed())
 
 			By("Verifying TLS 1.2 clients are rejected")
 			Eventually(func() error {
-				return verifyTLSResponse(metricsHTTPSPort, tls.VersionTLS12, false)
+				return verifyTLS12Response(metricsHTTPSPort, false)
+			}, tlsHandshakeTimeout, 2*time.Second).Should(Succeed())
+			Eventually(func() error {
+				return verifyTLS12Response(telemetryHTTPSPort, false)
 			}, tlsHandshakeTimeout, 2*time.Second).Should(Succeed())
 		})
 
@@ -161,7 +169,7 @@ var _ = Describe("TLS Profile Functional Tests", func() {
 			// Verify endpoints use TLS 1.2 minimum
 			By("Checking custom TLS settings are applied")
 			Eventually(func() error {
-				return verifyTLSEndpoint(metricsHTTPSPort, tls.VersionTLS12, tls.VersionTLS13)
+				return verifyTLSEndpoint(metricsHTTPSPort, tls.VersionTLS12)
 			}, podRestartTimeout, 5*time.Second).Should(Succeed())
 
 			// Verify the cipher suite is from our allowed list
@@ -175,7 +183,7 @@ var _ = Describe("TLS Profile Functional Tests", func() {
 
 			By("Verifying TLS 1.2 clients are accepted")
 			Eventually(func() error {
-				return verifyTLSResponse(metricsHTTPSPort, tls.VersionTLS12, true)
+				return verifyTLS12Response(metricsHTTPSPort, true)
 			}, tlsHandshakeTimeout, 2*time.Second).Should(Succeed())
 		})
 	})
@@ -198,12 +206,12 @@ var _ = Describe("TLS Profile Functional Tests", func() {
 
 			// Verify Intermediate is active
 			Eventually(func() error {
-				return verifyTLSEndpoint(metricsHTTPSPort, tls.VersionTLS12, tls.VersionTLS13)
+				return verifyTLSEndpoint(metricsHTTPSPort, tls.VersionTLS12)
 			}, podRestartTimeout, 5*time.Second).Should(Succeed())
 
 			By("Verifying TLS 1.2 clients are accepted")
 			Eventually(func() error {
-				return verifyTLSResponse(metricsHTTPSPort, tls.VersionTLS12, true)
+				return verifyTLS12Response(metricsHTTPSPort, true)
 			}, tlsHandshakeTimeout, 2*time.Second).Should(Succeed())
 
 			// Change to Modern profile
@@ -222,12 +230,12 @@ var _ = Describe("TLS Profile Functional Tests", func() {
 			// Verify Modern profile is now active (TLS 1.3)
 			By("Verifying Modern profile is active after change")
 			Eventually(func() error {
-				return verifyTLSEndpoint(metricsHTTPSPort, tls.VersionTLS13, tls.VersionTLS13)
+				return verifyTLSEndpoint(metricsHTTPSPort, tls.VersionTLS13)
 			}, podRestartTimeout, 5*time.Second).Should(Succeed())
 
 			By("Verifying TLS 1.2 clients are rejected")
 			Eventually(func() error {
-				return verifyTLSResponse(metricsHTTPSPort, tls.VersionTLS12, false)
+				return verifyTLS12Response(metricsHTTPSPort, false)
 			}, tlsHandshakeTimeout, 2*time.Second).Should(Succeed())
 		})
 	})
@@ -244,8 +252,11 @@ func updateAPIServerProfile(configClient configclient.Interface, profile *config
 	return err
 }
 
-// verifyTLSEndpoint connects to an endpoint and verifies the TLS version is within expected range
-func verifyTLSEndpoint(endpoint string, minVersion, maxVersion uint16) error {
+// verifyTLSEndpoint connects to an endpoint and verifies the negotiated TLS
+// version is at least minVersion. The client offers at most TLS 1.3.
+func verifyTLSEndpoint(endpoint string, minVersion uint16) error {
+	const maxVersion = tls.VersionTLS13
+
 	// Create TLS config that records what was negotiated
 	var negotiatedVersion uint16
 	var negotiatedCipher uint16
@@ -313,9 +324,10 @@ func tlsHandshakeRejected(err error) bool {
 		strings.Contains(message, "tls: server selected unsupported")
 }
 
-// verifyTLSResponse verifies that a connection with the specified TLS version
-// is accepted or rejected, and that the HTTP response agrees with the error.
-func verifyTLSResponse(endpoint string, tlsVersion uint16, accept bool) error {
+// verifyTLS12Response verifies that a TLS 1.2 client to the endpoint is
+// accepted or rejected, and that the HTTP response agrees with the error.
+func verifyTLS12Response(endpoint string, accept bool) error {
+	const tlsVersion = tls.VersionTLS12
 	// #nosec G402 -- InsecureSkipVerify and low TLS versions are acceptable in tests
 	tlsConfig := &tls.Config{
 		InsecureSkipVerify: true,
@@ -366,12 +378,9 @@ func verifyTLSResponse(endpoint string, tlsVersion uint16, accept bool) error {
 	return nil
 }
 
-// verifyTLSCipher verifies that the server supports only the allowed cipher suites
+// verifyTLSCipher verifies that the server accepts every allowed cipher and
+// rejects a cipher outside that list.
 func verifyTLSCipher(endpoint string, allowedCiphers []uint16) error {
-	supportedCiphers := []uint16{}
-	unsupportedCiphers := []uint16{}
-
-	// Test each allowed cipher individually
 	for _, cipher := range allowedCiphers {
 		// #nosec G402 -- InsecureSkipVerify is acceptable in tests with self-signed certificates
 		tlsConfig := &tls.Config{
@@ -390,63 +399,46 @@ func verifyTLSCipher(endpoint string, allowedCiphers []uint16) error {
 
 		resp, err := client.Get(endpoint)
 		if err != nil {
-			// Cipher not supported
-			unsupportedCiphers = append(unsupportedCiphers, cipher)
-			klog.V(4).Infof("Cipher 0x%04x not supported: %v", cipher, err)
-			continue
+			return fmt.Errorf("allowed cipher 0x%04x was rejected: %w", cipher, err)
 		}
 		resp.Body.Close()
 
-		if resp.StatusCode == http.StatusOK && resp.TLS != nil {
-			supportedCiphers = append(supportedCiphers, resp.TLS.CipherSuite)
-			klog.Infof("✓ Cipher 0x%04x is supported", cipher)
-		} else {
-			unsupportedCiphers = append(unsupportedCiphers, cipher)
+		if resp.StatusCode != http.StatusOK || resp.TLS == nil {
+			return fmt.Errorf("allowed cipher 0x%04x returned status %d", cipher, resp.StatusCode)
 		}
+		klog.Infof("✓ Cipher 0x%04x is supported", cipher)
 	}
 
-	// Verify at least some allowed ciphers are supported
-	if len(supportedCiphers) == 0 {
-		return fmt.Errorf("none of the allowed ciphers are supported by the server")
+	// Use a weak cipher that the custom and modern profiles should not offer.
+	nonAllowedCipher := tls.TLS_RSA_WITH_AES_128_CBC_SHA
+	if slices.Contains(allowedCiphers, nonAllowedCipher) {
+		return fmt.Errorf("weak cipher 0x%04x chosen for testing but found in allow list", nonAllowedCipher)
 	}
 
-	// Test a non-allowed cipher to ensure server rejects it
-	// Use a common cipher that's not in the allowed list for negative test
-	nonAllowedCipher := tls.TLS_RSA_WITH_AES_128_CBC_SHA // Weak cipher, unlikely to be in Modern/Custom profiles
-	isInAllowedList := false
-	for _, allowed := range allowedCiphers {
-		if allowed == nonAllowedCipher {
-			isInAllowedList = true
-			break
-		}
+	// #nosec G402 -- InsecureSkipVerify is acceptable in tests with self-signed certificates
+	tlsConfig := &tls.Config{
+		InsecureSkipVerify: true,
+		CipherSuites:       []uint16{nonAllowedCipher},
+		MinVersion:         tls.VersionTLS12,
+		MaxVersion:         tls.VersionTLS12,
 	}
 
-	if !isInAllowedList {
-		// #nosec G402 -- InsecureSkipVerify is acceptable in tests with self-signed certificates
-		tlsConfig := &tls.Config{
-			InsecureSkipVerify: true,
-			CipherSuites:       []uint16{nonAllowedCipher},
-			MinVersion:         tls.VersionTLS12,
-			MaxVersion:         tls.VersionTLS12,
-		}
-
-		client := &http.Client{
-			Transport: &http.Transport{
-				TLSClientConfig: tlsConfig,
-			},
-			Timeout: 5 * time.Second,
-		}
-
-		resp, err := client.Get(endpoint)
-		if err == nil && resp.StatusCode == http.StatusOK {
-			resp.Body.Close()
-			klog.Warningf("⚠ Server accepted non-allowed cipher 0x%04x", nonAllowedCipher)
-		} else {
-			klog.Infof("✓ Server correctly rejected non-allowed cipher 0x%04x", nonAllowedCipher)
-		}
+	client := &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: tlsConfig,
+		},
+		Timeout: 5 * time.Second,
 	}
 
-	klog.Infof("Server supports %d/%d allowed ciphers", len(supportedCiphers), len(allowedCiphers))
+	resp, err := client.Get(endpoint)
+	if err == nil {
+		resp.Body.Close()
+		return fmt.Errorf("server accepted non-allowed cipher 0x%04x (status %d)", nonAllowedCipher, resp.StatusCode)
+	}
+	if !tlsHandshakeRejected(err) {
+		return fmt.Errorf("non-allowed cipher 0x%04x failed before the handshake: %w", nonAllowedCipher, err)
+	}
+	klog.Infof("✓ Server correctly rejected non-allowed cipher 0x%04x", nonAllowedCipher)
 	return nil
 }
 

@@ -195,7 +195,7 @@ var _ = Describe("ManagedCluster Metrics", func() {
 				if err != nil || resp.StatusCode != http.StatusOK {
 					return false
 				}
-				recordBody = strings.Replace(recordBody, fmt.Sprintf("\"__name__\":\"%s\",", record), "", -1)
+				recordBody = strings.ReplaceAll(recordBody, fmt.Sprintf("\"__name__\":\"%s\",", record), "")
 				recordBody = re.ReplaceAllString(recordBody, `0000000000.000`)
 				klog.Infof("Querying record %s response: %s", record, recordBody)
 
@@ -655,9 +655,17 @@ func getMetric(metricName string) (resp *http.Response, bodyString string, err e
 }
 
 func queryMetrics(promQL string) (resp *http.Response, bodyString string, err error) {
-	promURL := "http://localhost/prometheus-k8s/api/v1/query?query=" + promQL
-	klog.Infof("queryMetrics: %s", promURL)
-	resp, err = http.Get(promURL)
+	// Keep the host fixed. Callers write spaces as '+'; encode the PromQL so it
+	// stays in the query parameter.
+	req, err := http.NewRequest(http.MethodGet, "http://localhost/prometheus-k8s/api/v1/query", nil)
+	if err != nil {
+		return nil, "", err
+	}
+	query := req.URL.Query()
+	query.Set("query", strings.ReplaceAll(promQL, "+", " "))
+	req.URL.RawQuery = query.Encode()
+	klog.Infof("queryMetrics: %s", req.URL.String())
+	resp, err = http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, "", err
 	}

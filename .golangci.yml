@@ -1,4 +1,8 @@
 version: "2"
+run:
+  build-tags:
+    - functional
+    - testrunmain
 linters:
   default: none
   enable:

@@ -12,6 +12,9 @@ on:
     paths-ignore:
       - ".tekton/**"
 
+permissions:
+  contents: read
+
 jobs:
   test:
     runs-on: ubuntu-latest

@@ -24,6 +24,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/kubernetes"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
@@ -71,6 +72,10 @@ var (
 // promLogger implements promhttp.Logger
 type promLogger struct{}
 
+func (pl promLogger) Println(v ...interface{}) {
+	klog.Error(v...)
+}
+
 func init() {
 	// Add the zap logger flag set to the CLI. The flag set must
 	// be added before calling flag.Parse().
@@ -83,13 +88,8 @@ func init() {
 	opts = options.NewOptions()
 	opts.AddFlags()
 
-	// init schema
-	_ = clientgoscheme.AddToScheme(scheme)
-	_ = workv1.Install(scheme)
-}
-
-func (pl promLogger) Println(v ...interface{}) {
-	klog.Error(v...)
+	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
+	utilruntime.Must(workv1.Install(scheme))
 }
 
 func main() {
