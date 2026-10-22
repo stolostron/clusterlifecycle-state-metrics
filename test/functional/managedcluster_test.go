@@ -14,7 +14,6 @@ import (
 	"io"
 	"net/http"
 	"reflect"
-	"regexp"
 	"strings"
 	"time"
 
@@ -187,27 +186,21 @@ var _ = Describe("ManagedCluster Metrics", func() {
 		})
 	}
 
-	assertRecordingRule := func(ctx context.Context, record, expr string) {
-		var re = regexp.MustCompile(`[0-9]{10}\.[0-9]{3}`)
+	assertRecordingRule := func(ctx context.Context, record, expr, exposition string) {
 		By("Querying recording rule ...", func() {
+			expected, err := expositionSamples(exposition)
+			Expect(err).To(BeNil())
 			Eventually(func(g Gomega) {
-				resp, recordBody, err := queryMetrics(ctx, record)
+				recordSamples, err := queryVectorSamples(ctx, record)
 				g.Expect(err).To(BeNil())
-				g.Expect(resp.StatusCode).To(Equal(http.StatusOK))
-
-				recordBody = strings.ReplaceAll(recordBody, fmt.Sprintf("\"__name__\":\"%s\",", record), "")
-				recordBody = re.ReplaceAllString(recordBody, `0000000000.000`)
-				klog.Infof("Querying record %s response: %s", record, recordBody)
-
-				resp, exprBody, err := queryMetrics(ctx, expr)
+				exprSamples, err := queryVectorSamples(ctx, expr)
 				g.Expect(err).To(BeNil())
-				g.Expect(resp.StatusCode).To(Equal(http.StatusOK))
-
-				exprBody = re.ReplaceAllString(exprBody, `0000000000.000`)
-				klog.Infof("Querying with expr %s response: %s", expr, exprBody)
-
-				g.Expect(recordBody).To(Equal(exprBody))
-			}).Should(Succeed())
+				klog.Infof("recording rule %s samples: %v", record, recordSamples)
+				klog.Infof("expr %s samples: %v", expr, exprSamples)
+				klog.Infof("expected samples: %v", expected)
+				g.Expect(recordSamples).To(Equal(expected))
+				g.Expect(exprSamples).To(Equal(expected))
+			}).WithTimeout(90 * time.Second).Should(Succeed())
 		})
 	}
 
@@ -575,7 +568,7 @@ var _ = Describe("ManagedCluster Metrics", func() {
 
 		It("should get metric", func(ctx SpecContext) {
 			assertGetMetrics("acm_managed_cluster_worker_cores", clusterWorkerCoresResponse)
-			assertRecordingRule(ctx, "acm_managed_cluster_worker_cores:max", ruleExpr)
+			assertRecordingRule(ctx, "acm_managed_cluster_worker_cores:max", ruleExpr, clusterWorkerCoresResponse)
 		})
 
 		It("should reflect the change on the managed cluster", func(ctx SpecContext) {
@@ -588,7 +581,7 @@ var _ = Describe("ManagedCluster Metrics", func() {
 			})
 
 			assertGetMetrics("acm_managed_cluster_worker_cores", clusterWorkerCoresUpdatedResponse)
-			assertRecordingRule(ctx, "acm_managed_cluster_worker_cores:max", ruleExpr)
+			assertRecordingRule(ctx, "acm_managed_cluster_worker_cores:max", ruleExpr, clusterWorkerCoresUpdatedResponse)
 		})
 
 		It("should reflect the change on the hibernating cluster", func(ctx SpecContext) {
@@ -601,28 +594,28 @@ var _ = Describe("ManagedCluster Metrics", func() {
 			})
 
 			assertGetMetrics("acm_managed_cluster_worker_cores", clusterWorkerCoresUpdatedResponse)
-			assertRecordingRule(ctx, "acm_managed_cluster_worker_cores:max", ruleExpr)
+			assertRecordingRule(ctx, "acm_managed_cluster_worker_cores:max", ruleExpr, clusterWorkerCoresUpdatedResponse)
 
 			By("Updating cluster-hive to be hibernating", func() {
 				Expect(updateCDStatus("cluster-hive", "True")).Should(BeNil())
 			})
 
 			assertGetMetrics("acm_managed_cluster_worker_cores", clusterWorkerCoresResponse)
-			assertRecordingRule(ctx, "acm_managed_cluster_worker_cores:max", ruleExpr)
+			assertRecordingRule(ctx, "acm_managed_cluster_worker_cores:max", ruleExpr, clusterWorkerCoresResponse)
 
 			By("Updating cluster-hive to be running with hibernating status false", func() {
 				Expect(updateCDStatus("cluster-hive", "False")).Should(BeNil())
 			})
 
 			assertGetMetrics("acm_managed_cluster_worker_cores", clusterWorkerCoresUpdatedResponse)
-			assertRecordingRule(ctx, "acm_managed_cluster_worker_cores:max", ruleExpr)
+			assertRecordingRule(ctx, "acm_managed_cluster_worker_cores:max", ruleExpr, clusterWorkerCoresUpdatedResponse)
 
 			By("Updating cluster-hive to be running with hibernating condition removed", func() {
 				Expect(updateCDStatus("cluster-hive", "")).Should(BeNil())
 			})
 
 			assertGetMetrics("acm_managed_cluster_worker_cores", clusterWorkerCoresUpdatedResponse)
-			assertRecordingRule(ctx, "acm_managed_cluster_worker_cores:max", ruleExpr)
+			assertRecordingRule(ctx, "acm_managed_cluster_worker_cores:max", ruleExpr, clusterWorkerCoresUpdatedResponse)
 		})
 	})
 })
@@ -652,6 +645,17 @@ func getMetric(metricName string) (resp *http.Response, bodyString string, err e
 		bodyString = sb.String()
 	}
 	return
+}
+
+func queryVectorSamples(ctx context.Context, promQL string) (map[string]string, error) {
+	resp, body, err := queryMetrics(ctx, promQL)
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("query %s returned status %d", promQL, resp.StatusCode)
+	}
+	return vectorSamples(body)
 }
 
 func queryMetrics(ctx context.Context, promQL string) (resp *http.Response, bodyString string, err error) {

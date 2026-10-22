@@ -115,7 +115,9 @@ for dir in overlays/test/*; do
   helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
   helm repo add stable https://charts.helm.sh/stable
   helm repo update
-  helm install prometheus prometheus-community/kube-prometheus-stack --namespace openshift-monitoring
+  helm install prometheus prometheus-community/kube-prometheus-stack --namespace openshift-monitoring \
+    --set prometheus.prometheusSpec.evaluationInterval=15s \
+    --set prometheus.prometheusSpec.scrapeInterval=15s
   echo "wait for prometheus to be ready"
   kubectl rollout status -n openshift-monitoring deployment -l release=prometheus --timeout=180s
   kubectl apply -f test/functional/resources/ingress_prometheus.yaml
