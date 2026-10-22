@@ -1,12 +1,14 @@
 # Copyright Contributors to the Open Cluster Management project
 
-bases:
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
 - ../../../deploy
 - servicemonitor.yaml
 - prometheusrule.yaml
 
-patchesStrategicMerge:
-- deployment.yaml
-- service.yaml
-- clusterrole_binding_prom.yaml
-
+patches:
+- path: deployment.yaml
+- path: service.yaml
+- path: clusterrole_binding_prom.yaml

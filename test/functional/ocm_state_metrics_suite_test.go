@@ -47,7 +47,6 @@ var _ = BeforeSuite(func() {
 	gvrClusterdeployment = schema.GroupVersionResource{Group: "hive.openshift.io", Version: "v1", Resource: "clusterdeployments"}
 
 	setupHub()
-
 })
 
 func TestOCMStateMEtrics(t *testing.T) {

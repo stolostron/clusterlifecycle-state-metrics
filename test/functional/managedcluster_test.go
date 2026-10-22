@@ -14,7 +14,6 @@ import (
 	"io"
 	"net/http"
 	"reflect"
-	"regexp"
 	"strings"
 	"time"
 
@@ -187,35 +186,29 @@ var _ = Describe("ManagedCluster Metrics", func() {
 		})
 	}
 
-	assertRecordingRule := func(record, expr string) {
-		var re = regexp.MustCompile(`[0-9]{10}\.[0-9]{3}`)
+	assertRecordingRule := func(ctx context.Context, record, expr, exposition string) {
 		By("Querying recording rule ...", func() {
-			Eventually(func() bool {
-				resp, recordBody, err := queryMetrics(record)
-				if err != nil || resp.StatusCode != http.StatusOK {
-					return false
-				}
-				recordBody = strings.Replace(recordBody, fmt.Sprintf("\"__name__\":\"%s\",", record), "", -1)
-				recordBody = re.ReplaceAllString(recordBody, `0000000000.000`)
-				klog.Infof("Querying record %s response: %s", record, recordBody)
-
-				resp, exprBody, err := queryMetrics(expr)
-				if err != nil || resp.StatusCode != http.StatusOK {
-					return false
-				}
-				exprBody = re.ReplaceAllString(exprBody, `0000000000.000`)
-				klog.Infof("Querying with expr %s response: %s", expr, exprBody)
-
-				return recordBody == exprBody
-			}).Should(BeTrue())
+			expected, err := expositionSamples(exposition)
+			Expect(err).To(BeNil())
+			Eventually(func(g Gomega) {
+				recordSamples, err := queryVectorSamples(ctx, record)
+				g.Expect(err).To(BeNil())
+				exprSamples, err := queryVectorSamples(ctx, expr)
+				g.Expect(err).To(BeNil())
+				klog.Infof("recording rule %s samples: %v", record, recordSamples)
+				klog.Infof("expr %s samples: %v", expr, exprSamples)
+				klog.Infof("expected samples: %v", expected)
+				g.Expect(recordSamples).To(Equal(expected))
+				g.Expect(exprSamples).To(Equal(expected))
+			}).WithTimeout(90 * time.Second).Should(Succeed())
 		})
 	}
 
 	Context("acm_managed_cluster_info", func() {
-		AfterEach(func() {
+		AfterEach(func(ctx SpecContext) {
 			By("Query metrics by sum(acm_managed_cluster_info) by (hub_cluster_id)", func() {
 				Eventually(func() error {
-					resp, b, err := queryMetrics("sum(acm_managed_cluster_info)+by+(hub_cluster_id)")
+					resp, b, err := queryMetrics(ctx, "sum(acm_managed_cluster_info)+by+(hub_cluster_id)")
 					klog.Infof("Get Empty Metrics response: %v", b)
 					if err != nil || resp.StatusCode != http.StatusOK {
 						return fmt.Errorf("Failed to query metrics %v: %v", resp.StatusCode, err)
@@ -243,7 +236,7 @@ var _ = Describe("ManagedCluster Metrics", func() {
 			})
 			By("Query metrics by sum(acm_managed_cluster_info) by (version)", func() {
 				Eventually(func() error {
-					resp, b, err := queryMetrics("sum(acm_managed_cluster_info)+by+(version)")
+					resp, b, err := queryMetrics(ctx, "sum(acm_managed_cluster_info)+by+(version)")
 					klog.Infof("Get Empty Metrics response: %v", b)
 					if err != nil || resp.StatusCode != http.StatusOK {
 						return fmt.Errorf("Failed to query metrics %v: %v", resp.StatusCode, err)
@@ -271,7 +264,7 @@ var _ = Describe("ManagedCluster Metrics", func() {
 			})
 			By("Query metrics by sum(acm_managed_cluster_info) by (cloud,created_via,vendor)", func() {
 				Eventually(func() error {
-					resp, b, err := queryMetrics("sum(acm_managed_cluster_info)+by+(cloud,created_via,vendor)")
+					resp, b, err := queryMetrics(ctx, "sum(acm_managed_cluster_info)+by+(cloud,created_via,vendor)")
 					klog.Infof("Get Empty Metrics response: %v", b)
 					if err != nil || resp.StatusCode != http.StatusOK {
 						return fmt.Errorf("Failed to query metrics %v: %v", resp.StatusCode, err)
@@ -396,10 +389,10 @@ var _ = Describe("ManagedCluster Metrics", func() {
 	})
 
 	Context("acm_managed_cluster_labels", func() {
-		AfterEach(func() {
+		AfterEach(func(ctx SpecContext) {
 			By("Query metrics by sum(acm_managed_cluster_labels) by (cloud)", func() {
 				Eventually(func() error {
-					resp, b, err := queryMetrics("sum(acm_managed_cluster_labels)+by+(cloud)")
+					resp, b, err := queryMetrics(ctx, "sum(acm_managed_cluster_labels)+by+(cloud)")
 					klog.Infof("Get Empty Metrics response: %v", b)
 					if err != nil || resp.StatusCode != http.StatusOK {
 						return fmt.Errorf("Failed to query metrics %v: %v", resp.StatusCode, err)
@@ -428,7 +421,7 @@ var _ = Describe("ManagedCluster Metrics", func() {
 			})
 			By("Query metrics by sum(acm_managed_cluster_labels) by (hub_cluster_id)", func() {
 				Eventually(func() error {
-					resp, b, err := queryMetrics("sum(acm_managed_cluster_labels)+by+(hub_cluster_id)")
+					resp, b, err := queryMetrics(ctx, "sum(acm_managed_cluster_labels)+by+(hub_cluster_id)")
 					klog.Infof("Get Empty Metrics response: %v", b)
 					if err != nil || resp.StatusCode != http.StatusOK {
 						return fmt.Errorf("Failed to query metrics %v: %v", resp.StatusCode, err)
@@ -463,10 +456,10 @@ var _ = Describe("ManagedCluster Metrics", func() {
 	})
 
 	Context("acm_managed_cluster_status_condition", func() {
-		AfterEach(func() {
+		AfterEach(func(ctx SpecContext) {
 			By("Query metrics by sum(acm_managed_cluster_status_condition) by (managed_cluster_name)", func() {
 				Eventually(func() error {
-					resp, b, err := queryMetrics("sum(acm_managed_cluster_status_condition)+by+(managed_cluster_name)")
+					resp, b, err := queryMetrics(ctx, "sum(acm_managed_cluster_status_condition)+by+(managed_cluster_name)")
 					klog.Infof("Get Empty Metrics response: %v", b)
 					if err != nil || resp.StatusCode != http.StatusOK {
 						return fmt.Errorf("Failed to query metrics %v: %v", resp.StatusCode, err)
@@ -502,10 +495,10 @@ var _ = Describe("ManagedCluster Metrics", func() {
 	})
 
 	Context("acm_managed_cluster_count", func() {
-		AfterEach(func() {
+		AfterEach(func(ctx SpecContext) {
 			By("Query metrics of acm_managed_cluster_count", func() {
 				Eventually(func() error {
-					resp, b, err := queryMetrics("acm_managed_cluster_count")
+					resp, b, err := queryMetrics(ctx, "acm_managed_cluster_count")
 					klog.Infof("Get Empty Metrics response: %v", b)
 					if err != nil || resp.StatusCode != http.StatusOK {
 						return fmt.Errorf("Failed to query metrics %v: %v", resp.StatusCode, err)
@@ -542,10 +535,10 @@ var _ = Describe("ManagedCluster Metrics", func() {
 	Context("acm_managed_cluster_worker_cores", func() {
 		ruleExpr := "max(acm_managed_cluster_worker_cores)+by+(hub_cluster_id,managed_cluster_id)"
 
-		AfterEach(func() {
+		AfterEach(func(ctx SpecContext) {
 			By("Query metrics by count(acm_managed_cluster_worker_cores) by (hub_cluster_id)", func() {
 				Eventually(func() error {
-					resp, b, err := queryMetrics("count(acm_managed_cluster_worker_cores)+by+(hub_cluster_id)")
+					resp, b, err := queryMetrics(ctx, "count(acm_managed_cluster_worker_cores)+by+(hub_cluster_id)")
 					klog.Infof("Get Empty Metrics response: %v", b)
 					if err != nil || resp.StatusCode != http.StatusOK {
 						return fmt.Errorf("Failed to query metrics %v: %v", resp.StatusCode, err)
@@ -573,12 +566,12 @@ var _ = Describe("ManagedCluster Metrics", func() {
 			})
 		})
 
-		It("should get metric", func() {
+		It("should get metric", func(ctx SpecContext) {
 			assertGetMetrics("acm_managed_cluster_worker_cores", clusterWorkerCoresResponse)
-			assertRecordingRule("acm_managed_cluster_worker_cores:max", ruleExpr)
+			assertRecordingRule(ctx, "acm_managed_cluster_worker_cores:max", ruleExpr, clusterWorkerCoresResponse)
 		})
 
-		It("should reflect the change on the managed cluster", func() {
+		It("should reflect the change on the managed cluster", func(ctx SpecContext) {
 			By("Updating status cluster-hive", func() {
 				Expect(updateMCStatus("cluster-hive", mcv1.ManagedClusterStatus{
 					Capacity: mcv1.ResourceList{
@@ -588,10 +581,10 @@ var _ = Describe("ManagedCluster Metrics", func() {
 			})
 
 			assertGetMetrics("acm_managed_cluster_worker_cores", clusterWorkerCoresUpdatedResponse)
-			assertRecordingRule("acm_managed_cluster_worker_cores:max", ruleExpr)
+			assertRecordingRule(ctx, "acm_managed_cluster_worker_cores:max", ruleExpr, clusterWorkerCoresUpdatedResponse)
 		})
 
-		It("should reflect the change on the hibernating cluster", func() {
+		It("should reflect the change on the hibernating cluster", func(ctx SpecContext) {
 			By("Updating status cluster-hive to have some worker cores", func() {
 				Expect(updateMCStatus("cluster-hive", mcv1.ManagedClusterStatus{
 					Capacity: mcv1.ResourceList{
@@ -601,28 +594,28 @@ var _ = Describe("ManagedCluster Metrics", func() {
 			})
 
 			assertGetMetrics("acm_managed_cluster_worker_cores", clusterWorkerCoresUpdatedResponse)
-			assertRecordingRule("acm_managed_cluster_worker_cores:max", ruleExpr)
+			assertRecordingRule(ctx, "acm_managed_cluster_worker_cores:max", ruleExpr, clusterWorkerCoresUpdatedResponse)
 
 			By("Updating cluster-hive to be hibernating", func() {
 				Expect(updateCDStatus("cluster-hive", "True")).Should(BeNil())
 			})
 
 			assertGetMetrics("acm_managed_cluster_worker_cores", clusterWorkerCoresResponse)
-			assertRecordingRule("acm_managed_cluster_worker_cores:max", ruleExpr)
+			assertRecordingRule(ctx, "acm_managed_cluster_worker_cores:max", ruleExpr, clusterWorkerCoresResponse)
 
 			By("Updating cluster-hive to be running with hibernating status false", func() {
 				Expect(updateCDStatus("cluster-hive", "False")).Should(BeNil())
 			})
 
 			assertGetMetrics("acm_managed_cluster_worker_cores", clusterWorkerCoresUpdatedResponse)
-			assertRecordingRule("acm_managed_cluster_worker_cores:max", ruleExpr)
+			assertRecordingRule(ctx, "acm_managed_cluster_worker_cores:max", ruleExpr, clusterWorkerCoresUpdatedResponse)
 
 			By("Updating cluster-hive to be running with hibernating condition removed", func() {
 				Expect(updateCDStatus("cluster-hive", "")).Should(BeNil())
 			})
 
 			assertGetMetrics("acm_managed_cluster_worker_cores", clusterWorkerCoresUpdatedResponse)
-			assertRecordingRule("acm_managed_cluster_worker_cores:max", ruleExpr)
+			assertRecordingRule(ctx, "acm_managed_cluster_worker_cores:max", ruleExpr, clusterWorkerCoresUpdatedResponse)
 		})
 	})
 })
@@ -654,10 +647,31 @@ func getMetric(metricName string) (resp *http.Response, bodyString string, err e
 	return
 }
 
-func queryMetrics(promQL string) (resp *http.Response, bodyString string, err error) {
-	promURL := "http://localhost/prometheus-k8s/api/v1/query?query=" + promQL
-	klog.Infof("queryMetrics: %s", promURL)
-	resp, err = http.Get(promURL)
+func queryVectorSamples(ctx context.Context, promQL string) (map[string]string, error) {
+	resp, body, err := queryMetrics(ctx, promQL)
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("query %s returned status %d", promQL, resp.StatusCode)
+	}
+	return vectorSamples(body)
+}
+
+func queryMetrics(ctx context.Context, promQL string) (resp *http.Response, bodyString string, err error) {
+	// Keep the host fixed. Callers write spaces as '+'; encode the PromQL so it
+	// stays in the query parameter.
+	ctxWithTimeout, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+	req, err := http.NewRequestWithContext(ctxWithTimeout, http.MethodGet, "http://localhost/prometheus-k8s/api/v1/query", nil)
+	if err != nil {
+		return nil, "", err
+	}
+	query := req.URL.Query()
+	query.Set("query", strings.ReplaceAll(promQL, "+", " "))
+	req.URL.RawQuery = query.Encode()
+	klog.Infof("queryMetrics: %s", req.URL.String())
+	resp, err = http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, "", err
 	}

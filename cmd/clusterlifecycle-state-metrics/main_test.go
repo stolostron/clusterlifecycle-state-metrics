@@ -14,7 +14,7 @@ import (
 	"testing"
 )
 
-func TestRunMain(t *testing.T) {
+func TestRunMain(_ *testing.T) {
 	fmt.Println("Start tests")
 	go main()
 	fmt.Println("Waiting Signal")
@@ -25,10 +25,9 @@ func TestRunMain(t *testing.T) {
 		sig := <-signalChannel
 		switch sig {
 		case os.Interrupt:
-			fmt.Printf("Signal Interupt: %s\n", sig.String())
+			fmt.Printf("Signal Interrupt: %s\n", sig.String())
 			return
 		case syscall.SIGTERM:
-			//handle SIGTERM
 			fmt.Printf("Signal SIGTERM: %s\n", sig.String())
 			return
 		}

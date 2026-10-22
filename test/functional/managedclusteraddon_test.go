@@ -116,10 +116,10 @@ var _ = Describe("ManagedClusterAddOn Metrics", func() {
 	}
 
 	Context("acm_managed_cluster_addon_status_condition", func() {
-		AfterEach(func() {
+		AfterEach(func(ctx SpecContext) {
 			By("Query metrics by sum(acm_managed_cluster_addon_status_condition) by (managed_cluster_name)", func() {
 				Eventually(func() error {
-					resp, b, err := queryMetrics("sum(acm_managed_cluster_addon_status_condition)+by+(managed_cluster_name)")
+					resp, b, err := queryMetrics(ctx, "sum(acm_managed_cluster_addon_status_condition)+by+(managed_cluster_name)")
 					klog.Infof("Get Metrics response: %v", b)
 					if err != nil || resp.StatusCode != http.StatusOK {
 						return fmt.Errorf("Failed to query metrics %v: %v", resp.StatusCode, err)

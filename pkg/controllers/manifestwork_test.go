@@ -7,6 +7,7 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
 	workv1 "open-cluster-management.io/api/work/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -21,9 +22,7 @@ var (
 )
 
 func init() {
-	if err := workv1.Install(testscheme); err != nil {
-		panic(err)
-	}
+	utilruntime.Must(workv1.Install(testscheme))
 }
 
 func TestReconcile(t *testing.T) {
