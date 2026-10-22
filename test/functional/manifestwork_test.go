@@ -125,10 +125,10 @@ var _ = Describe("ManifestWork Metrics", func() {
 	}
 
 	Context("acm_manifestwork_status_condition", func() {
-		AfterEach(func() {
+		AfterEach(func(ctx SpecContext) {
 			By("Query metrics by sum(acm_manifestwork_status_condition) by (managed_cluster_name)", func() {
 				Eventually(func() error {
-					resp, b, err := queryMetrics("sum(acm_manifestwork_status_condition)+by+(managed_cluster_name)")
+					resp, b, err := queryMetrics(ctx, "sum(acm_manifestwork_status_condition)+by+(managed_cluster_name)")
 					klog.Infof("Get Metrics response: %v", b)
 					if err != nil || resp.StatusCode != http.StatusOK {
 						return fmt.Errorf("Failed to query metrics %v: %v", resp.StatusCode, err)
@@ -164,10 +164,10 @@ var _ = Describe("ManifestWork Metrics", func() {
 	})
 
 	Context("acm_manifestwork_count", func() {
-		AfterEach(func() {
+		AfterEach(func(ctx SpecContext) {
 			By("Query metrics of acm_manifestwork_count", func() {
 				Eventually(func() error {
-					resp, b, err := queryMetrics("acm_manifestwork_count")
+					resp, b, err := queryMetrics(ctx, "acm_manifestwork_count")
 					klog.Infof("Get Metrics response: %v", b)
 					if err != nil || resp.StatusCode != http.StatusOK {
 						return fmt.Errorf("Failed to query metrics %v: %v", resp.StatusCode, err)
