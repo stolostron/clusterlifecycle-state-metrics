@@ -2,17 +2,17 @@
 
 SHELL := /bin/bash
 
-export ARCH       ?= $(shell uname -m)
+export ARCH       := $(or $(ARCH),$(shell uname -m))
 export ARCH_TYPE   = $(if $(patsubst x86_64,,$(ARCH)),$(ARCH),amd64)
 
 export CGO_ENABLED  = 1
 export GO111MODULE := on
-export GOOS         = $(shell go env GOOS)
+export GOOS        := $(shell go env GOOS)
 export GOARCH       = $(ARCH_TYPE)
-export GOPACKAGES   = $(shell go list ./... | grep -v /vendor | grep -v /internal | grep -v /build | grep -v /test)
+export GOPACKAGES  := $(shell go list ./... | grep -v /vendor | grep -v /internal | grep -v /build | grep -v /test)
 
-export PROJECT_DIR            = $(shell 'pwd')
-export PROJECT_NAME            = $(shell basename ${PROJECT_DIR})
+export PROJECT_DIR            := $(shell pwd)
+export PROJECT_NAME            := $(shell basename ${PROJECT_DIR})
 
 export BUILD_DIR              = $(PROJECT_DIR)/build
 
