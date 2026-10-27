@@ -4,11 +4,11 @@ name: Go
 
 on:
   push:
-    branches: [main, release-*]
+    branches: [main, backplane-*]
     paths-ignore:
       - ".tekton/**"
   pull_request:
-    branches: [main, release-*]
+    branches: [main, backplane-*]
     paths-ignore:
       - ".tekton/**"
 
