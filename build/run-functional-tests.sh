@@ -115,7 +115,17 @@ for dir in overlays/test/*; do
   helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
   helm repo add stable https://charts.helm.sh/stable
   helm repo update
+  # helm 4 applies chart CRDs with server-side apply, which conflicts with the
+  # fixture CRDs installed client-side by kubectl earlier in this script
+  # (https://github.com/helm/helm/issues/32706). --force-conflicts resolves it
+  # but is not accepted by helm 3, so only pass it when the installed helm
+  # supports it.
+  HELM_FORCE_CONFLICTS=""
+  if helm install --help 2>&1 | grep -q -- --force-conflicts; then
+    HELM_FORCE_CONFLICTS="--force-conflicts"
+  fi
   helm install prometheus prometheus-community/kube-prometheus-stack --namespace openshift-monitoring \
+    ${HELM_FORCE_CONFLICTS} \
     --set prometheus.prometheusSpec.evaluationInterval=15s \
     --set prometheus.prometheusSpec.scrapeInterval=15s
   echo "wait for prometheus to be ready"
