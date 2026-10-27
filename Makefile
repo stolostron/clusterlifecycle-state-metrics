@@ -5,25 +5,22 @@ SHELL := /bin/bash
 export ARCH       ?= $(shell uname -m)
 export ARCH_TYPE   = $(if $(patsubst x86_64,,$(ARCH)),$(ARCH),amd64)
 
-export CGO_ENABLED  = 1
+export CGO_ENABLED ?= 1
 export GO111MODULE := on
-export GOOS         = $(shell go env GOOS)
-export GOARCH       = $(ARCH_TYPE)
-export GOPACKAGES   = $(shell go list ./... | grep -v /vendor | grep -v /internal | grep -v /build | grep -v /test)
+export GOOS        := $(shell go env GOOS)
+export GOARCH      := $(ARCH_TYPE)
+GOPACKAGES  := $(shell go list ./... | grep -v /vendor | grep -v /internal | grep -v /build | grep -v /test)
 
-export PROJECT_DIR            = $(shell 'pwd')
-export PROJECT_NAME            = $(shell basename ${PROJECT_DIR})
+export PROJECT_DIR  := $(PWD)
+export PROJECT_NAME := $(shell basename $(PROJECT_DIR))
 
-export BUILD_DIR              = $(PROJECT_DIR)/build
+export BUILD_DIR    := $(PROJECT_DIR)/build
 
-export DOCKER_FILE        = $(BUILD_DIR)/Dockerfile.prow
-export DOCKER_FILE_COVERAGE = $(BUILD_DIR)/Dockerfile.coverage.prow
-export DOCKER_IMAGE      ?= clusterlifecycle-state-metrics
-export DOCKER_IMAGE_COVERAGE_POSTFIX ?= -coverage
-export DOCKER_IMAGE_COVERAGE      ?= $(DOCKER_IMAGE)$(DOCKER_IMAGE_COVERAGE_POSTFIX)
+export DOCKER_FILE          := $(BUILD_DIR)/Dockerfile.prow
+export DOCKER_FILE_COVERAGE := $(BUILD_DIR)/Dockerfile.coverage.prow
+export DOCKER_IMAGE         ?= clusterlifecycle-state-metrics
+export DOCKER_IMAGE_COVERAGE      ?= $(DOCKER_IMAGE)-coverage
 export DOCKER_BUILDER    ?= docker
-
-export KUBECONFIG ?= ${HOME}/.kube/config
 
 GOBIN := $(PROJECT_DIR)/build/_output/bin
 ENSURE_ENVTEST_SCRIPT := https://raw.githubusercontent.com/open-cluster-management-io/sdk-go/main/ci/envtest/ensure-envtest.sh
@@ -56,7 +53,7 @@ envtest-setup:
 .PHONY: test
 ## Runs go unit tests
 test: dependencies envtest-setup
-	@build/run-unit-tests.sh
+	@GOPACKAGES="$(GOPACKAGES)" build/run-unit-tests.sh
 
 .PHONY: build-image
 ## Builds controller binary inside of an image

@@ -98,8 +98,7 @@ kind get kubeconfig --name $CLUSTER_NAME >${KIND_KUBECONFIG}
 # load image if possible
 kind load docker-image ${DOCKER_IMAGE_AND_TAG} --name=$CLUSTER_NAME -v 99 || echo "failed to load image locally, will use imagePullSecret"
 
-echo "install cluster"
-# setup cluster
+echo "setup cluster"
 make kind-cluster-setup
 echo "::endgroup::"
 
@@ -108,9 +107,6 @@ for dir in overlays/test/*; do
 
   echo "::group::Deploy controller and prerequisites"
   # install clusterlifecycle-state-metrics
-  echo "install managedcluster-import-controller"
-  kubectl apply -k "$dir" --dry-run=client -o yaml | sed "s|REPLACE_IMAGE|${DOCKER_IMAGE_AND_TAG}|g" | kubectl apply -f -
-
   echo "install prometheus"
   helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
   helm repo add stable https://charts.helm.sh/stable
@@ -120,6 +116,10 @@ for dir in overlays/test/*; do
     --set prometheus.prometheusSpec.scrapeInterval=15s
   echo "wait for prometheus to be ready"
   kubectl rollout status -n openshift-monitoring deployment -l release=prometheus --timeout=180s
+
+  echo "install clusterlifecycle-state-metrics"
+  kubectl apply -k "$dir" --dry-run=client -o yaml | sed "s|REPLACE_IMAGE|${DOCKER_IMAGE_AND_TAG}|g" | kubectl apply -f -
+
   kubectl apply -f test/functional/resources/ingress_prometheus.yaml
 
   echo "Create ingress for functional test"
